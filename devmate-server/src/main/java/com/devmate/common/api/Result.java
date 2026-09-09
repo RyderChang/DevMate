@@ -13,7 +13,15 @@ public final class Result<T> {
     }
 
     public static <T> Result<T> success(T data) {
-        return new Result<>(0, "success", data);
+        return new Result<>(ErrorCode.SUCCESS.getCode(), ErrorCode.SUCCESS.getMessage(), data);
+    }
+
+    public static Result<Void> success() {
+        return success(null);
+    }
+
+    public static Result<Void> error(ErrorCode errorCode) {
+        return error(errorCode.getCode(), errorCode.getMessage());
     }
 
     public static <T> Result<T> error(int code, String message) {
