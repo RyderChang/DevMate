@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Maven Wrapper startup script. The Maven distribution is downloaded on first use.
+set -eu
+
+BASE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PROPERTIES_FILE="$BASE_DIR/.mvn/wrapper/maven-wrapper.properties"
+DISTRIBUTION_URL=$(sed -n 's/^distributionUrl=//p' "$PROPERTIES_FILE")
+MAVEN_VERSION=$(printf '%s' "$DISTRIBUTION_URL" | sed -n 's|.*/apache-maven/\([^/]*\)/.*|\1|p')
+MAVEN_HOME="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/apache-maven-$MAVEN_VERSION"
+MAVEN_BIN="$MAVEN_HOME/apache-maven-$MAVEN_VERSION/bin/mvn"
+
+if [ ! -x "$MAVEN_BIN" ]; then
+    ARCHIVE="$MAVEN_HOME/apache-maven-$MAVEN_VERSION-bin.zip"
+    mkdir -p "$MAVEN_HOME"
+    if command -v curl >/dev/null 2>&1; then
+        curl --fail --location --output "$ARCHIVE" "$DISTRIBUTION_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget --output-document="$ARCHIVE" "$DISTRIBUTION_URL"
+    else
+        echo "Error: curl or wget is required to download Maven." >&2
+        exit 1
+    fi
+    if command -v unzip >/dev/null 2>&1; then
+        unzip -q "$ARCHIVE" -d "$MAVEN_HOME"
+    else
+        echo "Error: unzip is required to install Maven." >&2
+        exit 1
+    fi
+    rm -f "$ARCHIVE"
+fi
+
+exec "$MAVEN_BIN" "$@"
