@@ -1,14 +1,13 @@
 package com.devmate;
 
+import com.devmate.database.MySqlIntegrationTestBase;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
 @ActiveProfiles("dev")
-class DevProfileApplicationTests {
+class DevProfileApplicationTests extends MySqlIntegrationTestBase {
 
     @Test
-    void contextLoadsWithoutExternalServices() {
+    void devProfileUsesManagedTestDatabase() {
     }
 }
