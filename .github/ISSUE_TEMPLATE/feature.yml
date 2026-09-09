@@ -1,0 +1,61 @@
+name: 功能任务
+description: 提议或拆分一个可独立验收的功能任务
+title: "[Feature] "
+labels: []
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: 说明业务背景、用户问题及必要上下文。
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 描述本任务期望达成的可验证结果。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围
+      description: 列出本任务包含的工作。
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: 非范围
+      description: 明确本任务不会处理的事项。
+    validations:
+      required: true
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: 输入条件
+      description: 列出依赖、已有决策和开始任务前必须满足的条件。
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 实现建议
+      description: 可选的实现思路或约束；不要把未经确认的建议写成决策。
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 使用可检查的条目描述完成条件。
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充信息
+      description: 添加其他相关信息；请删除密钥、Token、私有源码等敏感数据。
+    validations:
+      required: false

@@ -1,16 +1,5 @@
-# Compiled class file
+# Java / Maven / Gradle
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
 *.nar
@@ -18,7 +7,61 @@
 *.zip
 *.tar.gz
 *.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+target/
+.gradle/
+build/
+out/
 hs_err_pid*
 replay_pid*
+.mtj.tmp/
+*.ctxt
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Node.js / Vue / Vite
+node_modules/
+dist/
+.vite/
+.nuxt/
+.output/
+coverage/
+.nyc_output/
+
+# VS Code local preferences
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# Local environment and secrets (keep templates tracked)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+*.pem
+*.key
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Repository-local runtime data
+.runtime/mysql/
+.runtime/minio/
+.runtime/redis/
+.runtime/qdrant/
+deploy/data/
