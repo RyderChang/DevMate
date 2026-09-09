@@ -6,11 +6,19 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
 public abstract class MySqlIntegrationTestBase {
+
+    @DynamicPropertySource
+    static void authenticationProperties(DynamicPropertyRegistry registry) {
+        registry.add("devmate.jwt.secret", () -> "test-only-jwt-secret-that-is-at-least-32-bytes-long");
+        registry.add("devmate.jwt.expiration", () -> "PT1H");
+    }
 
     @Container
     @ServiceConnection

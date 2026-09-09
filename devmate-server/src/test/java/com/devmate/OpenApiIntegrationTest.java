@@ -16,18 +16,15 @@ class OpenApiIntegrationTest extends MySqlIntegrationTestBase {
     private MockMvc mockMvc;
 
     @Test
-    void publishesHealthEndpointInOpenApiDocument() throws Exception {
+    void protectsOpenApiDocumentByDefault() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/json"))
-                .andExpect(jsonPath("$.info.title").value("DevMate API"))
-                .andExpect(jsonPath("$.paths['/health']").exists());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401));
     }
 
     @Test
-    void servesSwaggerUi() throws Exception {
+    void protectsSwaggerUiByDefault() throws Exception {
         mockMvc.perform(get("/swagger-ui/index.html"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("text/html"));
+                .andExpect(status().isUnauthorized());
     }
 }

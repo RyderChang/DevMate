@@ -10,16 +10,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DatabaseConfigurationContractTest {
 
     @Test
-    void enablesDataSourceWhileRetainingTemporarySecurityExclusion() throws IOException {
+    void enablesDataSourceAndSecurity() throws IOException {
         String config = resource("/application.yml");
 
         assertThat(config)
-                .contains("org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration")
+                .doesNotContain("SecurityAutoConfiguration")
                 .doesNotContain("DataSourceAutoConfiguration")
                 .contains("map-underscore-to-camel-case: true")
                 .contains("clean-disabled: true")
                 .contains("baseline-on-migrate: false")
                 .contains("out-of-order: false");
+        assertThat(config).contains("secret: ${JWT_SECRET:}").contains("expiration: ${JWT_EXPIRATION:PT2H}");
     }
 
     @Test

@@ -1,9 +1,6 @@
 spring:
   application:
     name: devmate-server
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
   datasource:
     hikari:
       maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
@@ -37,3 +34,8 @@ management:
 logging:
   level:
     root: INFO
+
+devmate:
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration: ${JWT_EXPIRATION:PT2H}
