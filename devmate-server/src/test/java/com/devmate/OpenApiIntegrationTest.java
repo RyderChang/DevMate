@@ -21,7 +21,7 @@ class OpenApiIntegrationTest extends MySqlIntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.info.title").value("DevMate API"))
-                .andExpect(jsonPath("$.paths['/api/health']").exists());
+                .andExpect(jsonPath("$.paths['/health']").exists());
     }
 
     @Test

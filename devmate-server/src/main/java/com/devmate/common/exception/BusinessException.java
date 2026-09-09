@@ -18,8 +18,20 @@ public class BusinessException extends RuntimeException {
         this(errorCode.getCode(), errorCode.getMessage(), errorCode.getHttpStatus());
     }
 
+    public BusinessException(ErrorCode errorCode, String clientMessage) {
+        this(errorCode.getCode(), clientMessage, errorCode.getHttpStatus());
+    }
+
+    public BusinessException(ErrorCode errorCode, String clientMessage, Throwable cause) {
+        this(errorCode.getCode(), clientMessage, errorCode.getHttpStatus(), cause);
+    }
+
     public BusinessException(int code, String clientMessage, HttpStatus httpStatus) {
-        super(Objects.requireNonNull(clientMessage, "clientMessage must not be null"));
+        this(code, clientMessage, httpStatus, null);
+    }
+
+    public BusinessException(int code, String clientMessage, HttpStatus httpStatus, Throwable cause) {
+        super(Objects.requireNonNull(clientMessage, "clientMessage must not be null"), cause);
         this.code = code;
         this.clientMessage = clientMessage;
         this.httpStatus = Objects.requireNonNull(httpStatus, "httpStatus must not be null");

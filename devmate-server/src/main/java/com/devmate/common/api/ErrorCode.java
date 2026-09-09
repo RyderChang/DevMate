@@ -4,10 +4,10 @@ import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
 
-    SUCCESS(0, "success", HttpStatus.OK),
-    INVALID_PARAMETER(1001, "Invalid request parameter", HttpStatus.BAD_REQUEST),
-    BUSINESS_ERROR(2001, "Business request failed", HttpStatus.BAD_REQUEST),
-    INTERNAL_ERROR(5000, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+    SUCCESS(200, "success", HttpStatus.OK),
+    INVALID_PARAMETER(400, "Invalid request parameter", HttpStatus.BAD_REQUEST),
+    BUSINESS_ERROR(400, "Business request failed", HttpStatus.BAD_REQUEST),
+    INTERNAL_ERROR(500, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String message;

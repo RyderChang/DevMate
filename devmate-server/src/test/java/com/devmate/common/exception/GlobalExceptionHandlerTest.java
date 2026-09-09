@@ -36,7 +36,7 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/test/unexpected-error"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
-                .andExpect(jsonPath("$.code").value(5000))
+                .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("Internal server error"))
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(content().string(not(containsString("sensitive failure detail"))))
@@ -47,7 +47,7 @@ class GlobalExceptionHandlerTest {
     void businessExceptionUsesExplicitStatusAndSafeMessage() throws Exception {
         mockMvc.perform(get("/test/business-error"))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value(2001))
+                .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("Request conflicts with current state"))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
@@ -58,7 +58,7 @@ class GlobalExceptionHandlerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(1001))
+                .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message")
                         .value("Invalid request parameter: name: must not be blank"));
     }
@@ -67,7 +67,7 @@ class GlobalExceptionHandlerTest {
     void constraintViolationUsesUnifiedParameterResponse() throws Exception {
         mockMvc.perform(get("/test/query").param("count", "0"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(1001))
+                .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value(containsString("must be greater than or equal to 1")));
     }
 
@@ -82,7 +82,7 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/test/business-error")
         String businessError() {
-            throw new BusinessException(2001, "Request conflicts with current state", HttpStatus.CONFLICT);
+            throw new BusinessException(400, "Request conflicts with current state", HttpStatus.CONFLICT);
         }
 
         @PostMapping("/test/body")
