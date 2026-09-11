@@ -7,6 +7,10 @@ public enum ErrorCode {
     SUCCESS(200, "success", HttpStatus.OK),
     INVALID_PARAMETER(400, "Invalid request parameter", HttpStatus.BAD_REQUEST),
     BUSINESS_ERROR(400, "Business request failed", HttpStatus.BAD_REQUEST),
+    USERNAME_ALREADY_EXISTS(409, "Username already exists", HttpStatus.CONFLICT),
+    INVALID_CREDENTIALS(401, "Invalid username or password", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(401, "Authentication required", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN(403, "Access denied", HttpStatus.FORBIDDEN),
     INTERNAL_ERROR(500, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

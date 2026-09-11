@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationState;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 
@@ -17,6 +18,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
 
     @Autowired
@@ -37,7 +39,8 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         HikariDataSource hikari = (HikariDataSource) dataSource;
         assertThat(hikari.getMaximumPoolSize()).isEqualTo(10);
         assertThat(hikari.getMinimumIdle()).isEqualTo(2);
-        assertThat(environment.getProperty("spring.datasource.url")).isNull();
+        assertThat(environment.getProperty("spring.datasource.url"))
+        .isEqualTo(MYSQL.getJdbcUrl());
 
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
@@ -54,10 +57,10 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     }
 
     @Test
-    void appliesAndValidatesBaselineExactlyOnceWithoutBusinessTables() throws Exception {
+    void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
-        assertThat(flyway.info().current().getScript()).isEqualTo("V1__baseline.sql");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+        assertThat(flyway.info().current().getScript()).isEqualTo("V2__create_users_table.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
@@ -70,7 +73,7 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
                 tables.add(result.getString("TABLE_NAME"));
             }
         }
-        assertThat(tables).containsExactly("flyway_schema_history");
+        assertThat(tables).containsExactlyInAnyOrder("flyway_schema_history", "users");
     }
 
     @Test
@@ -78,3 +81,13 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(databaseProbeMapper.selectOne()).isEqualTo(1);
     }
 }
+
+
+
+
+
+
+
+
+
+
