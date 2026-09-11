@@ -18,15 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
-    private static final String DEFAULT_ROLE = "USER";
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserRoleService userRoleService;
 
-    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UserService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService,
+                       UserRoleService userRoleService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.userRoleService = userRoleService;
     }
 
     @Transactional
@@ -39,9 +41,10 @@ public class UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setNickname(normalizeNickname(request.nickname(), username));
-        user.setRole(DEFAULT_ROLE);
+        user.setRole(UserRoleService.DEFAULT_ROLE_CODE);
         try {
             userMapper.insert(user);
+            userRoleService.assignDefaultRole(user.getId());
         } catch (DataIntegrityViolationException exception) {
             if (hasUniqueConstraintCause(exception)) {
                 throw new BusinessException(ErrorCode.USERNAME_ALREADY_EXISTS, ErrorCode.USERNAME_ALREADY_EXISTS.getMessage(), exception);
@@ -56,7 +59,8 @@ public class UserService {
         if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
-        CurrentUser principal = new CurrentUser(user.getId(), user.getUsername(), user.getRole());
+        CurrentUser principal = new CurrentUser(user.getId(), user.getUsername(),
+                userRoleService.findRoleCodes(user.getId()));
         return new LoginResponse(jwtService.generate(principal), "Bearer", jwtService.expirationSeconds(), toResponse(user));
     }
 

@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.springframework.boot.test.mock.mockito.MockBean;
 import com.devmate.security.JwtService;
+import com.devmate.service.UserRoleService;
 
 @WebMvcTest(HealthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -21,6 +22,8 @@ class HealthControllerTest {
     private MockMvc mockMvc;
 @MockBean
 private JwtService jwtService;
+@MockBean
+private UserRoleService userRoleService;
 
 
     @Test

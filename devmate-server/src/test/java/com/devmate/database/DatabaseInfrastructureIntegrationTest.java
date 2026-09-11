@@ -59,8 +59,8 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     @Test
     void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
-        assertThat(flyway.info().current().getScript()).isEqualTo("V2__create_users_table.sql");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
+        assertThat(flyway.info().current().getScript()).isEqualTo("V3__create_and_initialize_rbac.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
@@ -73,7 +73,8 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
                 tables.add(result.getString("TABLE_NAME"));
             }
         }
-        assertThat(tables).containsExactlyInAnyOrder("flyway_schema_history", "users");
+        assertThat(tables).containsExactlyInAnyOrder(
+                "flyway_schema_history", "users", "role", "permission", "user_role", "role_permission");
     }
 
     @Test
@@ -81,7 +82,6 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(databaseProbeMapper.selectOne()).isEqualTo(1);
     }
 }
-
 
 
 

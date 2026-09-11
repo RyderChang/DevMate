@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,8 +31,8 @@ public JwtService(JwtProperties properties) {
         Instant issuedAt = clock.instant();
         return Jwts.builder()
                 .subject(user.username())
-                .claim("uid", user.id().toString())
-                .claim("role", user.role())
+                .claim("id", user.id())
+                .claim("roles", user.roles())
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(issuedAt.plus(properties.expiration())))
                 .signWith(signingKey())
@@ -41,8 +42,13 @@ public JwtService(JwtProperties properties) {
     public CurrentUser parse(String token) {
         Claims claims = Jwts.parser().verifyWith(signingKey()).clock(() -> Date.from(clock.instant()))
                 .build().parseSignedClaims(token).getPayload();
-        return new CurrentUser(Long.valueOf(claims.get("uid", String.class)), claims.getSubject(),
-                claims.get("role", String.class));
+        Number id = claims.get("id", Number.class);
+        List<?> values = claims.get("roles", List.class);
+        if (id == null || values == null || values.stream().anyMatch(value -> !(value instanceof String))) {
+            throw new IllegalArgumentException("JWT identity claims are invalid");
+        }
+        List<String> roles = values.stream().map(String.class::cast).distinct().sorted().toList();
+        return new CurrentUser(id.longValue(), claims.getSubject(), roles);
     }
 
     public long expirationSeconds() {
@@ -56,4 +62,3 @@ public JwtService(JwtProperties properties) {
         return Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
     }
 }
-

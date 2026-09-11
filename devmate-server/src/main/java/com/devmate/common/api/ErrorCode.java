@@ -11,6 +11,8 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(401, "Invalid username or password", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(401, "Authentication required", HttpStatus.UNAUTHORIZED),
     FORBIDDEN(403, "Access denied", HttpStatus.FORBIDDEN),
+    USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
+    DEFAULT_ROLE_NOT_CONFIGURED(500, "Default user role is not configured", HttpStatus.INTERNAL_SERVER_ERROR),
     INTERNAL_ERROR(500, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import com.devmate.security.JwtService;
 import com.devmate.service.UserService;
+import com.devmate.service.UserRoleService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,6 +45,8 @@ private MockMvc mockMvc;
 private JwtService jwtService;
 @MockBean
 private UserService userService;
+@MockBean
+private UserRoleService userRoleService;
 
     @Test
     void unexpectedExceptionReturnsSafeUnifiedResponse() throws Exception {
@@ -113,7 +116,6 @@ private UserService userService;
     record TestRequest(@NotBlank String name) {
     }
 }
-
 
 
 
