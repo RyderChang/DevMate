@@ -1,8 +1,8 @@
 # DevMate Server
 
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
-MyBatis-Plus 基础能力，并保留统一响应、异常转换、健康检查和 OpenAPI。数据库中只有 Flyway
-历史表；尚未实现业务表、业务 Mapper、用户、认证、Redis 或 AI 功能。
+MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查及基于 JWT 的用户认证。Flyway
+负责创建 `users` 表；尚未实现用户中心、Redis 或 AI 功能。
 
 ## 前置要求
 
@@ -42,6 +42,8 @@ MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试�
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | 获取连接超时（毫秒） | `30000` | `30000` |
 | `DB_POOL_IDLE_TIMEOUT_MS` | 空闲连接超时（毫秒） | `600000` | `600000` |
 | `DB_POOL_MAX_LIFETIME_MS` | 连接最大生命周期（毫秒） | `1800000` | `1800000` |
+| `JWT_SECRET` | JWT HMAC 签名密钥（至少 32 字节） | 无，必填 | 无，必填 |
+| `JWT_EXPIRATION` | JWT 有效期（ISO-8601 Duration） | `PT2H` | `PT2H` |
 
 ### 准备本地数据库并启动
 
@@ -59,6 +61,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP
 
 ```bash
 export DB_PASSWORD='<local-password>'
+export JWT_SECRET='<random-secret-at-least-32-bytes>'
 SPRING_PROFILES_ACTIVE=dev ./devmate-server/mvnw \
   -f devmate-server/pom.xml spring-boot:run
 ```
@@ -76,25 +79,26 @@ checksum。迁移或校验失败会阻止启动。`clean`、自动 baseline 和�
 重排；修正必须新增更高版本，并在 PR 中说明前向修复和回滚方案。`V1__baseline.sql` 仅执行
 无副作用探测，不创建业务表。详细规则见 `src/main/resources/db/migration/README.md`。
 
-MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，默认不输出 SQL。本阶段未
-设置业务主键、逻辑删除、自动填充或分页插件；`SELECT 1` 探针 Mapper 只存在于测试源码。
+MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，默认不输出 SQL。用户主键
+由 MySQL 自增生成；`SELECT 1` 探针 Mapper 只存在于测试源码。
 
 ## API 与当前限制
 
 启动后可访问：
 
-- `GET http://localhost:8080/api/health`；
-- OpenAPI JSON：`http://localhost:8080/v3/api-docs`；
-- Swagger UI：`http://localhost:8080/swagger-ui/index.html`。
+- `GET http://localhost:8080/health`（匿名）；
+- `POST http://localhost:8080/auth/register`（匿名）；
+- `POST http://localhost:8080/auth/login`（匿名）；
+- `GET http://localhost:8080/auth/me`（需要 `Authorization: Bearer <token>`）。
 
 健康接口仍返回：
 
 ```json
-{"code":0,"message":"success","data":"DevMate server running"}
+{"code":200,"message":"success","data":{"status":"UP"}}
 ```
 
-启用数据库后，完整应用上下文预期必须连接 MySQL，只有隔离的 MVC slice 测试不需要数据库。
-Spring Security 自动配置仍临时排除，后续认证任务才会建立鉴权。当前不应配置 Redis、AI、
+除注册、登录和健康检查外，Spring Security 默认要求 JWT 认证，OpenAPI 与 Swagger UI 也不在
+白名单中。JWT 密钥只从 `JWT_SECRET` 注入，不提供仓库内明文默认值。当前不应配置 Redis、AI、
 GitHub 或其他外部服务凭据。
 
 DEV-005 执行环境访问 Maven Central 时仍收到 HTTP 403，因此 DEV-004 遗留的依赖解析债务尚未

@@ -6,7 +6,11 @@ import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import com.devmate.security.JwtService;
+import com.devmate.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,16 +24,26 @@ import org.springframework.validation.annotation.Validated;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(GlobalExceptionHandlerTest.ExceptionTestController.class)
-@Import(GlobalExceptionHandler.class)
+@WebMvcTest
+@AutoConfigureMockMvc(addFilters = false)
+@Import({
+        GlobalExceptionHandler.class,
+        GlobalExceptionHandlerTest.ExceptionTestController.class
+})
 class GlobalExceptionHandlerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+private MockMvc mockMvc;
+
+@MockBean
+private JwtService jwtService;
+@MockBean
+private UserService userService;
 
     @Test
     void unexpectedExceptionReturnsSafeUnifiedResponse() throws Exception {
@@ -99,3 +113,9 @@ class GlobalExceptionHandlerTest {
     record TestRequest(@NotBlank String name) {
     }
 }
+
+
+
+
+
+
