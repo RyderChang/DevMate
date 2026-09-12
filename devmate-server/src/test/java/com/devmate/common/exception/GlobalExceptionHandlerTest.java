@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
+@WebMvcTest(GlobalExceptionHandlerTest.ExceptionTestController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({
         GlobalExceptionHandler.class,
@@ -116,7 +116,6 @@ private UserRoleService userRoleService;
     record TestRequest(@NotBlank String name) {
     }
 }
-
 
 
 
