@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -63,6 +64,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Result<Void>> handleUnreadableMessage() {
         return invalidParameter("");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Result<Void>> handleAccessDenied(
+            AccessDeniedException exception, HttpServletRequest request) {
+        LOGGER.warn("Access denied method={} uri={}", request.getMethod(), request.getRequestURI());
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.getHttpStatus())
+                .body(Result.error(ErrorCode.FORBIDDEN));
     }
 
     @ExceptionHandler(Exception.class)

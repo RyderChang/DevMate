@@ -3,6 +3,7 @@ package com.devmate.auth;
 import com.devmate.database.MySqlIntegrationTestBase;
 import com.devmate.entity.UserEntity;
 import com.devmate.mapper.UserMapper;
+import com.devmate.mapper.UserRoleMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ class AuthIntegrationTest extends MySqlIntegrationTestBase {
     @Autowired MockMvc mockMvc;
     @Autowired UserMapper userMapper;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired UserRoleMapper userRoleMapper;
 
     @BeforeEach
     void cleanUsers() {
@@ -45,6 +47,7 @@ class AuthIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(passwordEncoder.matches("password123", saved.getPassword())).isTrue();
         assertThat(saved.getCreateTime()).isNotNull();
         assertThat(saved.getUpdateTime()).isNotNull();
+        assertThat(userRoleMapper.findRoleCodesByUserId(saved.getId())).containsExactly("USER");
     }
 
     @Test
@@ -59,6 +62,11 @@ class AuthIntegrationTest extends MySqlIntegrationTestBase {
         mockMvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"new-user\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"no-admin\",\"password\":\"password123\",\"roles\":[\"ADMIN\"]}"))
+                .andExpect(status().isOk());
+        assertThat(userRoleMapper.findRoleCodesByUserId(userMapper.findByUsername("no-admin").getId()))
+                .containsExactly("USER");
     }
 
     @Test
@@ -103,8 +111,6 @@ class AuthIntegrationTest extends MySqlIntegrationTestBase {
                 .andExpect(status().isOk());
     }
 }
-
-
 
 
 
