@@ -1,8 +1,9 @@
 # DevMate Server
 
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
-MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查及基于 JWT 的用户认证。Flyway
-负责创建 `users` 表；尚未实现用户中心、Redis 或 AI 功能。
+MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
+以及按用户隔离的项目空间 API。Flyway 负责创建认证、授权和项目相关数据表；尚未实现前端
+项目页面、项目成员、GitHub 绑定、文件存储、Redis 业务或 AI 功能。
 
 ## 前置要求
 
@@ -91,6 +92,19 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 - `POST http://localhost:8080/auth/login`（匿名）；
 - `GET http://localhost:8080/auth/me`（需要 `Authorization: Bearer <token>`）。
 
+项目接口均需要有效 Bearer Token 和 `user` authority：
+
+- `POST /projects`：创建当前用户的项目；
+- `GET /projects?page=1&pageSize=20`：分页查询当前用户的未删除项目；
+- `GET /projects/{projectId}`：查询当前用户的项目；
+- `PUT /projects/{projectId}`：完整更新项目名称和描述；
+- `DELETE /projects/{projectId}`：软删除项目。
+
+列表页码范围为 `1..10000`，页大小范围为 `1..100`，默认页大小为 `20`，并固定按
+`update_time DESC, id DESC` 排序。详情、更新和删除始终同时校验项目 ID、当前用户 ID 和
+未删除状态；不存在、已删除或属于其他用户的项目统一返回 `404 PROJECT_NOT_FOUND`。管理员
+默认不能绕过所有权检查。删除会同时记录 UTC 删除时间，本任务不提供恢复接口。
+
 健康接口仍返回：
 
 ```json
@@ -101,6 +115,6 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 白名单中。JWT 密钥只从 `JWT_SECRET` 注入，不提供仓库内明文默认值。当前不应配置 Redis、AI、
 GitHub 或其他外部服务凭据。
 
-DEV-005 执行环境访问 Maven Central 时仍收到 HTTP 403，因此 DEV-004 遗留的依赖解析债务尚未
-在该环境消除，测试、打包和依赖树也无法在该环境完成。合并前应在可访问 Maven Central 且
-Docker 可用的本地或 CI 环境依次执行本 README 的三条 Maven Wrapper 命令。
+完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V4 migration、
+Mapper、认证授权和项目 API 集成测试。合并前应在 Docker 可用的环境执行本 README 的 Maven
+Wrapper 命令。

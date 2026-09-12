@@ -7,7 +7,8 @@
 - [需求与架构基线](requirements/devmate-baseline.md)：已确认的产品范围、约束与路线图；
 - [目标架构概览](architecture/README.md)：系统边界、组件关系和演进原则；
 - [架构决策记录（ADR）](adr/README.md)：重要技术决策的索引与模板；
-- [开发任务 DEV-001](tasks/DEV-001.md)：当前仓库治理任务说明。
+- [开发任务 DEV-001](tasks/DEV-001.md)：仓库治理任务说明；
+- [开发任务 DEV-009](tasks/DEV-009-project-workspace.md)：项目空间后端基础能力说明。
 
 ## 计划中的文档
 
