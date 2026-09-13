@@ -29,3 +29,59 @@ textarea,
 select {
   font: inherit;
 }
+
+a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.auth-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px 16px;
+  background: linear-gradient(145deg, #eef5ff, #f5f7fa 55%);
+}
+
+.auth-card {
+  width: min(100%, 420px);
+}
+
+.auth-heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.auth-heading h1 {
+  margin: 12px 0 8px;
+  font-size: 28px;
+}
+
+.auth-heading p,
+.auth-switch {
+  margin: 0;
+  color: #606266;
+}
+
+.auth-brand {
+  color: #409eff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.auth-card .el-alert {
+  margin-bottom: 20px;
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.auth-switch {
+  margin-top: 20px;
+  text-align: center;
+}
