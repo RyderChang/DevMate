@@ -1,0 +1,30 @@
+import { afterEach, beforeEach, vi } from 'vitest'
+
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+
+vi.stubGlobal('ResizeObserver', ResizeObserverStub)
+vi.stubGlobal(
+  'matchMedia',
+  vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+)
+
+beforeEach(() => {
+  window.sessionStorage.clear()
+})
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})

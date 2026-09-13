@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, useRouter } from 'vue-router'
+
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+async function logout(): Promise<void> {
+  authStore.logout()
+  await router.replace({ name: 'login' })
+}
 </script>
 
 <template>
   <div class="app-shell">
     <header class="app-header">
       <span class="brand">DevMate</span>
-      <span class="stage">Frontend Foundation</span>
+      <div class="account">
+        <span>{{ authStore.user?.nickname || authStore.user?.username }}</span>
+        <el-button text @click="logout">退出登录</el-button>
+      </div>
     </header>
     <main class="app-content">
       <RouterView />
@@ -42,7 +55,13 @@ import { RouterView } from 'vue-router'
 .app-content {
   display: grid;
   min-height: calc(100vh - 64px);
-  place-items: center;
   padding: 32px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #606266;
 }
 </style>

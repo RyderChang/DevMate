@@ -1,13 +1,20 @@
 <template>
-  <el-card class="foundation-card" shadow="never">
-    <h1>DevMate 前端工程已正常运行</h1>
-    <p>当前仅完成 Vue 前端基座，业务功能将在后续任务中实现。</p>
+  <el-card class="home-card" shadow="never">
+    <h1>欢迎回来，{{ authStore.user?.nickname || authStore.user?.username }}</h1>
+    <p>认证流程已接通。项目空间页面将在后续任务中实现。</p>
   </el-card>
 </template>
 
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+</script>
+
 <style scoped>
-.foundation-card {
+.home-card {
   width: min(100%, 640px);
+  margin: 64px auto;
   text-align: center;
 }
 
