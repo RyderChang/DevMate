@@ -35,6 +35,7 @@ async function load(): Promise<void> {
   errorMessage.value = ''
   unavailable.value = projectId === null
   if (projectId === null) {
+    loading.value = false
     return
   }
 

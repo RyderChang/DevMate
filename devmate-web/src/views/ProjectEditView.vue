@@ -31,9 +31,11 @@ async function load(): Promise<void> {
   const projectId = parseProjectId(route.params.projectId)
   const version = ++requestVersion
   project.value = null
+  submitting.value = false
   errorMessage.value = ''
   unavailable.value = projectId === null
   if (projectId === null) {
+    loading.value = false
     return
   }
 
@@ -64,15 +66,16 @@ async function submit(request: ProjectMutationRequest): Promise<void> {
   if (projectId === null || submitting.value) {
     return
   }
+  const version = requestVersion
   submitting.value = true
   errorMessage.value = ''
   try {
     await updateProject(projectId, request)
-    if (active) {
+    if (active && version === requestVersion) {
       await router.replace({ name: 'project-detail', params: { projectId } })
     }
   } catch (error) {
-    if (!active) {
+    if (!active || version !== requestVersion) {
       return
     }
     if (isProjectUnavailableError(error)) {
@@ -82,7 +85,7 @@ async function submit(request: ProjectMutationRequest): Promise<void> {
       errorMessage.value = getProjectErrorMessage(error, '更新项目失败，请稍后重试')
     }
   } finally {
-    if (active) {
+    if (active && version === requestVersion) {
       submitting.value = false
     }
   }

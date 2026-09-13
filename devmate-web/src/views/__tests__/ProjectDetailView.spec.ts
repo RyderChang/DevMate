@@ -117,6 +117,18 @@ describe('ProjectDetailView', () => {
     expect(wrapper.text()).not.toContain(project.name)
   })
 
+  it('clears loading when a pending project route changes to an invalid id', async () => {
+    vi.mocked(projectApi.getProject).mockImplementation(() => new Promise(() => undefined))
+    const { router, wrapper } = await mountDetail()
+
+    expect(wrapper.find('.el-skeleton').exists()).toBe(true)
+    await router.push('/projects/not-a-number')
+    await flushPromises()
+
+    expect(wrapper.find('.el-skeleton').exists()).toBe(false)
+    expect(wrapper.text()).toContain('项目不存在或无权访问')
+  })
+
   it('does not call delete when the user cancels confirmation', async () => {
     vi.mocked(projectApi.getProject).mockResolvedValue(project)
     vi.spyOn(ElMessageBox, 'confirm').mockRejectedValue('cancel')

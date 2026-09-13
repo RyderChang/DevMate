@@ -155,4 +155,42 @@ describe('project form views', () => {
     expect(projectApi.getProject).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('项目不存在或无权访问')
   })
+
+  it('clears loading when a pending edit route changes to an invalid id', async () => {
+    vi.mocked(projectApi.getProject).mockImplementation(() => new Promise(() => undefined))
+    const { router, wrapper } = await mountView(ProjectEditView, '/projects/42/edit')
+
+    expect(wrapper.find('.el-skeleton').exists()).toBe(true)
+    await router.push('/projects/not-a-number/edit')
+    await flushPromises()
+
+    expect(wrapper.find('.el-skeleton').exists()).toBe(false)
+    expect(wrapper.text()).toContain('项目不存在或无权访问')
+  })
+
+  it('ignores an update result after the edit route changes', async () => {
+    let resolveUpdate!: (value: Project) => void
+    const newerProject = { ...project, id: 43, name: 'Newer project' }
+    vi.mocked(projectApi.getProject).mockImplementation((projectId) =>
+      Promise.resolve(projectId === 42 ? project : newerProject),
+    )
+    vi.mocked(projectApi.updateProject).mockImplementation(
+      () => new Promise((resolve) => (resolveUpdate = resolve)),
+    )
+    const { router, wrapper } = await mountView(ProjectEditView, '/projects/42/edit')
+
+    await wrapper.find('input[name="project-name"]').setValue('Updated old project')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    await router.push('/projects/43/edit')
+    await flushPromises()
+
+    resolveUpdate({ ...project, name: 'Updated old project' })
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/projects/43/edit')
+    expect((wrapper.find('input[name="project-name"]').element as HTMLInputElement).value).toBe(
+      newerProject.name,
+    )
+  })
 })
