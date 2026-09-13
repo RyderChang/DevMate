@@ -4,6 +4,26 @@ export interface ApiResult<T> {
   data: T
 }
 
+export interface PageResult<T> {
+  page: number
+  pageSize: number
+  total: number
+  items: T[]
+}
+
+export interface Project {
+  id: number
+  name: string
+  description: string | null
+  createTime: string
+  updateTime: string
+}
+
+export interface ProjectMutationRequest {
+  name: string
+  description?: string | null
+}
+
 export interface User {
   id: number
   username: string

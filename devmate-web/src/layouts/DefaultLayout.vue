@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterView, useRouter } from 'vue-router'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
@@ -15,7 +15,10 @@ async function logout(): Promise<void> {
 <template>
   <div class="app-shell">
     <header class="app-header">
-      <span class="brand">DevMate</span>
+      <div class="app-navigation">
+        <RouterLink class="brand" to="/projects">DevMate</RouterLink>
+        <RouterLink class="navigation-link" to="/projects">项目</RouterLink>
+      </div>
       <div class="account">
         <span>{{ authStore.user?.nickname || authStore.user?.username }}</span>
         <el-button text @click="logout">退出登录</el-button>
@@ -43,13 +46,14 @@ async function logout(): Promise<void> {
 }
 
 .brand {
+  color: #213547;
   font-size: 20px;
   font-weight: 600;
 }
 
-.stage {
-  color: #909399;
-  font-size: 14px;
+.brand:hover,
+.navigation-link:hover {
+  text-decoration: none;
 }
 
 .app-content {
@@ -63,5 +67,38 @@ async function logout(): Promise<void> {
   align-items: center;
   gap: 12px;
   color: #606266;
+}
+
+.app-navigation {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.navigation-link {
+  color: #606266;
+  font-weight: 500;
+}
+
+.navigation-link.router-link-active {
+  color: #409eff;
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 16px;
+  }
+
+  .app-navigation {
+    gap: 16px;
+  }
+
+  .account > span {
+    display: none;
+  }
+
+  .app-content {
+    padding: 20px 16px;
+  }
 }
 </style>
