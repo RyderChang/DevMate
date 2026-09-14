@@ -85,3 +85,64 @@ a:hover {
   margin-top: 20px;
   text-align: center;
 }
+
+.project-page {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+}
+
+.project-page.narrow-page {
+  width: min(100%, 760px);
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.page-heading h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(25px, 4vw, 32px);
+  overflow-wrap: anywhere;
+}
+
+.page-heading p {
+  margin: 0;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.page-heading .eyebrow {
+  color: #409eff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.project-page > .el-alert {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-heading > .el-button {
+    width: 100%;
+  }
+
+  .page-actions {
+    justify-content: flex-start;
+  }
+}

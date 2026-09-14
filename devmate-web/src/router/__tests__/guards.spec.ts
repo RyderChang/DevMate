@@ -28,7 +28,7 @@ describe('authentication route guards', () => {
     await router.push('/')
 
     expect(router.currentRoute.value.name).toBe('login')
-    expect(router.currentRoute.value.query.redirect).toBe('/')
+    expect(router.currentRoute.value.query.redirect).toBe('/projects')
   })
 
   it('restores a valid session before entering a protected route', async () => {
@@ -38,7 +38,7 @@ describe('authentication route guards', () => {
 
     await router.push('/')
 
-    expect(router.currentRoute.value.name).toBe('home')
+    expect(router.currentRoute.value.name).toBe('project-list')
   })
 
   it('keeps an authenticated user away from guest-only pages', async () => {
@@ -46,6 +46,20 @@ describe('authentication route guards', () => {
     store.$patch({ token: 'signed-token', user, initialized: true })
     await router.push('/register')
 
-    expect(router.currentRoute.value.name).toBe('home')
+    expect(router.currentRoute.value.name).toBe('project-list')
+  })
+
+  it.each(['/projects', '/projects/new', '/projects/42', '/projects/42/edit'])(
+    'protects the project route %s',
+    async (path) => {
+      await router.push(path)
+
+      expect(router.currentRoute.value.name).toBe('login')
+      expect(router.currentRoute.value.query.redirect).toBe(path)
+    },
+  )
+
+  it('matches the static create route before the project id route', () => {
+    expect(router.resolve('/projects/new').name).toBe('project-create')
   })
 })
