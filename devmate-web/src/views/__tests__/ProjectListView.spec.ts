@@ -172,6 +172,33 @@ describe('ProjectListView', () => {
     await flushPromises()
   })
 
+  it('does not let an old delete result change a newer list route', async () => {
+    let resolveDelete!: () => void
+    const newerProject = { ...project, id: 43, name: 'Newer project' }
+    vi.mocked(projectApi.listProjects).mockImplementation(async ({ page }) =>
+      result([page === 1 ? project : newerProject], page),
+    )
+    vi.mocked(projectApi.deleteProject).mockImplementation(
+      () => new Promise<void>((resolve) => (resolveDelete = resolve)),
+    )
+    vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue(
+      'confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>,
+    )
+    const { router, wrapper } = await mountList()
+
+    await wrapper.find(`button[aria-label="删除项目 ${project.name}"]`).trigger('click')
+    await flushPromises()
+    await router.push('/projects?page=2&pageSize=20')
+    await flushPromises()
+
+    resolveDelete()
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.page).toBe('2')
+    expect(wrapper.text()).toContain(newerProject.name)
+    expect(wrapper.text()).not.toContain(project.name)
+  })
+
   it('moves to the previous page after deleting its last item', async () => {
     vi.mocked(projectApi.listProjects).mockImplementation(async ({ page }) =>
       result([project], page),

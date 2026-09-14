@@ -89,6 +89,7 @@ async function remove(project: Project): Promise<void> {
   if (deletingProjectId.value !== null) {
     return
   }
+  const version = requestVersion
   deletingProjectId.value = project.id
   try {
     await ElMessageBox.confirm(
@@ -101,14 +102,15 @@ async function remove(project: Project): Promise<void> {
     return
   }
 
-  if (!active) {
+  if (!active || version !== requestVersion) {
+    deletingProjectId.value = null
     return
   }
 
   errorMessage.value = ''
   try {
     await deleteProject(project.id)
-    if (!active) {
+    if (!active || version !== requestVersion) {
       return
     }
     ElMessage.success('项目已删除')
@@ -118,7 +120,7 @@ async function remove(project: Project): Promise<void> {
       await load()
     }
   } catch (error) {
-    if (active) {
+    if (active && version === requestVersion) {
       errorMessage.value = getProjectErrorMessage(error, '删除项目失败，请稍后重试')
     }
   } finally {

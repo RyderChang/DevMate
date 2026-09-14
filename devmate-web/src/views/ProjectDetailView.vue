@@ -17,7 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const project = ref<Project | null>(null)
 const loading = ref(false)
-const deleting = ref(false)
+const deletingProjectId = ref<number | null>(null)
 const errorMessage = ref('')
 const unavailable = ref(false)
 let requestVersion = 0
@@ -63,10 +63,11 @@ watch(() => route.params.projectId, load, { immediate: true })
 
 async function remove(): Promise<void> {
   const currentProject = project.value
-  if (!currentProject || deleting.value) {
+  if (!currentProject || deletingProjectId.value !== null) {
     return
   }
-  deleting.value = true
+  const version = requestVersion
+  deletingProjectId.value = currentProject.id
   try {
     await ElMessageBox.confirm(
       `确定删除项目“${currentProject.name}”吗？删除后将无法在项目空间中访问。`,
@@ -74,23 +75,24 @@ async function remove(): Promise<void> {
       { confirmButtonText: '确认删除', cancelButtonText: '取消', type: 'warning' },
     )
   } catch {
-    deleting.value = false
+    deletingProjectId.value = null
     return
   }
 
-  if (!active) {
+  if (!active || version !== requestVersion) {
+    deletingProjectId.value = null
     return
   }
 
   errorMessage.value = ''
   try {
     await deleteProject(currentProject.id)
-    if (active) {
+    if (active && version === requestVersion) {
       ElMessage.success('项目已删除')
       await router.replace({ name: 'project-list' })
     }
   } catch (error) {
-    if (!active) {
+    if (!active || version !== requestVersion) {
       return
     }
     if (isProjectUnavailableError(error)) {
@@ -101,7 +103,7 @@ async function remove(): Promise<void> {
     }
   } finally {
     if (active) {
-      deleting.value = false
+      deletingProjectId.value = null
     }
   }
 }
@@ -130,7 +132,15 @@ async function remove(): Promise<void> {
           >
             编辑项目
           </el-button>
-          <el-button type="danger" plain :loading="deleting" @click="remove">删除项目</el-button>
+          <el-button
+            type="danger"
+            plain
+            :loading="deletingProjectId === project.id"
+            :disabled="deletingProjectId !== null && deletingProjectId !== project.id"
+            @click="remove"
+          >
+            删除项目
+          </el-button>
         </div>
       </div>
       <el-alert

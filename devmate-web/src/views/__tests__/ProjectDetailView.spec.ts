@@ -156,4 +156,32 @@ describe('ProjectDetailView', () => {
     expect(projectApi.deleteProject).toHaveBeenCalledWith(42)
     expect(router.currentRoute.value.name).toBe('project-list')
   })
+
+  it('does not navigate from an old delete result after the route changes', async () => {
+    let resolveDelete!: () => void
+    const newerProject = { ...project, id: 43, name: 'Newer project' }
+    vi.mocked(projectApi.getProject).mockImplementation((projectId) =>
+      Promise.resolve(projectId === 42 ? project : newerProject),
+    )
+    vi.mocked(projectApi.deleteProject).mockImplementation(
+      () => new Promise<void>((resolve) => (resolveDelete = resolve)),
+    )
+    vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue(
+      'confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>,
+    )
+    const { router, wrapper } = await mountDetail()
+
+    const remove = wrapper.findAll('button').find((button) => button.text().includes('删除项目'))
+    await remove?.trigger('click')
+    await flushPromises()
+    await router.push('/projects/43')
+    await flushPromises()
+
+    resolveDelete()
+    await flushPromises()
+
+    expect(router.currentRoute.value.fullPath).toBe('/projects/43')
+    expect(wrapper.text()).toContain(newerProject.name)
+    expect(wrapper.text()).not.toContain(project.name)
+  })
 })
