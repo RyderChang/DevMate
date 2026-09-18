@@ -16,14 +16,14 @@ DevMate 的 Web 客户端。当前已具备注册、登录、会话恢复、受�
 ## 前置要求
 
 - Node.js 22.19.0（项目通过 `.nvmrc` 固定版本）
-- npm 10 或更高版本（唯一支持的包管理器）
+- npm 10.9.3（`packageManager` 固定版本，唯一支持的包管理器）
 
 使用 nvm 时可执行 `nvm use` 切换到项目版本。
 
 ## 本地开发
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 npm run dev
 ```
@@ -51,11 +51,16 @@ npm run dev
 
 ## 质量检查
 
+统一启动步骤见[本地开发指南](../docs/development/local-development.md)，
+完整检查与限制见[验收记录](../docs/testing/foundation-acceptance.md)。
+
 ```bash
 npm run type-check
 npm run lint
 npm run format:check
 npm run test
+npm run build
+npm audit
 ```
 
 需要统一格式时运行 `npm run format`。

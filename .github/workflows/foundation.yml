@@ -1,0 +1,78 @@
+name: Foundation
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Foundation Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: devmate-server/pom.xml
+      - name: Check Docker
+        run: docker info
+      - name: Verify backend
+        run: ./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify
+      - name: Create sanitized test summary
+        if: always()
+        run: python3 scripts/summarize-tests.py
+      - name: Upload test summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-test-summary
+          path: tmp/test-summary.md
+          retention-days: 7
+          if-no-files-found: warn
+
+  frontend:
+    name: Foundation Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: devmate-web
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: devmate-web/.nvmrc
+          cache: npm
+          cache-dependency-path: devmate-web/package-lock.json
+      - name: Select repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run test
+      - run: npm run build
+      - run: npm audit
+      - name: Check documentation and workflow syntax
+        working-directory: .
+        run: |
+          node scripts/check-docs.mjs
+          node devmate-web/node_modules/prettier/bin/prettier.cjs --check .github/workflows/foundation.yml scripts/check-docs.mjs README.md devmate-server/README.md devmate-web/README.md docs/README.md docs/development/local-development.md docs/testing/foundation-acceptance.md
+          git diff --check

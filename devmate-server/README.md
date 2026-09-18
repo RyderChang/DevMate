@@ -2,8 +2,11 @@
 
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
 MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
-以及按用户隔离的项目空间 API。Flyway 负责创建认证、授权和项目相关数据表；尚未实现前端
-项目页面、项目成员、GitHub 绑定、文件存储、Redis 业务或 AI 功能。
+以及按用户隔离的项目空间 API。Flyway 负责创建认证、授权和项目相关数据表；前端已具备
+认证和项目 CRUD 页面。项目成员、GitHub 绑定、文件存储、Redis 业务或 AI 功能尚未实现。
+
+完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
+阶段验证状态见[验收记录](../docs/testing/foundation-acceptance.md)。
 
 ## 前置要求
 
@@ -23,7 +26,7 @@ MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查�
 ```
 
 数据库集成测试固定使用 `mysql:8.4.6`，创建临时空库并由 Flyway 迁移。测试连接信息由
-Spring Boot Testcontainers service connection 注入，不读取 dev/prod 数据库凭据；无需预装
+测试基类的 `DynamicPropertySource` 注入，不读取 dev/prod 数据库凭据；无需预装
 MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试会失败而不会静默跳过。
 
 ## Profiles 与数据库配置
@@ -32,19 +35,19 @@ MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试�
 `prod` 用于生产，数据库 URL、用户名和密码都必须由部署环境注入。两个 profile 都要求显式
 提供 `DB_PASSWORD`，仓库不保存密码。
 
-| 环境变量 | 用途 | 公共/dev 默认值 | prod 默认值 |
-| --- | --- | --- | --- |
-| `SERVER_PORT` | HTTP 端口 | `8080` | `8080` |
-| `DB_URL` | MySQL JDBC URL | dev: `jdbc:mysql://localhost:3306/devmate` | 无，必填 |
-| `DB_USERNAME` | 最小权限应用账户 | dev: `devmate` | 无，必填 |
-| `DB_PASSWORD` | 应用账户密码 | 无，必填 | 无，必填 |
-| `DB_POOL_MAX_SIZE` | Hikari 最大连接数 | `10` | `20` |
-| `DB_POOL_MIN_IDLE` | Hikari 最小空闲连接数 | `2` | `2` |
-| `DB_POOL_CONNECTION_TIMEOUT_MS` | 获取连接超时（毫秒） | `30000` | `30000` |
-| `DB_POOL_IDLE_TIMEOUT_MS` | 空闲连接超时（毫秒） | `600000` | `600000` |
-| `DB_POOL_MAX_LIFETIME_MS` | 连接最大生命周期（毫秒） | `1800000` | `1800000` |
-| `JWT_SECRET` | JWT HMAC 签名密钥（至少 32 字节） | 无，必填 | 无，必填 |
-| `JWT_EXPIRATION` | JWT 有效期（ISO-8601 Duration） | `PT2H` | `PT2H` |
+| 环境变量                        | 用途                              | 公共/dev 默认值                            | prod 默认值 |
+| ------------------------------- | --------------------------------- | ------------------------------------------ | ----------- |
+| `SERVER_PORT`                   | HTTP 端口                         | `8080`                                     | `8080`      |
+| `DB_URL`                        | MySQL JDBC URL                    | dev: `jdbc:mysql://localhost:3306/devmate` | 无，必填    |
+| `DB_USERNAME`                   | 最小权限应用账户                  | dev: `devmate`                             | 无，必填    |
+| `DB_PASSWORD`                   | 应用账户密码                      | 无，必填                                   | 无，必填    |
+| `DB_POOL_MAX_SIZE`              | Hikari 最大连接数                 | `10`                                       | `20`        |
+| `DB_POOL_MIN_IDLE`              | Hikari 最小空闲连接数             | `2`                                        | `2`         |
+| `DB_POOL_CONNECTION_TIMEOUT_MS` | 获取连接超时（毫秒）              | `30000`                                    | `30000`     |
+| `DB_POOL_IDLE_TIMEOUT_MS`       | 空闲连接超时（毫秒）              | `600000`                                   | `600000`    |
+| `DB_POOL_MAX_LIFETIME_MS`       | 连接最大生命周期（毫秒）          | `1800000`                                  | `1800000`   |
+| `JWT_SECRET`                    | JWT HMAC 签名密钥（至少 32 字节） | 无，必填                                   | 无，必填    |
+| `JWT_EXPIRATION`                | JWT 有效期（ISO-8601 Duration）   | `PT2H`                                     | `PT2H`      |
 
 ### 准备本地数据库并启动
 
@@ -108,7 +111,7 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 健康接口仍返回：
 
 ```json
-{"code":200,"message":"success","data":{"status":"UP"}}
+{ "code": 200, "message": "success", "data": { "status": "UP" } }
 ```
 
 除注册、登录和健康检查外，Spring Security 默认要求 JWT 认证，OpenAPI 与 Swagger UI 也不在
