@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import { pinia } from '@/stores'
@@ -18,7 +17,27 @@ const router = createRouter({
         {
           path: '',
           name: 'home',
-          component: HomeView,
+          redirect: { name: 'project-list' },
+        },
+        {
+          path: 'projects',
+          name: 'project-list',
+          component: () => import('@/views/ProjectListView.vue'),
+        },
+        {
+          path: 'projects/new',
+          name: 'project-create',
+          component: () => import('@/views/ProjectCreateView.vue'),
+        },
+        {
+          path: 'projects/:projectId',
+          name: 'project-detail',
+          component: () => import('@/views/ProjectDetailView.vue'),
+        },
+        {
+          path: 'projects/:projectId/edit',
+          name: 'project-edit',
+          component: () => import('@/views/ProjectEditView.vue'),
         },
       ],
     },
@@ -45,7 +64,7 @@ router.beforeEach(async (to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return { name: 'home' }
+    return { name: 'project-list' }
   }
   return true
 })
