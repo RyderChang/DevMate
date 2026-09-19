@@ -12,7 +12,7 @@
 - 日期：2026-09-18 至 2026-09-19。
 - 业务基线：`e8aad5ffc441b62ff4cc7d6f4fac09ce3e2f0c4e`。
 - DEV-011 合并提交：`6c1bdbb1a5d29faec3dcb75b348c2085a2833eb4`，PR #22 已合并。
-- CI 实现提交：`f75538d08628ced1cf69bd32f007f917b1fa3c16`；后续仅补充指南、记录与截图，不修改业务代码、依赖或 migration。
+- CI 首次实现提交：`f75538d08628ced1cf69bd32f007f917b1fa3c16`；审查跟进将文档检查扩展到全部已跟踪 Markdown，并只格式检查当前变更，未修改业务代码、依赖或 migration。
 - 本地：Windows，JDK 21.0.7、Node 22.19.0、npm 10.9.3、Docker 29.2.1、MySQL 8.4.6。
 - 浏览器联调：独立 Docker 网络与临时 MySQL，Java 21.0.12 Linux JRE 运行当前构建 JAR；后端 127.0.0.1:18080、Vite 127.0.0.1:15173。
 - CI：Ubuntu 24.04、Temurin 21.0.12、Node 22.19.0、npm 10.9.3。
@@ -21,17 +21,17 @@
 
 命令在指南所列目录执行，全部实际成功退出（退出码 0）。
 
-| 检查             | 实际命令                                                                       | 结果                                                                                |
-| ---------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Docker           | `docker info`                                                                  | 引擎可用，未跳过集成测试                                                            |
-| 后端             | `./devmate-server/mvnw.cmd -B -f devmate-server/pom.xml clean verify`          | 57 tests，0 failures/errors/skipped；空库 Flyway V1–V4 与 MySQL Testcontainers 通过 |
-| 前端安装         | `npm ci`                                                                       | 361 个包安装成功                                                                    |
-| 类型、Lint、格式 | `npm run type-check`、`npm run lint`、`npm run format:check`                   | 全部通过                                                                            |
-| 前端测试         | `npm run test`                                                                 | 10 个测试文件，55 个用例通过                                                        |
-| 构建             | `npm run build`                                                                | 通过；主 JS 1042.45 kB，gzip 346.07 kB                                              |
-| 审计             | `npm audit --registry=https://registry.npmjs.org`                              | 0 vulnerabilities                                                                   |
-| 摘要             | `python scripts/summarize-tests.py`                                            | 输出 57 个测试、失败/错误/跳过均为 0；不上传原始 XML 或日志                         |
-| 文档、YAML       | `node scripts/check-docs.mjs`、指南中的 `prettier --check`、`git diff --check` | 相对链接、格式与空白检查通过；工作流另经 GitHub 实际运行                            |
+| 检查             | 实际命令                                                                                                       | 结果                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Docker           | `docker info`                                                                                                  | 引擎可用，未跳过集成测试                                                              |
+| 后端             | `./devmate-server/mvnw.cmd -B -f devmate-server/pom.xml clean verify`                                          | 57 tests，0 failures/errors/skipped；空库 Flyway V1–V4 与 MySQL Testcontainers 通过   |
+| 前端安装         | `npm ci`                                                                                                       | 361 个包安装成功                                                                      |
+| 类型、Lint、格式 | `npm run type-check`、`npm run lint`、`npm run format:check`                                                   | 全部通过                                                                              |
+| 前端测试         | `npm run test`                                                                                                 | 10 个测试文件，55 个用例通过                                                          |
+| 构建             | `npm run build`                                                                                                | 通过；主 JS 1042.45 kB，gzip 346.07 kB                                                |
+| 审计             | `npm audit --registry=https://registry.npmjs.org`                                                              | 0 vulnerabilities                                                                     |
+| 摘要             | `python scripts/summarize-tests.py`                                                                            | 输出 57 个测试、失败/错误/跳过均为 0；不上传原始 XML 或日志                           |
+| 文档、YAML       | `node scripts/check-docs.mjs --format-changed origin/develop`、指南中的 `prettier --check`、`git diff --check` | 29 个 Markdown、42 个相对链接、变更文件格式与空白检查通过；工作流另经 GitHub 实际运行 |
 
 [首轮 CI](https://github.com/RyderChang/DevMate/actions/runs/35318136207)
 对应实现 head `f75538d08628ced1cf69bd32f007f917b1fa3c16`，

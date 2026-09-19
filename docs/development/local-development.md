@@ -33,8 +33,8 @@ npm run test
 npm run build
 npm audit
 cd ..
-node scripts/check-docs.mjs
-node devmate-web/node_modules/prettier/bin/prettier.cjs --check .github/workflows/foundation.yml scripts/check-docs.mjs README.md devmate-server/README.md devmate-web/README.md docs/README.md docs/development/local-development.md docs/testing/foundation-acceptance.md
+node scripts/check-docs.mjs --format-changed origin/develop
+node devmate-web/node_modules/prettier/bin/prettier.cjs --check .github/workflows/foundation.yml scripts/check-docs.mjs
 git diff --check
 ```
 
@@ -42,6 +42,8 @@ Windows 将 `./devmate-server/mvnw` 替换为 `./devmate-server/mvnw.cmd`，
 `python3` 替换为实际 Python 3 命令（通常是 `python`）。
 Testcontainers 自动创建和回收隔离 MySQL 8.4.6，执行空库迁移；无需先创建下面的手工验收容器。
 Docker 失败、依赖下载失败或漏洞审计失败都不是测试通过，不能跳过集成测试。
+文档检查会扫描全部已跟踪及未忽略的新 Markdown 文件，并对相对 `origin/develop`
+新增或修改的 Markdown 执行格式检查；执行前先确认该远端引用是任务分支的实际基线。
 
 ## 启动隔离的手工验收环境
 

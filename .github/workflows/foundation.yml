@@ -55,6 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -72,7 +73,13 @@ jobs:
       - run: npm audit
       - name: Check documentation and workflow syntax
         working-directory: .
+        env:
+          MARKDOWN_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          node scripts/check-docs.mjs
-          node devmate-web/node_modules/prettier/bin/prettier.cjs --check .github/workflows/foundation.yml scripts/check-docs.mjs README.md devmate-server/README.md devmate-web/README.md docs/README.md docs/development/local-development.md docs/testing/foundation-acceptance.md
+          base_sha="${MARKDOWN_BASE_SHA:-HEAD^}"
+          if ! git cat-file -e "$base_sha^{commit}" 2>/dev/null; then
+            base_sha=HEAD^
+          fi
+          node scripts/check-docs.mjs --format-changed "$base_sha"
+          node devmate-web/node_modules/prettier/bin/prettier.cjs --check .github/workflows/foundation.yml scripts/check-docs.mjs
           git diff --check
