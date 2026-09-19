@@ -57,7 +57,7 @@ MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试�
 ```sql
 CREATE DATABASE devmate CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 CREATE USER 'devmate'@'localhost' IDENTIFIED BY 'replace-interactively';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP, REFERENCES
     ON devmate.* TO 'devmate'@'localhost';
 ```
 

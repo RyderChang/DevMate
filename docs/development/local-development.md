@@ -128,6 +128,24 @@ VITE_DEV_PROXY_TARGET=http://127.0.0.1:18080 npm run dev -- --host 127.0.0.1 --p
 
 ## 常见故障
 
+Windows 宿主 JVM 若报告 `Unable to establish loopback connection`，不要修改业务安全配置。
+可以在 `clean verify` 已生成当前 JAR 后，使用 Java 21 Linux 容器做本地联调。
+以下 PowerShell 命令在已创建本文临时 MySQL 的同一终端运行，先停止原后端：
+
+```powershell
+docker network create devmate-foundation-net
+docker network connect devmate-foundation-net devmate-foundation-local
+$env:DB_URL = 'jdbc:mysql://devmate-foundation-local:3306/devmate'
+$env:SERVER_PORT = '8080'
+$taskJar = (Resolve-Path devmate-server/target/devmate-server-0.0.1-SNAPSHOT.jar).Path
+docker run --rm --name devmate-foundation-app --network devmate-foundation-net -p 127.0.0.1:18080:8080 -v "${taskJar}:/app.jar:ro" -e DB_URL -e DB_USERNAME -e DB_PASSWORD -e JWT_SECRET -e SPRING_PROFILES_ACTIVE -e SERVER_PORT eclipse-temurin:21-jre java -jar /app.jar
+```
+
+此方式只用于本地隔离验收，不是部署配置。前端代理保持 `http://127.0.0.1:18080`。
+完成后 Ctrl+C；若容器仍在运行，用 `docker stop devmate-foundation-app` 停止本任务容器。
+网络名须未被占用；完成数据库容器清理后，用 `docker network rm devmate-foundation-net` 清理此临时网络。
+仍须单独保留 JDK 21/Testcontainers 完整测试结果，不能把启动成功当作测试通过。
+
 | 症状                         | 检查与处理                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------ |
 | Docker pipe/socket 不可用    | 启动 Docker Desktop/Linux daemon，确认 Linux containers 与 `docker info`，不跳过数据库测试 |
