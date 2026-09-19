@@ -12,16 +12,17 @@
 - [开发任务 DEV-010](tasks/DEV-010-frontend-authentication.md)：前端认证流程、会话与路由保护说明；
 - [开发任务 DEV-011](tasks/DEV-011-frontend-project-workspace.md)：前端项目列表、详情与 CRUD 交互说明。
 
-## 下一任务（待实施）
+## 第一阶段验证
 
-- [开发任务 DEV-012](tasks/DEV-012-foundation-acceptance.md)：第一阶段验收与 CI 基线；包含已完成任务核查，须等待 DEV-011 合并后实施。
+- [开发任务 DEV-012](tasks/DEV-012-foundation-acceptance.md)：第一阶段验收与 CI 基线，保留编写时的历史核查记录；
+- [本地开发指南](development/local-development.md)：隔离数据库、前后端启动、质量检查及清理；
+- [第一阶段验收记录](testing/foundation-acceptance.md)：当前验证证据、限制与待确认事项。
 
 ## 计划中的文档
 
 以下内容尚未建立，当前不提供虚假链接：
 
 - API 文档；
-- 本地开发指南；
 - 部署与运维指南；
 - 安全与威胁模型；
 - 测试策略。

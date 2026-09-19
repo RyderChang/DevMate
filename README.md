@@ -20,7 +20,7 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 - 数据与基础设施：MySQL 8、Redis、Qdrant、MinIO；
 - 工程能力：Flyway、OpenAPI、JUnit 5、Testcontainers、Docker Compose、GitHub Actions。
 
-具体版本将在相应工程初始化任务中确定，不代表当前已经安装或接入。
+已接入部分的具体版本以构建文件为准；Redis 业务、Qdrant、MinIO 和 AI 能力尚未接入。
 
 ## Monorepo 目录
 
@@ -30,7 +30,7 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 | `devmate-web/`    | Vue 3 前端                      | 已初始化，具备认证与项目空间主流程   |
 | `deploy/`         | 部署配置与环境模板              | 尚未实现                             |
 | `docs/`           | 需求、架构、ADR、API 与开发文档 | 基线建设中                           |
-| `scripts/`        | 可复用的本地开发与检查脚本      | 尚未实现                             |
+| `scripts/`        | 可复用的本地开发与检查脚本      | 文档链接检查与脱敏测试摘要           |
 
 ## 路线图
 
@@ -48,6 +48,9 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 ## 文档与协作
 
 - 从[文档导航](docs/README.md)了解需求、架构与 ADR；
+- 按[本地开发指南](docs/development/local-development.md)启动隔离环境；
+- [第一阶段验收记录](docs/testing/foundation-acceptance.md)区分验证结果与尚待完成项；
+- [Foundation CI](.github/workflows/foundation.yml)执行前后端检查，阶段收口仍需所有者确认；
 - 提交改动前阅读[贡献指南](CONTRIBUTING.md)和 [AGENTS.md](AGENTS.md)。
 
 ## 安全
