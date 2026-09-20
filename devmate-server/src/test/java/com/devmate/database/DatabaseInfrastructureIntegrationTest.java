@@ -59,8 +59,9 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     @Test
     void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("4");
-        assertThat(flyway.info().current().getScript()).isEqualTo("V4__create_projects_table.sql");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("5");
+        assertThat(flyway.info().current().getScript())
+                .isEqualTo("V5__create_conversations_and_ai_invocations.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
@@ -75,7 +76,7 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         }
         assertThat(tables).containsExactlyInAnyOrder(
                 "flyway_schema_history", "users", "role", "permission", "user_role", "role_permission",
-                "projects");
+                "projects", "conversations", "conversation_messages", "ai_invocations");
     }
 
     @Test
@@ -83,8 +84,6 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(databaseProbeMapper.selectOne()).isEqualTo(1);
     }
 }
-
-
 
 
 

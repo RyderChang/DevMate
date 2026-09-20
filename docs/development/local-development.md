@@ -1,6 +1,6 @@
-# 第一阶段本地开发与验收
+# 本地开发与验收
 
-适用于认证与项目空间；不启动 AI、Redis、Qdrant 或对象存储。先阅读
+适用于认证、项目空间和默认关闭的项目对话后端；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
 [后端说明](../../devmate-server/README.md)、[前端说明](../../devmate-web/README.md)和
 [验收记录](../testing/foundation-acceptance.md)。
 
@@ -15,6 +15,10 @@
 选择 Node；Windows 使用已有版本管理器或官方便携版。`npm --version` 应为 10.9.3，
 必要时在选定的 Node 安装中执行 `npm install --global npm@10.9.3`。
 PowerShell 下可使用 `npm.cmd` 避免执行策略拦截。
+
+AI Gateway 默认关闭，因此本地构建和自动测试不需要 `OPENAI_API_KEY`，也不会访问公共模型服务。
+如项目所有者选择单独执行真实模型冒烟测试，需在当前 shell 注入 `AI_ENABLED=true`、
+`OPENAI_API_KEY` 和 `OPENAI_MODEL`；不得把值写入仓库、日志或命令记录。真实模型冒烟不是合并门禁。
 
 ## 先运行自动化检查
 

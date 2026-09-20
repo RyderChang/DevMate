@@ -13,3 +13,5 @@ pull request. Production rollback normally restores compatible application code 
 new corrective migration; Flyway `clean` is disabled and must never be used for rollback.
 
 `V1__baseline.sql` is the infrastructure baseline. It deliberately creates no application table.
+The current latest migration is `V5__create_conversations_and_ai_invocations.sql`, which adds
+application-managed conversations, visible messages, generation leases, and auditable AI invocation metadata.
