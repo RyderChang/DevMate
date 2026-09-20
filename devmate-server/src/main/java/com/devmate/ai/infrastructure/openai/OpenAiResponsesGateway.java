@@ -48,7 +48,6 @@ public final class OpenAiResponsesGateway implements AiGateway {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody(request))
                     .exchange((httpRequest, response) -> {
-                        byte[] body = readLimited(response.getBody());
                         int status = response.getStatusCode().value();
                         if (status == 429) {
                             throw new AiGatewayException(ErrorCode.AI_PROVIDER_RATE_LIMITED);
@@ -58,6 +57,7 @@ public final class OpenAiResponsesGateway implements AiGateway {
                                     ? ErrorCode.AI_PROVIDER_UNAVAILABLE : ErrorCode.AI_RESPONSE_INVALID;
                             throw new AiGatewayException(error);
                         }
+                        byte[] body = readLimited(response.getBody());
                         return parse(body, elapsedMillis(started));
                     });
         } catch (AiGatewayException exception) {
@@ -78,7 +78,6 @@ public final class OpenAiResponsesGateway implements AiGateway {
         body.put("model", model());
         body.put("store", false);
         body.put("stream", false);
-        body.put("background", false);
         body.put("max_output_tokens", request.maxOutputTokens());
         body.put("instructions", request.instructions());
         List<Map<String, String>> input = new ArrayList<>();
@@ -117,7 +116,11 @@ public final class OpenAiResponsesGateway implements AiGateway {
                 if (!item.isObject()) {
                     throw invalid();
                 }
-                if (!"message".equals(text(item, "type"))) {
+                String itemType = text(item, "type");
+                if (isExecutionOutput(itemType)) {
+                    throw invalid();
+                }
+                if (!"message".equals(itemType)) {
                     continue;
                 }
                 if (!"assistant".equals(text(item, "role"))) {
@@ -180,6 +183,10 @@ public final class OpenAiResponsesGateway implements AiGateway {
             throw invalid();
         }
         target.append(value);
+    }
+
+    private boolean isExecutionOutput(String type) {
+        return type != null && (type.endsWith("_call") || "mcp_approval_request".equals(type));
     }
 
     private AiGatewayException invalid() {

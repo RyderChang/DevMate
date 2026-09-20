@@ -62,7 +62,7 @@ class OpenAiResponsesGatewayTest {
         assertThat(request.path("model").asText()).isEqualTo("test-model");
         assertThat(request.path("store").asBoolean()).isFalse();
         assertThat(request.path("stream").asBoolean()).isFalse();
-        assertThat(request.path("background").asBoolean()).isFalse();
+        assertThat(request.has("background")).isFalse();
         assertThat(request.path("max_output_tokens").asInt()).isEqualTo(321);
         assertThat(request.path("instructions").asText()).isEqualTo("developer rules");
         assertThat(request.path("input").get(0).path("role").asText()).isEqualTo("user");
@@ -79,6 +79,10 @@ class OpenAiResponsesGatewayTest {
         assertInvalid("{\"id\":\"r\",\"status\":\"completed\",\"output\":[]}");
         assertInvalid("not-json");
         assertInvalid("{\"id\":\"r\",\"status\":\"completed\",\"output\":["
+                + "{\"type\":\"function_call\",\"name\":\"unsafe\"}]}");
+        assertInvalid("{\"id\":\"r\",\"status\":\"completed\",\"output\":["
+                + "{\"type\":\"message\",\"role\":\"assistant\",\"content\":["
+                + "{\"type\":\"output_text\",\"text\":\"looks safe\"}]},"
                 + "{\"type\":\"function_call\",\"name\":\"unsafe\"}]}");
     }
 
@@ -97,6 +101,13 @@ class OpenAiResponsesGatewayTest {
         assertStatus(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.AI_PROVIDER_RATE_LIMITED);
         assertStatus(HttpStatus.UNAUTHORIZED, ErrorCode.AI_PROVIDER_UNAVAILABLE);
         assertStatus(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.AI_PROVIDER_UNAVAILABLE);
+
+        AiProperties limited = properties();
+        limited.setMaxResponseBytes(1024);
+        Harness oversizedRateLimit = harness(limited);
+        oversizedRateLimit.server.expect(requestTo("https://unit.test/responses"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).body("x".repeat(1025)));
+        assertError(oversizedRateLimit.gateway, ErrorCode.AI_PROVIDER_RATE_LIMITED);
 
         Harness timeout = harness(properties());
         timeout.server.expect(requestTo("https://unit.test/responses"))

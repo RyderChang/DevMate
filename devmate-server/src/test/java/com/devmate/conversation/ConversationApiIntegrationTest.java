@@ -174,6 +174,16 @@ class ConversationApiIntegrationTest extends MySqlIntegrationTestBase {
         String token = login("guard-owner");
         long projectId = createProject(token, "Workspace", null);
         long conversationId = createConversation(token, projectId, "Guards");
+        jdbc.update("DELETE rp FROM role_permission rp JOIN `role` r ON r.id=rp.role_id "
+                + "JOIN permission p ON p.id=rp.permission_id WHERE r.code='USER' AND p.code='user'");
+        try {
+            mockMvc.perform(get("/projects/{projectId}/conversations", projectId)
+                            .header("Authorization", bearer(token)))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value(403));
+        } finally {
+            jdbc.update("INSERT INTO role_permission(role_id,permission_id) SELECT r.id,p.id FROM `role` r "
+                    + "JOIN permission p ON p.code='user' WHERE r.code='USER'");
+        }
         assertBadRequest(post("/projects/{projectId}/conversations/{conversationId}/messages",
                 projectId, conversationId).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"clientRequestId\":\"bad\",\"content\":\"hello\"}"), token);
@@ -184,6 +194,9 @@ class ConversationApiIntegrationTest extends MySqlIntegrationTestBase {
                 projectId, conversationId).contentType(MediaType.APPLICATION_JSON).content(
                 "{\"clientRequestId\":\"6ac90474-d684-4200-9d4b-70ef8ecf51c7\",\"content\":\"hello\"}"), token, 503);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM conversation_messages", Integer.class)).isZero();
+        mockMvc.perform(get("/projects/{projectId}/conversations/{conversationId}", projectId, conversationId)
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(conversationId));
         gateway.enabled.set(true);
         jdbc.update("UPDATE conversations SET generation_state='GENERATING',generation_started_at=CURRENT_TIMESTAMP(6) "
                 + "WHERE id=?", conversationId);
