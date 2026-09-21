@@ -13,6 +13,14 @@ public enum ErrorCode {
     FORBIDDEN(403, "Access denied", HttpStatus.FORBIDDEN),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND),
     PROJECT_NOT_FOUND(404, "Project not found", HttpStatus.NOT_FOUND),
+    CONVERSATION_NOT_FOUND(404, "Conversation not found", HttpStatus.NOT_FOUND),
+    AI_SERVICE_DISABLED(503, "AI service is disabled", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_REQUEST_IN_PROGRESS(409, "An AI response is already being generated", HttpStatus.CONFLICT),
+    AI_REQUEST_EXPIRED(503, "The previous AI request expired", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_PROVIDER_RATE_LIMITED(503, "AI provider rate limit reached", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_PROVIDER_TIMEOUT(504, "AI provider request timed out", HttpStatus.GATEWAY_TIMEOUT),
+    AI_PROVIDER_UNAVAILABLE(503, "AI provider is unavailable", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_RESPONSE_INVALID(502, "AI provider returned an invalid response", HttpStatus.BAD_GATEWAY),
     DEFAULT_ROLE_NOT_CONFIGURED(500, "Default user role is not configured", HttpStatus.INTERNAL_SERVER_ERROR),
     INTERNAL_ERROR(500, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 

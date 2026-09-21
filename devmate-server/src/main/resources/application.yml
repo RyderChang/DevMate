@@ -39,3 +39,18 @@ devmate:
   jwt:
     secret: ${JWT_SECRET:}
     expiration: ${JWT_EXPIRATION:PT2H}
+  ai:
+    enabled: ${AI_ENABLED:false}
+    provider: ${AI_PROVIDER:openai}
+    connect-timeout: ${AI_CONNECT_TIMEOUT:PT5S}
+    read-timeout: ${AI_READ_TIMEOUT:PT60S}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
+    max-message-characters: ${AI_MAX_MESSAGE_CHARACTERS:8000}
+    max-context-messages: ${AI_MAX_CONTEXT_MESSAGES:20}
+    max-context-characters: ${AI_MAX_CONTEXT_CHARACTERS:24000}
+    generation-lease: ${AI_GENERATION_LEASE:PT2M}
+    max-response-bytes: ${AI_MAX_RESPONSE_BYTES:1048576}
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_MODEL:}

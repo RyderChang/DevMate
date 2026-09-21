@@ -2,8 +2,9 @@
 
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
 MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
-以及按用户隔离的项目空间 API。Flyway 负责创建认证、授权和项目相关数据表；前端已具备
-认证和项目 CRUD 页面。项目成员、GitHub 绑定、文件存储、Redis 业务或 AI 功能尚未实现。
+以及按用户隔离的项目空间和项目对话 API。Flyway 负责创建认证、授权、项目、对话、消息与
+AI 调用元数据表；前端已具备认证和项目 CRUD 页面。AI Gateway 当前提供默认关闭的 OpenAI
+Responses 适配器，前端聊天、项目成员、GitHub 绑定、文件存储、Redis 业务和 RAG 尚未实现。
 
 完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
 阶段验证状态见[验收记录](../docs/testing/foundation-acceptance.md)。
@@ -48,6 +49,19 @@ MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试�
 | `DB_POOL_MAX_LIFETIME_MS`       | 连接最大生命周期（毫秒）          | `1800000`                                  | `1800000`   |
 | `JWT_SECRET`                    | JWT HMAC 签名密钥（至少 32 字节） | 无，必填                                   | 无，必填    |
 | `JWT_EXPIRATION`                | JWT 有效期（ISO-8601 Duration）   | `PT2H`                                     | `PT2H`      |
+| `AI_ENABLED`                    | 是否启用模型生成                  | `false`                                    | `false`     |
+| `AI_PROVIDER`                   | AI 提供商（当前仅 `openai`）      | `openai`                                   | `openai`    |
+| `OPENAI_BASE_URL`               | 服务端 OpenAI API 基础 URL        | `https://api.openai.com/v1`                | 同左        |
+| `OPENAI_API_KEY`                | OpenAI API Key                    | 空；启用 AI 时必填                         | 空；必填    |
+| `OPENAI_MODEL`                  | 经部署者确认的模型 ID             | 空；启用 AI 时必填                         | 空；必填    |
+| `AI_CONNECT_TIMEOUT`            | 连接超时                          | `PT5S`                                     | `PT5S`      |
+| `AI_READ_TIMEOUT`               | 读取超时，最大 `PT120S`           | `PT60S`                                    | `PT60S`     |
+| `AI_MAX_OUTPUT_TOKENS`          | 单次最大输出 Token                | `1024`                                     | `1024`      |
+| `AI_MAX_MESSAGE_CHARACTERS`     | 单条消息 Unicode 字符上限         | `8000`                                     | `8000`      |
+| `AI_MAX_CONTEXT_MESSAGES`       | 历史消息数上限                    | `20`                                       | `20`        |
+| `AI_MAX_CONTEXT_CHARACTERS`     | 历史消息字符上限                  | `24000`                                    | `24000`     |
+| `AI_GENERATION_LEASE`           | 单对话生成租约                    | `PT2M`                                     | `PT2M`      |
+| `AI_MAX_RESPONSE_BYTES`         | 可接受上游响应体上限              | `1048576`                                  | `1048576`   |
 
 ### 准备本地数据库并启动
 
@@ -115,9 +129,26 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 ```
 
 除注册、登录和健康检查外，Spring Security 默认要求 JWT 认证，OpenAPI 与 Swagger UI 也不在
-白名单中。JWT 密钥只从 `JWT_SECRET` 注入，不提供仓库内明文默认值。当前不应配置 Redis、AI、
-GitHub 或其他外部服务凭据。
+白名单中。JWT 密钥只从 `JWT_SECRET` 注入，不提供仓库内明文默认值。当前不应配置 Redis、
+GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_ENABLED=true` 并注入 OpenAI Key
+和模型时启用；默认关闭状态不读取或要求这些值。
 
-完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V4 migration、
+服务端为每个 HTTP 请求生成 UUID 格式的 traceId，通过 `X-Trace-Id` 响应头返回，并用于关联
+该请求产生的 AI 调用审计日志。客户端不能指定或覆盖服务端 traceId。
+
+项目对话接口均需要有效 Bearer Token 和 `user` authority：
+
+- `POST /projects/{projectId}/conversations`：创建对话；
+- `GET /projects/{projectId}/conversations`：固定排序分页；
+- `GET /projects/{projectId}/conversations/{conversationId}`：查询对话；
+- `GET /projects/{projectId}/conversations/{conversationId}/messages`：按序分页查询消息；
+- `POST /projects/{projectId}/conversations/{conversationId}/messages`：同步生成非流式回复。
+
+生成请求必须提供 UUID `clientRequestId`。同一 ID 不会重复调用模型；同一对话同一时间只允许一个
+生成请求。模型调用在数据库事务之外执行，成功和失败都会记录安全的调用状态。请求显式使用
+`store=false`、`stream=false`，不启用工具或提供商托管会话。AI 默认关闭时，读取和管理对话仍可用，
+生成接口返回 `503 AI_SERVICE_DISABLED`。
+
+完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V5 migration、
 Mapper、认证授权和项目 API 集成测试。合并前应在 Docker 可用的环境执行本 README 的 Maven
 Wrapper 命令。

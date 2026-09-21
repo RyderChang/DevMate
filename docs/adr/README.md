@@ -10,3 +10,4 @@ ADR 使用四位递增编号，文件名格式为 `NNNN-short-title.md`。状态
 
 - [0000：ADR 模板](0000-template.md)
 - [0001：首版采用模块化单体](0001-use-modular-monolith.md) — Accepted
+- [0002：AI Gateway 与应用侧会话状态](0002-ai-gateway-and-application-managed-conversations.md) — Accepted

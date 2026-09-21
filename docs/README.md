@@ -18,6 +18,10 @@
 - [本地开发指南](development/local-development.md)：隔离数据库、前后端启动、质量检查及清理；
 - [第一阶段验收记录](testing/foundation-acceptance.md)：当前验证证据、限制与待确认事项。
 
+## 第二阶段任务
+
+- [开发任务 DEV-013](tasks/DEV-013-ai-gateway-conversation.md)：统一 AI Gateway、首个模型适配器与项目对话后端任务书。
+
 ## 计划中的文档
 
 以下内容尚未建立，当前不提供虚假链接：
