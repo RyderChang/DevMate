@@ -18,6 +18,10 @@
 - [本地开发指南](development/local-development.md)：隔离数据库、前后端启动、质量检查及清理；
 - [第一阶段验收记录](testing/foundation-acceptance.md)：当前验证证据、限制与待确认事项。
 
+## 第二阶段任务
+
+- [开发任务 DEV-014](tasks/DEV-014-frontend-project-conversation.md)：项目对话前端、同步消息交互、幂等恢复与测试要求；实现必须等待 DEV-013 合并。
+
 ## 计划中的文档
 
 以下内容尚未建立，当前不提供虚假链接：
