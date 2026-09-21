@@ -133,6 +133,9 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_ENABLED=true` 并注入 OpenAI Key
 和模型时启用；默认关闭状态不读取或要求这些值。
 
+服务端为每个 HTTP 请求生成 UUID 格式的 traceId，通过 `X-Trace-Id` 响应头返回，并用于关联
+该请求产生的 AI 调用审计日志。客户端不能指定或覆盖服务端 traceId。
+
 项目对话接口均需要有效 Bearer Token 和 `user` authority：
 
 - `POST /projects/{projectId}/conversations`：创建对话；

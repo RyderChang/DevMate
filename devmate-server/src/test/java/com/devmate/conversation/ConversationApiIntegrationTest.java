@@ -76,6 +76,28 @@ class ConversationApiIntegrationTest extends MySqlIntegrationTestBase {
     }
 
     @Test
+    void validatesConversationTitleAfterTrimmingWhitespace() throws Exception {
+        register("title-owner");
+        String token = login("title-owner");
+        long projectId = createProject(token, "Workspace", "Project context");
+        String validTitle = "x".repeat(200);
+
+        mockMvc.perform(post("/projects/{projectId}/conversations", projectId)
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("title", validTitle + "   "))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value(validTitle));
+
+        mockMvc.perform(post("/projects/{projectId}/conversations", projectId)
+                        .header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("title", "x".repeat(201) + "   "))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
     void generatesOutsideTransactionPersistsAuditDataAndReturnsIdempotentResult() throws Exception {
         register("chat-owner");
         String token = login("chat-owner");

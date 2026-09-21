@@ -8,6 +8,7 @@ import com.devmate.ai.config.AiProperties;
 import com.devmate.common.api.ErrorCode;
 import com.devmate.common.api.PageResult;
 import com.devmate.common.exception.BusinessException;
+import com.devmate.common.web.TraceIdFilter;
 import com.devmate.conversation.dto.CreateConversationRequest;
 import com.devmate.conversation.dto.SendMessageRequest;
 import com.devmate.conversation.entity.ConversationEntity;
@@ -25,6 +26,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -126,15 +128,17 @@ public class ConversationService {
             AiChatRequest chatRequest = promptBuilder.build(project, history, content);
             AiChatResult result = aiGateway.chat(chatRequest);
             SendMessageResponse response = transactionService.complete(context, result);
-            LOGGER.info("AI invocation completed invocationId={} provider={} model={} status={} inputTokens={} "
-                            + "outputTokens={} durationMs={}", context.invocationId(), aiGateway.provider(),
-                    aiGateway.model(), "SUCCEEDED", result.inputTokens(), result.outputTokens(), result.durationMs());
+            LOGGER.info("AI invocation completed traceId={} invocationId={} provider={} model={} status={} "
+                            + "inputTokens={} outputTokens={} durationMs={}", traceId(), context.invocationId(),
+                    aiGateway.provider(), aiGateway.model(), "SUCCEEDED", result.inputTokens(), result.outputTokens(),
+                    result.durationMs());
             return response;
         } catch (AiGatewayException exception) {
             long durationMs = elapsedMillis(started);
             transactionService.fail(context, exception.getErrorCode(), durationMs);
-            LOGGER.warn("AI invocation failed invocationId={} provider={} model={} status={} errorCode={} durationMs={}",
-                    context.invocationId(), aiGateway.provider(), aiGateway.model(), "FAILED",
+            LOGGER.warn("AI invocation failed traceId={} invocationId={} provider={} model={} status={} errorCode={} "
+                            + "durationMs={}", traceId(), context.invocationId(), aiGateway.provider(),
+                    aiGateway.model(), "FAILED",
                     exception.getErrorCode().name(), durationMs);
             throw new BusinessException(exception.getErrorCode());
         } catch (BusinessException exception) {
@@ -143,8 +147,9 @@ public class ConversationService {
         } catch (RuntimeException exception) {
             long durationMs = elapsedMillis(started);
             transactionService.fail(context, ErrorCode.AI_PROVIDER_UNAVAILABLE, durationMs);
-            LOGGER.warn("AI invocation failed invocationId={} provider={} model={} status={} errorCode={} durationMs={}",
-                    context.invocationId(), aiGateway.provider(), aiGateway.model(), "FAILED",
+            LOGGER.warn("AI invocation failed traceId={} invocationId={} provider={} model={} status={} errorCode={} "
+                            + "durationMs={}", traceId(), context.invocationId(), aiGateway.provider(),
+                    aiGateway.model(), "FAILED",
                     ErrorCode.AI_PROVIDER_UNAVAILABLE.name(), durationMs);
             throw new BusinessException(ErrorCode.AI_PROVIDER_UNAVAILABLE);
         }
@@ -215,5 +220,9 @@ public class ConversationService {
 
     private long elapsedMillis(long started) {
         return Math.max(0L, (System.nanoTime() - started) / 1_000_000L);
+    }
+
+    private String traceId() {
+        return Objects.toString(MDC.get(TraceIdFilter.MDC_KEY), "unavailable");
     }
 }

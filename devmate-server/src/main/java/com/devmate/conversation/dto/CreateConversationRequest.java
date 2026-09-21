@@ -1,6 +1,4 @@
 package com.devmate.conversation.dto;
 
-import jakarta.validation.constraints.Size;
-
-public record CreateConversationRequest(@Size(max = 200) String title) {
+public record CreateConversationRequest(String title) {
 }
