@@ -127,6 +127,13 @@ async function remove(): Promise<void> {
         <div class="page-actions">
           <el-button @click="router.push({ name: 'project-list' })">返回列表</el-button>
           <el-button
+            type="success"
+            plain
+            @click="router.push({ name: 'conversation-list', params: { projectId: project.id } })"
+          >
+            项目对话
+          </el-button>
+          <el-button
             type="primary"
             @click="router.push({ name: 'project-edit', params: { projectId: project.id } })"
           >

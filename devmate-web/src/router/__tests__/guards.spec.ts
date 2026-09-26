@@ -49,17 +49,26 @@ describe('authentication route guards', () => {
     expect(router.currentRoute.value.name).toBe('project-list')
   })
 
-  it.each(['/projects', '/projects/new', '/projects/42', '/projects/42/edit'])(
-    'protects the project route %s',
-    async (path) => {
-      await router.push(path)
+  it.each([
+    '/projects',
+    '/projects/new',
+    '/projects/42',
+    '/projects/42/edit',
+    '/projects/42/conversations',
+    '/projects/42/conversations/9',
+  ])('protects the project route %s', async (path) => {
+    await router.push(path)
 
-      expect(router.currentRoute.value.name).toBe('login')
-      expect(router.currentRoute.value.query.redirect).toBe(path)
-    },
-  )
+    expect(router.currentRoute.value.name).toBe('login')
+    expect(router.currentRoute.value.query.redirect).toBe(path)
+  })
 
   it('matches the static create route before the project id route', () => {
     expect(router.resolve('/projects/new').name).toBe('project-create')
+  })
+
+  it('resolves the project conversation routes', () => {
+    expect(router.resolve('/projects/42/conversations').name).toBe('conversation-list')
+    expect(router.resolve('/projects/42/conversations/9').name).toBe('conversation-chat')
   })
 })
