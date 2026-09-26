@@ -22,6 +22,8 @@
 
 - [开发任务 DEV-013](tasks/DEV-013-ai-gateway-conversation.md)：统一 AI Gateway、首个模型适配器与项目对话后端任务书。
 - [开发任务 DEV-014](tasks/DEV-014-frontend-project-conversation.md)：已实现项目对话前端、同步消息交互、幂等恢复与测试。
+- [开发任务 DEV-015](tasks/DEV-015-ai-conversation-acceptance.md)：第二阶段 AI 对话验收与联调基线，覆盖隔离 Stub、失败恢复、权限及浏览器验收。
+- [第二阶段验收记录](testing/ai-conversation-acceptance.md)：本轮验证证据、环境限制和人工确认状态。
 
 ## 计划中的文档
 

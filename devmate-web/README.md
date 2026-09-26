@@ -62,7 +62,8 @@ AI Gateway 默认关闭。未启用时，页面会保留草稿并显示安全提
 ## 质量检查
 
 统一启动步骤见[本地开发指南](../docs/development/local-development.md)，
-完整检查与限制见[验收记录](../docs/testing/foundation-acceptance.md)。
+完整检查与限制见[第一阶段验收记录](../docs/testing/foundation-acceptance.md)和
+[第二阶段对话验收记录](../docs/testing/ai-conversation-acceptance.md)。后者包含本地 Stub、响应截断代理和 320px 浏览器验证。
 
 ```bash
 npm run type-check

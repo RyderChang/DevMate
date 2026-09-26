@@ -1,6 +1,6 @@
 # 本地开发与验收
 
-适用于认证、项目空间和默认关闭的项目对话后端；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
+适用于认证、项目空间和项目内同步对话；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
 [后端说明](../../devmate-server/README.md)、[前端说明](../../devmate-web/README.md)和
 [验收记录](../testing/foundation-acceptance.md)。
 
@@ -134,6 +134,8 @@ VITE_DEV_PROXY_TARGET=http://127.0.0.1:18080 npm run dev -- --host 127.0.0.1 --p
 
 ## 常见故障
 
+第二阶段的独立容器、模型 Stub 和故障注入步骤见本文末尾“AI 对话隔离验收”。
+
 Windows 宿主 JVM 若报告 `Unable to establish loopback connection`，不要修改业务安全配置。
 可以在 `clean verify` 已生成当前 JAR 后，使用 Java 21 Linux 容器做本地联调。
 以下 PowerShell 命令在已创建本文临时 MySQL 的同一终端运行，先停止原后端：
@@ -186,3 +188,113 @@ docker rm -v devmate-foundation-local
 
 后端上传 7 天保留的统计摘要，不上传 Surefire XML 中的系统属性、日志、密码或数据库文件。
 前端审计访问公共 npm registry；所有检查必须成功，不以历史运行替代最新提交结果。
+
+## AI 对话隔离验收
+
+任务范围见 [DEV-015](../tasks/DEV-015-ai-conversation-acceptance.md)，实际证据见
+[第二阶段验收记录](../testing/ai-conversation-acceptance.md)。以下辅助工具只用于本机合成数据验收，
+不属于生产服务。先完成上述构建与测试，使用固定的 Node 22.19.0、npm 10.9.3、Python 3 和 Docker。
+
+### 容器和模型 Stub
+
+在根目录执行：
+
+```bash
+node --test scripts/ai-stub.test.mjs
+python -B scripts/conversation_env.py start
+python -B scripts/check-conversation-api.py
+```
+
+`start` 创建带 `devmate.acceptance=dev015` 标签的 `devmate015-net`、`devmate015-db`、
+`devmate015-stub`、`devmate015-app`。已有同名资源时拒绝覆盖。镜像为 `mysql:8.4.6`、
+`eclipse-temurin:21-jre` 和 `node:22.19.0-alpine`，缺少时需下载；每次 Docker 命令最多等待 180 秒。
+数据库不发布端口、不挂载宿主数据；Stub 仅在专用容器网络监听，后端只发布 `127.0.0.1:18085`。
+Docker Desktop 下使用专用 bridge 网络，而非无法从宿主访问映射端口的 internal 网络。
+
+数据库、JWT 和 Stub 测试认证值运行时随机生成，仅存在进程及容器环境，不写入仓库或回显。
+后端显式使用 `http://devmate015-stub:19090/v1` 与合成模型 `acceptance-model`，不回退到公共模型。
+验收环境的读取超时为 5 秒、租约为 10 秒，生产默认值不变。
+仅在验收容器中抑制 Spring 自动配置生成的开发密码提示；不改变认证过滤器或业务审计日志。
+
+接口脚本创建随机合成账号和项目，验证所有权、重放、52 条消息分页、故障状态和调用计数，
+最后软删除自己的测试项目并恢复成功 Stub。重复执行会留下合成历史，最终随临时数据库清理。
+`-B` 防止辅助模块导入生成 Python 缓存。
+
+也可以在宿主直接运行 `node scripts/ai-stub.mjs success 19090`。默认只监听 loopback；
+只有在不发布端口的专用容器内才能设置 `STUB_ISOLATED_CONTAINER=1`。
+不要把容器后端的地址误设为 `127.0.0.1`，那表示后端容器自身。
+
+Stub 仅接受 `POST /v1/responses` 和计数用 `GET /stats`。请求体最多 1 MiB、同时处理最多 8 个生成请求、
+连接最多 32 个、请求接收超时 10 秒；延迟最多 150 秒，CLI 运行 2 小时后关闭。
+只接受合成模型和无状态、非流式、无工具契约，不匹配即失败；不记录请求头、正文或响应正文。
+
+切换故障会重建本任务 Stub，计数归零，不应在正常请求仍在执行时切换：
+
+```bash
+python -B scripts/conversation_env.py stub --scenario rate-limit
+python -B scripts/conversation_env.py stub --scenario unavailable
+python -B scripts/conversation_env.py stub --scenario invalid
+python -B scripts/conversation_env.py stub --scenario delay --delay-ms 6500
+python -B scripts/conversation_env.py stub --scenario success
+```
+
+分别验证 503、503、502、504 与成功。并发浏览器测试用 4500ms 延迟，在两个已登录标签中立即发送同一对话，
+第二个请求应显示生成冲突；5 秒读取超时内第一个请求应成功。自动化租约过期测试使用屏障和显式数据库时间，
+不依靠浏览器操作速度判定租约安全性。
+
+### 浏览器与响应丢失
+
+前端终端在 `devmate-web/` 中设置 `VITE_DEV_PROXY_TARGET=http://127.0.0.1:18085` 后执行：
+
+```bash
+npm run dev -- --host 127.0.0.1 --port 15175 --strictPort
+```
+
+PowerShell 使用 `$env:VITE_DEV_PROXY_TARGET='http://127.0.0.1:18085'` 和 `npm.cmd`。
+浏览器访问 `http://127.0.0.1:15175`，注册合成用户并创建项目。为该用户生成可读的分页固定数据：
+
+```bash
+python -B scripts/seed-conversation-browser.py dev015-browser
+```
+
+将用户名替换为刚创建的测试用户。脚本仅操作带任务标签的临时库，为第一个活动项目新增 52 条合成消息的对话
+和 12 个列表项目；不会触发模型调用。这只准备 UI 数据，真实发送与分页接口另由接口脚本验证。
+
+验证响应丢失时，在仓库根目录的另一终端运行：
+
+```bash
+node scripts/conversation-proxy.mjs drop-send-once 15175 15176
+```
+
+从 `http://127.0.0.1:15176` 登录并进入对话。代理先等真实后端完成第一次消息发送，再向浏览器返回截断的响应体；
+浏览器显示网络不确定提示，手动“重试确认结果”后消息恢复，Stub 计数与数据库消息数不得增加。
+代理不记录正文或 UUID，只截断首次消息响应；其他请求正常转发。
+不要只把代理放在 Vite 上游：Vite 会将断连转换成 HTTP 错误；只在响应头前断连又可能触发 Chromium 透明重试。
+
+Ctrl+C 停止该代理后，可用同样参数改为 `fail-read`，在已经加载消息的页面点击刷新，验证失败提示且保留消息；
+停止后用 `pass` 启动，点击重试恢复。代理固定仅支持本任务本机端口、1 MiB 请求上限、32 个连接、
+125 秒上游超时和 2 小时进程寿命，不是通用代理，也不在生产环境使用。
+
+切换 AI 关闭或短会话测试不删除数据库，保持 JWT 密钥，需重新登录才能取得新的短有效期令牌：
+
+```bash
+python -B scripts/conversation_env.py app --disabled --short-session
+python -B scripts/conversation_env.py app
+```
+
+关闭 AI 后仍可创建和读取对话，发送返回 503 并保留草稿；短会话为 30 秒，到期触发请求后应清理页面并跳转登录。
+恢复 `app` 默认设置后会启用本地 Stub 和 2 小时会话，不会启用真实模型。
+
+### 清理与检查
+
+先 Ctrl+C 停止本任务前端与代理，关闭测试浏览器标签，然后执行：
+
+```bash
+python -B scripts/conversation_env.py stop
+node scripts/check-docs.mjs --format-changed origin/develop
+git diff --check
+```
+
+`stop` 逐一验证标签后删除上述本任务容器、匿名数据库卷及专用网络；合成数据将不可恢复。
+不用于需保留的环境，不执行全局 prune。关闭设置了前端代理变量的终端，或恢复原值。
+若 npm 默认镜像不支持审计，使用 `npm audit --registry=https://registry.npmjs.org`，不修改用户全局配置或 lockfile。
