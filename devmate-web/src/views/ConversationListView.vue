@@ -131,6 +131,14 @@ function openCreate(): void {
   createVisible.value = true
 }
 
+function isCurrentList(projectId: number): boolean {
+  return (
+    active &&
+    route.name === 'conversation-list' &&
+    parsePositiveSafeId(route.params.projectId) === projectId
+  )
+}
+
 async function submitCreate(): Promise<void> {
   const projectId = parsePositiveSafeId(route.params.projectId)
   if (projectId === null || creating.value || titleInvalid.value) {
@@ -141,7 +149,7 @@ async function submitCreate(): Promise<void> {
   createError.value = ''
   try {
     const created = await createConversation(projectId, { title: normalizedTitle || null })
-    if (parsePositiveSafeId(route.params.projectId) !== projectId) {
+    if (!isCurrentList(projectId)) {
       return
     }
     if (!Number.isSafeInteger(created.id) || created.id <= 0 || created.projectId !== projectId) {
@@ -154,7 +162,7 @@ async function submitCreate(): Promise<void> {
       params: { projectId, conversationId: created.id },
     })
   } catch (error) {
-    if (parsePositiveSafeId(route.params.projectId) === projectId) {
+    if (isCurrentList(projectId)) {
       if (isConversationUnavailableError(error)) {
         createVisible.value = false
         unavailable.value = true

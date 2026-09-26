@@ -177,6 +177,42 @@ describe('ConversationChatView', () => {
     expect(wrapper.text()).toContain('加载消息历史失败')
   })
 
+  it('retries the latest-page load instead of loading an older page', async () => {
+    const oldest = message(1, 1, 'USER')
+    const latest = message(101, 101, 'ASSISTANT')
+    vi.mocked(conversationApi.listConversationMessages)
+      .mockResolvedValueOnce({ page: 1, pageSize: 50, total: 101, items: [oldest] })
+      .mockResolvedValueOnce({ page: 3, pageSize: 50, total: 101, items: [latest] })
+      .mockResolvedValueOnce({ page: 1, pageSize: 50, total: 101, items: [oldest] })
+      .mockRejectedValueOnce(new Error('latest page offline'))
+      .mockResolvedValueOnce({ page: 1, pageSize: 50, total: 101, items: [oldest] })
+      .mockResolvedValueOnce({ page: 3, pageSize: 50, total: 101, items: [latest] })
+    const { wrapper } = await mountChat()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '刷新')
+      ?.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('最新消息加载失败')
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(conversationApi.listConversationMessages).toHaveBeenNthCalledWith(5, 42, 9, {
+      page: 1,
+      pageSize: 50,
+    })
+    expect(conversationApi.listConversationMessages).toHaveBeenNthCalledWith(6, 42, 9, {
+      page: 3,
+      pageSize: 50,
+    })
+    expect(wrapper.text()).toContain('message 101')
+  })
+
   it('validates empty and over-limit content by Unicode code point', async () => {
     const { wrapper } = await mountChat()
     const textarea = wrapper.find('textarea')
@@ -217,6 +253,61 @@ describe('ConversationChatView', () => {
     expect(wrapper.text()).toContain('question')
     expect(wrapper.text()).toContain('answer')
     expect(wrapper.find('textarea').element.value).toBe('')
+  })
+
+  it('keeps an in-flight send active across a same-route refresh', async () => {
+    let resolveSend!: (value: SendMessageResponse) => void
+    vi.mocked(conversationApi.sendConversationMessage).mockImplementation(
+      () => new Promise((resolve) => (resolveSend = resolve)),
+    )
+    const { wrapper } = await mountChat()
+    await wrapper.find('textarea').setValue('question')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '发送消息')
+      ?.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '刷新')
+      ?.trigger('click')
+    await flushPromises()
+
+    resolveSend(sendResponse('question'))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('question')
+    expect(wrapper.text()).toContain('answer')
+    expect(wrapper.find('textarea').attributes('disabled')).toBeUndefined()
+  })
+
+  it('unlocks the composer and ignores the old send after switching conversations', async () => {
+    let resolveSend!: (value: SendMessageResponse) => void
+    vi.mocked(conversationApi.sendConversationMessage).mockImplementation(
+      () => new Promise((resolve) => (resolveSend = resolve)),
+    )
+    vi.mocked(conversationApi.getConversation).mockImplementation((_projectId, conversationId) =>
+      Promise.resolve(
+        conversationId === 9
+          ? conversation
+          : { ...conversation, id: 10, title: 'New conversation' },
+      ),
+    )
+    const { router, wrapper } = await mountChat()
+    await wrapper.find('textarea').setValue('old question')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '发送消息')
+      ?.trigger('click')
+
+    await router.push('/projects/42/conversations/10')
+    await flushPromises()
+    expect(wrapper.text()).toContain('New conversation')
+    expect(wrapper.find('textarea').attributes('disabled')).toBeUndefined()
+
+    resolveSend(sendResponse('old question'))
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('old question')
+    expect(wrapper.text()).not.toContain('answer')
   })
 
   it('reuses the UUID after an uncertain network result', async () => {

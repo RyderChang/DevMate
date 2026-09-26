@@ -161,4 +161,24 @@ describe('ConversationListView', () => {
     await vi.waitFor(() => expect(router.currentRoute.value.name).toBe('conversation-chat'))
     expect(router.currentRoute.value.params.conversationId).toBe('99')
   })
+
+  it('does not redirect after creation completes if the user left the list', async () => {
+    let resolveCreate!: (value: Conversation) => void
+    vi.mocked(conversationApi.createConversation).mockImplementation(
+      () => new Promise((resolve) => (resolveCreate = resolve)),
+    )
+    const { router, wrapper } = await mountList()
+    await wrapper.find('.page-actions .el-button--primary').trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '创建并进入')
+      ?.trigger('click')
+
+    await router.push('/projects/42')
+    resolveCreate({ ...conversation, id: 99, generationState: 'IDLE' })
+    await flushPromises()
+
+    expect(router.currentRoute.value.name).toBe('project-detail')
+  })
 })

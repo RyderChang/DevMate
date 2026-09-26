@@ -36,6 +36,7 @@ const unavailable = ref(false)
 const errorMessage = ref('')
 const historyLoading = ref(false)
 const historyError = ref('')
+const historyRetry = ref<'reload' | 'earlier' | null>(null)
 const earliestPage = ref(1)
 const totalMessages = ref(0)
 const draft = ref('')
@@ -90,6 +91,7 @@ async function loadHistory(
   const existingMessages = messages.value
   historyLoading.value = true
   historyError.value = ''
+  historyRetry.value = null
   try {
     const first = await listConversationMessages(projectId, conversationId, {
       page: 1,
@@ -128,12 +130,14 @@ async function loadHistory(
           error,
           '最新消息加载失败，已保留成功加载的历史消息',
         )
+        historyRetry.value = 'reload'
       }
     }
   } catch (error) {
     if (active && version === requestVersion) {
       unavailable.value = isConversationUnavailableError(error)
       historyError.value = getConversationErrorMessage(error, '加载消息历史失败，请稍后重试')
+      historyRetry.value = 'reload'
     }
   } finally {
     if (active && version === requestVersion) {
@@ -155,6 +159,7 @@ async function load(): Promise<void> {
     pendingAttempts.value = 0
     recoveryMode.value = null
     sendError.value = ''
+    sending.value = false
     project.value = null
     conversation.value = null
     messages.value = []
@@ -216,6 +221,7 @@ async function loadEarlier(): Promise<void> {
   const targetPage = earliestPage.value - 1
   historyLoading.value = true
   historyError.value = ''
+  historyRetry.value = null
   try {
     const result = await listConversationMessages(projectId, conversationId, {
       page: targetPage,
@@ -230,12 +236,21 @@ async function loadEarlier(): Promise<void> {
     if (active && version === requestVersion) {
       unavailable.value = isConversationUnavailableError(error)
       historyError.value = getConversationErrorMessage(error, '加载更早消息失败，请稍后重试')
+      historyRetry.value = 'earlier'
     }
   } finally {
     if (active && version === requestVersion) {
       historyLoading.value = false
     }
   }
+}
+
+function retryHistory(): void {
+  if (historyRetry.value === 'earlier') {
+    void loadEarlier()
+    return
+  }
+  void load()
 }
 
 function validMessage(message: ConversationMessage): boolean {
@@ -257,13 +272,20 @@ function validSendResponse(response: SendMessageResponse, conversationId: number
   )
 }
 
+function isCurrentConversation(projectId: number, conversationId: number): boolean {
+  return (
+    active &&
+    parsePositiveSafeId(route.params.projectId) === projectId &&
+    parsePositiveSafeId(route.params.conversationId) === conversationId
+  )
+}
+
 async function performSend(clientRequestId: string, content: string): Promise<void> {
   const projectId = parsePositiveSafeId(route.params.projectId)
   const conversationId = parsePositiveSafeId(route.params.conversationId)
   if (projectId === null || conversationId === null || sending.value) {
     return
   }
-  const version = requestVersion
   sending.value = true
   sendError.value = ''
   try {
@@ -271,7 +293,7 @@ async function performSend(clientRequestId: string, content: string): Promise<vo
       clientRequestId,
       content,
     })
-    if (!active || version !== requestVersion) {
+    if (!isCurrentConversation(projectId, conversationId)) {
       return
     }
     if (!validSendResponse(response, conversationId)) {
@@ -288,7 +310,7 @@ async function performSend(clientRequestId: string, content: string): Promise<vo
       conversation.value = { ...conversation.value, generationState: 'IDLE' }
     }
   } catch (error) {
-    if (!active || version !== requestVersion) {
+    if (!isCurrentConversation(projectId, conversationId)) {
       return
     }
     sendError.value = getSendErrorMessage(error)
@@ -312,7 +334,7 @@ async function performSend(clientRequestId: string, content: string): Promise<vo
       }
     }
   } finally {
-    if (active && version === requestVersion) {
+    if (isCurrentConversation(projectId, conversationId)) {
       sending.value = false
     }
   }
@@ -405,9 +427,7 @@ function retryPending(): void {
       />
       <el-alert v-if="historyError" :title="historyError" type="error" :closable="false" show-icon>
         <template #default>
-          <el-button link type="primary" @click="hasEarlierMessages ? loadEarlier() : load()">
-            重试
-          </el-button>
+          <el-button link type="primary" @click="retryHistory"> 重试 </el-button>
         </template>
       </el-alert>
 
