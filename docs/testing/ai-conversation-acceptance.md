@@ -2,14 +2,18 @@
 
 ## 当前结论
 
-本地自动检查、真实接口联调和下述浏览器场景已通过；PR 最新提交 CI 尚待核对，阶段结论暂为“未通过”。
+本地自动检查、真实接口联调、下述浏览器场景及实现提交的前后端 CI 已通过，结论为“验证通过待所有者确认”。
 本记录不代表所有者已确认第二阶段收口。任务范围见 [DEV-015](../tasks/DEV-015-ai-conversation-acceptance.md)，
 复现步骤见[本地开发指南](../development/local-development.md)。
 
 ## 基线与环境
 
 - 日期：2026-09-26；业务基线 `9ba5a7131658f3d3c52882f895f8879884d690c9`（DEV-014 PR #27 合并）。
-- 实现分支：`chore/dev-015-ai-conversation-acceptance`；验收提交及 PR CI 在交付时补充。
+- 实现分支：`chore/dev-015-ai-conversation-acceptance`；实现提交 `c465dadb24d68e7b8c22cb07dc5c1689a3057839`，
+  对应 [PR #28](https://github.com/RyderChang/DevMate/pull/28)。随后仅补充本记录的 CI 证据。
+- 实现提交的 [Foundation Backend](https://github.com/RyderChang/DevMate/actions/runs/36246889992/job/108417629451)
+  和 [Foundation Frontend](https://github.com/RyderChang/DevMate/actions/runs/36246889992/job/108417629412) 均成功。
+  合并前仍须以 [PR 最新检查](https://github.com/RyderChang/DevMate/pull/28/checks)为准，不能沿用旧提交结果。
 - Windows；本地 JDK 21、Node 22.19.0、npm 10.9.3、Docker 29.2.1。
 - 后端完整测试使用 MySQL 8.4.6 Testcontainers；联调使用独立 MySQL、Java 21 JRE、Node 22.19.0 Stub 容器。
 - 后端 `127.0.0.1:18085`、Vite `127.0.0.1:15175`、浏览器故障代理 `127.0.0.1:15176`。
