@@ -418,6 +418,11 @@ function retryPending(): void {
         </div>
       </div>
 
+      <el-alert v-if="errorMessage" :title="errorMessage" type="error" :closable="false" show-icon>
+        <template #default>
+          <el-button link type="primary" @click="load">重试</el-button>
+        </template>
+      </el-alert>
       <el-alert
         v-if="serverGenerating && !pendingRequestId"
         title="服务端仍在生成回复，请稍后刷新查看结果"

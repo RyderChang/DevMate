@@ -177,6 +177,26 @@ describe('ConversationChatView', () => {
     expect(wrapper.text()).toContain('加载消息历史失败')
   })
 
+  it('shows and retries metadata failures during a manual refresh', async () => {
+    const { wrapper } = await mountChat()
+    vi.mocked(conversationApi.getConversation).mockRejectedValueOnce(new Error('offline'))
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '刷新')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Architecture')
+    expect(wrapper.text()).toContain('加载对话失败')
+
+    await wrapper.find('.el-alert button').trigger('click')
+    await flushPromises()
+
+    expect(conversationApi.getConversation).toHaveBeenCalledTimes(3)
+    expect(wrapper.text()).not.toContain('加载对话失败')
+  })
+
   it('retries the latest-page load instead of loading an older page', async () => {
     const oldest = message(1, 1, 'USER')
     const latest = message(101, 101, 'ASSISTANT')
