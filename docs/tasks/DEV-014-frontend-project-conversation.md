@@ -8,19 +8,16 @@
 | 任务名称     | 前端项目对话与同步交互                                               |
 | 所属阶段     | 第二阶段——AI 对话                                                    |
 | 任务类型     | 前端业务能力、对话与消息交互、路由、错误恢复及自动化测试             |
-| 状态         | 待实施；本任务书不代表前端对话已经完成                               |
+| 状态         | 已实施；验证结果以 DEV-014 PR 记录为准                               |
 | 前置任务     | DEV-013 经项目所有者审核并合并到 `develop`                           |
 | 目标分支     | `develop`                                                            |
 | 建议实现分支 | `feature/dev-014-frontend-project-conversation`                      |
 | 预计主要目录 | `devmate-web/`、相关 README                                          |
 | 明确不涉及   | 后端契约、流式输出、取消生成、RAG、工具调用、Markdown 渲染、代码执行 |
 
-本任务书基于 2026-09-21 刷新的远端 `develop` 提交
-`45fcae14bf8dcb4f182bdfa6b0340015985229eb`，以及尚未合并的 DEV-013
-[PR #25](https://github.com/RyderChang/DevMate/pull/25) 修复提交
-`af2c6e2cfacc0e52e0f4b261af04348f75b157fa` 编写。DEV-014 实现不得直接从 DEV-013
-功能分支继续；必须等待 PR #25 合并，从合并后的最新 `develop` 创建独立分支，并重新核对实际接口、
-类型、测试数量和文档状态。
+本任务书最初基于 2026-09-21 的远端 `develop` 与 DEV-013 [PR #25](https://github.com/RyderChang/DevMate/pull/25)
+编写。DEV-014 已在 PR #25 合并后的 `develop` 提交
+`485eb2d1311f19e81b2471a90829c900551beab6` 上创建独立功能分支，并重新核对实际接口、类型、测试和文档状态。
 
 ## 2. 背景与目标
 

@@ -21,7 +21,7 @@
 ## 第二阶段任务
 
 - [开发任务 DEV-013](tasks/DEV-013-ai-gateway-conversation.md)：统一 AI Gateway、首个模型适配器与项目对话后端任务书。
-- [开发任务 DEV-014](tasks/DEV-014-frontend-project-conversation.md)：项目对话前端、同步消息交互、幂等恢复与测试要求。
+- [开发任务 DEV-014](tasks/DEV-014-frontend-project-conversation.md)：已实现项目对话前端、同步消息交互、幂等恢复与测试。
 
 ## 计划中的文档
 

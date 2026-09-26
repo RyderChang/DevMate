@@ -39,6 +39,16 @@ const router = createRouter({
           name: 'project-edit',
           component: () => import('@/views/ProjectEditView.vue'),
         },
+        {
+          path: 'projects/:projectId/conversations',
+          name: 'conversation-list',
+          component: () => import('@/views/ConversationListView.vue'),
+        },
+        {
+          path: 'projects/:projectId/conversations/:conversationId',
+          name: 'conversation-chat',
+          component: () => import('@/views/ConversationChatView.vue'),
+        },
       ],
     },
     {

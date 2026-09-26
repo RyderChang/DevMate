@@ -41,6 +41,11 @@ async function mountDetail(path = '/projects/42') {
         name: 'project-edit',
         component: { template: '<div />' },
       },
+      {
+        path: '/projects/:projectId/conversations',
+        name: 'conversation-list',
+        component: { template: '<div />' },
+      },
     ],
   })
   await router.push(path)
@@ -64,6 +69,18 @@ describe('ProjectDetailView', () => {
     expect(wrapper.text()).toContain(project.description)
     expect(wrapper.text()).toContain('--')
     expect(wrapper.find('script').exists()).toBe(false)
+  })
+
+  it('opens the current project conversation list', async () => {
+    vi.mocked(projectApi.getProject).mockResolvedValue(project)
+    const { router, wrapper } = await mountDetail()
+
+    const conversations = wrapper.findAll('button').find((button) => button.text() === '项目对话')
+    await conversations?.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.name).toBe('conversation-list')
+    expect(router.currentRoute.value.params.projectId).toBe('42')
   })
 
   it('does not request an invalid or unsafe project id', async () => {
