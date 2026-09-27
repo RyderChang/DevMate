@@ -2,8 +2,10 @@
 
 ## 当前结论
 
-本地自动检查、真实接口联调、下述浏览器场景及实现提交的前后端 CI 已通过，结论为“验证通过待所有者确认”。
-本记录不代表所有者已确认第二阶段收口。任务范围见 [DEV-015](../tasks/DEV-015-ai-conversation-acceptance.md)，
+本地自动检查、真实接口联调、下述浏览器场景及最终 PR head 的前后端 CI 已通过，结论为“所有者已确认”。
+所有者于 2026-09-27 在仓库审核会话中明确要求“修订上述文档、记录第二阶段确认，再确认 016 待定方案与存储 ADR”，
+据此记录第二阶段收口；确认涵盖本报告列明的范围与限制，不表示生产就绪或真实模型冒烟通过。
+任务范围见 [DEV-015](../tasks/DEV-015-ai-conversation-acceptance.md)，
 复现步骤见[本地开发指南](../development/local-development.md)。
 
 ## 基线与环境
@@ -13,7 +15,12 @@
   对应 [PR #28](https://github.com/RyderChang/DevMate/pull/28)。随后仅补充本记录的 CI 证据。
 - 实现提交的 [Foundation Backend](https://github.com/RyderChang/DevMate/actions/runs/36246889992/job/108417629451)
   和 [Foundation Frontend](https://github.com/RyderChang/DevMate/actions/runs/36246889992/job/108417629412) 均成功。
-  合并前仍须以 [PR 最新检查](https://github.com/RyderChang/DevMate/pull/28/checks)为准，不能沿用旧提交结果。
+  以上保留为实现提交的历史证据。
+- 2026-09-27 只读复核最终 head `dfe62876677a274d2aa32cbfee610048a43d379f`：
+  [Foundation Backend](https://github.com/RyderChang/DevMate/actions/runs/36247195670/job/108418464418)
+  和 [Foundation Frontend](https://github.com/RyderChang/DevMate/actions/runs/36247195670/job/108418464463) 均成功。
+  PR #28 于 2026-09-27 13:28:31 UTC 合并到 `develop`，合并提交为 `0fc422907f2792dc557ae6bd73b899257c2a51c5`。
+  这次文档收口未重新运行业务测试或浏览器验收，也不把上述 PR 检查称为合并提交的 push CI。
 - Windows；本地 JDK 21、Node 22.19.0、npm 10.9.3、Docker 29.2.1。
 - 后端完整测试使用 MySQL 8.4.6 Testcontainers；联调使用独立 MySQL、Java 21 JRE、Node 22.19.0 Stub 容器。
 - 后端 `127.0.0.1:18085`、Vite `127.0.0.1:15175`、浏览器故障代理 `127.0.0.1:15176`。
@@ -88,4 +95,6 @@
 ## 清理与人工确认
 
 已停止本任务 Vite/代理，删除已核对标签的临时容器与数据库卷，关闭测试标签并恢复视口覆盖。
-生成产物和本地日志位于忽略目录，不纳入提交。正式阶段收口及 PR 合并由项目所有者确认；不自动实施下一阶段。
+生成产物和本地日志位于忽略目录，不纳入提交。第二阶段确认依据及 PR 合并事实见上文。
+所有者接受本报告已披露的非阻塞限制；真实模型冒烟和生产验证仍未执行。
+下一阶段仅完成 DEV-016 任务书与存储 ADR 确认，功能实施需另行启动。

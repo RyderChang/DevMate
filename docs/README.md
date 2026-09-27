@@ -23,7 +23,12 @@
 - [开发任务 DEV-013](tasks/DEV-013-ai-gateway-conversation.md)：统一 AI Gateway、首个模型适配器与项目对话后端任务书。
 - [开发任务 DEV-014](tasks/DEV-014-frontend-project-conversation.md)：已实现项目对话前端、同步消息交互、幂等恢复与测试。
 - [开发任务 DEV-015](tasks/DEV-015-ai-conversation-acceptance.md)：第二阶段 AI 对话验收与联调基线，覆盖隔离 Stub、失败恢复、权限及浏览器验收。
-- [第二阶段验收记录](testing/ai-conversation-acceptance.md)：本轮验证证据、环境限制和人工确认状态。
+- [第二阶段验收记录](testing/ai-conversation-acceptance.md)：验证证据、环境限制及 2026-09-27 所有者收口确认。
+
+## 第三阶段任务
+
+- [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：已确认的知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；尚未实施。
+- [ADR 0003：知识文档存储与恢复边界](adr/0003-knowledge-document-storage-and-recovery.md)：已接受的存储职责、失败状态、幂等及清理决策。
 
 ## 计划中的文档
 

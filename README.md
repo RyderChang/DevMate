@@ -4,7 +4,8 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 
 > **当前状态：第二阶段——AI 对话。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
 > 可审计且按项目隔离的对话后端、首个 OpenAI Responses 适配器和同步前端聊天交互。
-> 第二阶段已补齐隔离联调工具与验收记录，正式收口仍需所有者确认。
+> 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。
+> DEV-016 文档接入方案已确认，尚未实施。
 
 ## 核心能力规划
 
@@ -53,7 +54,7 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 - 按[本地开发指南](docs/development/local-development.md)启动隔离环境；
 - [第一阶段验收记录](docs/testing/foundation-acceptance.md)区分验证结果与尚待完成项；
 - [第二阶段验收记录](docs/testing/ai-conversation-acceptance.md)记录对话联调、失败恢复和浏览器证据；
-- [Foundation CI](.github/workflows/foundation.yml)执行前后端检查，阶段收口仍需所有者确认；
+- [Foundation CI](.github/workflows/foundation.yml)执行前后端检查，阶段确认依据见对应验收记录；
 - 提交改动前阅读[贡献指南](CONTRIBUTING.md)和 [AGENTS.md](AGENTS.md)。
 
 ## 安全
