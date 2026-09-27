@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+import uuid
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
@@ -77,10 +78,17 @@ def main():
         os.utime(destination, (LOCK["sourceDateEpoch"], LOCK["sourceDateEpoch"]))
     metadata = OUTPUT / "image-metadata.json"
     image_archive = OUTPUT / "minio-image.tar"
-    command(["docker", "buildx", "build", "--platform", LOCK["platform"], "--provenance=false", "--no-cache",
-             "--output", f"type=docker,dest={image_archive},compression=uncompressed,rewrite-timestamp=true",
-             "--build-arg", f"SOURCE_DATE_EPOCH={LOCK['sourceDateEpoch']}", "--metadata-file", str(metadata),
-             "-t", LOCK["imageTag"], str(context)], timeout=300, log=OUTPUT / "image-build.log")
+    builder = "devmate016-" + uuid.uuid4().hex[:12]
+    command(["docker", "buildx", "create", "--name", builder, "--driver", "docker-container",
+             "--driver-opt", "image=" + LOCK["buildkitImage"]])
+    try:
+        command(["docker", "buildx", "build", "--builder", builder, "--platform", LOCK["platform"],
+                 "--provenance=false", "--no-cache", "--output",
+                 f"type=docker,dest={image_archive},compression=uncompressed,rewrite-timestamp=true",
+                 "--build-arg", f"SOURCE_DATE_EPOCH={LOCK['sourceDateEpoch']}", "--metadata-file", str(metadata),
+                 "-t", LOCK["imageTag"], str(context)], timeout=600, log=OUTPUT / "image-build.log")
+    finally:
+        command(["docker", "buildx", "rm", builder], timeout=60)
     built = json.loads(metadata.read_text(encoding="utf-8"))
     print("Built manifest:", built["containerimage.digest"], "config:", built["containerimage.config.digest"])
     if built["containerimage.digest"] != LOCK["imageManifestDigest"]:

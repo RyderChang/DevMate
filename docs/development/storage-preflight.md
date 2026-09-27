@@ -54,6 +54,10 @@ Go 固定为本机已安装且可在 [Go 官方发行页](https://go.dev/dl/)获
 `GOTOOLCHAIN=local` 禁止隐式下载/切换编译器，保留官方 `go.mod`/`go.sum`，`-mod=readonly`、checksum database 校验开启。
 固定 `linux/amd64`、`GOAMD64=v1`、`CGO_ENABLED=0`、`-trimpath`、编译元数据和文件时间，构建并发限制为 4。
 镜像显式使用未压缩 Docker 归档和 `rewrite-timestamp=true`，每次无缓存构建后校验摘要再加载。
+构建脚本创建按平台摘要锁定的 BuildKit `0.33.0` 临时容器构建器，完成或失败后回收其容器与缓存卷，
+不切换用户默认构建器。此方式采用 Docker 官方的
+[docker-container 驱动](https://docs.docker.com/build/builders/drivers/docker-container/)，
+避免 CI Docker 28 默认驱动不支持归档导出的问题；BuildKit 镜像摘要也纳入构建锁文件。
 不依赖 BuildKit 的默认压缩或缓存；先前一次 CI 已通过二进制校验，但默认导出产生不同 manifest，因而失败。
 Docker Desktop 的直接 unpack 与时间戳重写冲突，故采用“归档导出 → 摘要校验 → 本地加载”。
 
