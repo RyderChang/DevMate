@@ -88,6 +88,8 @@ Docker Desktop 的直接 unpack 与时间戳重写冲突，故采用“归档导
 运行引用集中在 [environment.properties](../../scripts/storage-preflight/environment.properties)。
 Docker daemon 与宿主内核版本是本次证据，不声称托管 CI runner 的内核永远固定；每次 CI 输出实际平台版本。
 新机器或引擎版本必须重跑核验，不能只靠版本号推断兼容。
+本次通过的 CI runner image 为 `20260920.314.1`，Python `3.12.3`、Docker `28.0.4`、
+Buildx `0.37.1`；本机与 CI 都使用锁定的 BuildKit `0.33.0` 容器，产出相同的二进制、manifest 与 config 摘要。
 
 MinIO 与 MySQL 都由 Testcontainers 创建，无固定容器名、复用开关或宿主数据目录。
 MinIO 9000、MySQL 3306 仅映射到宿主 `127.0.0.1` 的随机端口，控制台不发布。
@@ -142,7 +144,12 @@ CI 定义见 [Storage Preflight](../../.github/workflows/storage-preflight.yml)�
 
 ## 本次结果与实施边界
 
-本地前置核验已通过，CI 尚待本准备分支的最新提交运行结果；功能实施尚未启动。
+本地与 CI 前置核验均已通过；功能实施尚未启动。核验代码提交为
+`484255f8199b426e248d5cdbbd0c8301cfec0de9`，对应
+[Storage Preflight 成功记录](https://github.com/RyderChang/DevMate/actions/runs/36329754148)
+和 [Foundation 前后端成功记录](https://github.com/RyderChang/DevMate/actions/runs/36329754167)。
+本节证据补录仅更新文档；审阅时仍以 [PR #29](https://github.com/RyderChang/DevMate/pull/29)
+最新 head 的检查状态为准，后续变更不能沿用历史结果。
 
 | 实际执行                                           | 结果                                                                                                                   |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -154,7 +161,7 @@ CI 定义见 [Storage Preflight](../../.github/workflows/storage-preflight.yml)�
 | SDK 边界                                           | 503 只有 1 次请求；不响应的本地 Stub 被 API 总超时中断                                                                 |
 | MinIO 合同冒烟                                     | 私有 bucket；32 字节/5 MiB PUT、GET 原字节/SHA-256、HEAD；匿名和错误凭据均为 403；重复 DELETE 成功、删除后 HEAD 为 404 |
 | MySQL/Testcontainers                               | 摘要锁定的 8.4.6 启动、JDBC 查询、UTC 配置与自动回收通过                                                               |
-| GitHub CI                                          | 待本准备 PR 最新提交执行，不引用 DEV-015 的旧 CI 代替                                                                  |
+| GitHub CI                                          | 上述核验代码提交的 Storage Preflight、Foundation Backend 与 Frontend 均通过；空缓存源码构建及四项测试完成              |
 
 锁定的 MinIO 二进制 SHA-256 为 `2788cd3f1082a789905b3da10f61106849e31ddfc1443d11c89d16ff7ae0e36e`，
 镜像 manifest 为 `sha256:22d886b8a16cea295dcbbca55aea28fd8354e72a4e829eb269678ef07d07c923`，
@@ -163,6 +170,8 @@ image config 为 `sha256:5b7b9313d03bef5e8c4ac8bb9e538380c80ad80b4cdc4a0f072f3d4
 已复现并处理的环境问题：系统默认 Java 22、Docker 最初未启动、Windows Oracle JDK 21 loopback 失败
 （显式 IPv4 仍失败）、Testcontainers 默认 Docker API 过旧，以及公共源码依赖下载 EOF。
 首次测试夹具使用不存在的 `PullPolicy.neverPull()` 导致编译失败，已改用当前版本支持的 pull policy 后编译通过。
+CI 中还修正了 JDK 发行版本标识、Docker 归档导出驱动、镜像压缩/时间戳及跨宿主文件权限差异；
+最终通过记录使用显式权限、固定 BuildKit 和严格摘要校验，未降低断言或跳过测试。
 失败记录不计作通过；后续只以本次重跑的真实结果为准。
 
 本准备任务不验证文档 API、数据库 migration、额度/幂等、租约/恢复、迟到 PUT、项目删除或权限业务。
