@@ -1,0 +1,13 @@
+{
+  "platform": "linux/amd64",
+  "goVersion": "go1.26.5",
+  "sourceCommit": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+  "sourceUrl": "https://codeload.github.com/minio/minio/tar.gz/9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+  "sourceSha256": "45521908307306e925c98d629e1c17d78c8b72b6ee242b1bfb1409f7d8ee5841",
+  "sourceDateEpoch": 1760549395,
+  "imageTag": "devmate/minio-preflight:9e49d5e7a648-go1.26.5",
+  "binarySha256": "2788cd3f1082a789905b3da10f61106849e31ddfc1443d11c89d16ff7ae0e36e",
+  "imageManifestDigest": "sha256:565cfeb18f253d9646b0b3a31501419338dd685be36f8bb7bf15953516c8902d",
+  "imageConfigDigest": "sha256:215c82d5f260338d8adadcd90943505e4cf267e9b1734f2682176d10cc03b677",
+  "manifestMediaType": "application/vnd.docker.distribution.manifest.v2+json"
+}

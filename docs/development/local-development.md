@@ -1,5 +1,8 @@
 # 本地开发与验收
 
+DEV-016 的 SDK、MinIO 镜像及隔离运行组合见[实施前核验记录](storage-preflight.md)；
+其核验工具独立运行，不会启用文档接入或改变本文的既有环境。
+
 适用于认证、项目空间和项目内同步对话；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
 [后端说明](../../devmate-server/README.md)、[前端说明](../../devmate-web/README.md)和
 [验收记录](../testing/foundation-acceptance.md)。

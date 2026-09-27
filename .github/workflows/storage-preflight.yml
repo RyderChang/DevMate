@@ -1,0 +1,45 @@
+name: Storage Preflight
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - scripts/storage-preflight/**
+      - .github/workflows/storage-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: storage-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  storage-preflight:
+    name: Storage Dependency and Environment Preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "21.0.12+8"
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Verify platform
+        run: |
+          java -version
+          go version
+          python3 --version
+          docker version
+          docker buildx version
+      - name: Build the locked local MinIO test image
+        run: python3 -B scripts/storage-preflight/build-minio.py
+      - name: Verify dependency checksums and storage prerequisites
+        run: python3 -B scripts/storage-preflight/verify.py
