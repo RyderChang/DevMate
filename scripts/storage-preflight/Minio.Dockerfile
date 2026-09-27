@@ -1,4 +1,4 @@
-# Local synthetic-data probe only. Build source and verify hashes with run.py.
+# Local synthetic-data probe only. Build source and verify hashes with build-minio.py.
 FROM scratch
 LABEL org.opencontainers.image.source="https://github.com/minio/minio" \
       org.opencontainers.image.revision="9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a" \

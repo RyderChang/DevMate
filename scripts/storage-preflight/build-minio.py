@@ -24,6 +24,9 @@ def command(args, *, cwd=ROOT, env=None, timeout=180, log=None):
         with log.open("w", encoding="utf-8") as output:
             result = subprocess.run(args, cwd=cwd, env=env, stdout=output, stderr=subprocess.STDOUT, timeout=timeout)
         if result.returncode:
+            # This build uses only public source/binary/license files and no build secrets.
+            if log.name == "image-build.log":
+                print(log.read_text(encoding="utf-8", errors="replace")[-12000:])
             raise RuntimeError(f"Build failed; inspect local log {log.relative_to(ROOT)}")
         return ""
     result = subprocess.run(args, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout)
