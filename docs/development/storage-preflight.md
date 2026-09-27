@@ -128,6 +128,7 @@ python3 -B scripts/storage-preflight/verify.py
 本机 Windows Wrapper 有丢失 Maven 失败退出码的问题，不能单独用其退出码判定验证通过；本任务未扩大到修复 Wrapper。
 
 CI 定义见 [Storage Preflight](../../.github/workflows/storage-preflight.yml)，只在相关核验文件变更的 PR 或手动启动时执行。
+`setup-java` 使用发行元数据的完整版本标识 `21.0.12+8.0.LTS`；省略 `.0.LTS` 的首次 CI 安装失败，未进入测试。
 它从相同官方源码自行构建测试镜像并校验 digest，不依赖本机镜像缓存或已不可拉取的 MinIO 官方旧镜像。
 不会推送镜像、部署服务或调用付费服务。
 
