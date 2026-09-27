@@ -53,6 +53,9 @@ Quay 的该 tag 及 `RELEASE.2025-10-15T17-29-55Z` 查询返回 401；不能将�
 Go 固定为本机已安装且可在 [Go 官方发行页](https://go.dev/dl/)获取的 `1.26.5`；
 `GOTOOLCHAIN=local` 禁止隐式下载/切换编译器，保留官方 `go.mod`/`go.sum`，`-mod=readonly`、checksum database 校验开启。
 固定 `linux/amd64`、`GOAMD64=v1`、`CGO_ENABLED=0`、`-trimpath`、编译元数据和文件时间，构建并发限制为 4。
+镜像显式使用未压缩 Docker 归档和 `rewrite-timestamp=true`，每次无缓存构建后校验摘要再加载。
+不依赖 BuildKit 的默认压缩或缓存；先前一次 CI 已通过二进制校验，但默认导出产生不同 manifest，因而失败。
+Docker Desktop 的直接 unpack 与时间戳重写冲突，故采用“归档导出 → 摘要校验 → 本地加载”。
 
 构建及摘要见 [build-lock.json](../../scripts/storage-preflight/build-lock.json) 与
 [Minio.Dockerfile](../../scripts/storage-preflight/Minio.Dockerfile)。摘要分别表示源码归档、Linux 二进制、
@@ -149,7 +152,7 @@ CI 定义见 [Storage Preflight](../../.github/workflows/storage-preflight.yml)�
 | GitHub CI                                          | 待本准备 PR 最新提交执行，不引用 DEV-015 的旧 CI 代替                                                                  |
 
 锁定的 MinIO 二进制 SHA-256 为 `2788cd3f1082a789905b3da10f61106849e31ddfc1443d11c89d16ff7ae0e36e`，
-镜像 manifest 为 `sha256:565cfeb18f253d9646b0b3a31501419338dd685be36f8bb7bf15953516c8902d`，
+镜像 manifest 为 `sha256:7be4f8a65f59b9963a004a8fb4625af935f9c43f2fb216fa933658381b3a81c2`，
 image config 为 `sha256:215c82d5f260338d8adadcd90943505e4cf267e9b1734f2682176d10cc03b677`。
 
 已复现并处理的环境问题：系统默认 Java 22、Docker 最初未启动、Windows Oracle JDK 21 loopback 失败

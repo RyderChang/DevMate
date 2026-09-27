@@ -73,12 +73,16 @@ def main():
         os.chmod(destination, 0o755 if name == "minio" else 0o644)
         os.utime(destination, (LOCK["sourceDateEpoch"], LOCK["sourceDateEpoch"]))
     metadata = OUTPUT / "image-metadata.json"
-    command(["docker", "buildx", "build", "--platform", LOCK["platform"], "--provenance=false", "--load",
+    image_archive = OUTPUT / "minio-image.tar"
+    command(["docker", "buildx", "build", "--platform", LOCK["platform"], "--provenance=false", "--no-cache",
+             "--output", f"type=docker,dest={image_archive},compression=uncompressed,rewrite-timestamp=true",
              "--build-arg", f"SOURCE_DATE_EPOCH={LOCK['sourceDateEpoch']}", "--metadata-file", str(metadata),
              "-t", LOCK["imageTag"], str(context)], timeout=300, log=OUTPUT / "image-build.log")
     built = json.loads(metadata.read_text(encoding="utf-8"))
+    print("Built manifest:", built["containerimage.digest"], "config:", built["containerimage.config.digest"])
     if built["containerimage.digest"] != LOCK["imageManifestDigest"]:
-        raise RuntimeError("OCI manifest digest mismatch; do not run the changed image")
+        raise RuntimeError("Image manifest digest mismatch; do not run the changed image")
+    command(["docker", "load", "--input", str(image_archive)], timeout=180, log=OUTPUT / "image-load.log")
     actual_id = command(["docker", "image", "inspect", LOCK["imageTag"], "--format", "{{.Id}}"])
     if actual_id not in (LOCK["imageConfigDigest"], LOCK["imageManifestDigest"]):
         raise RuntimeError("Local image identity mismatch")
