@@ -3,11 +3,12 @@
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
 MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
 以及按用户隔离的项目空间和项目对话 API。Flyway 负责创建认证、授权、项目、对话、消息与
-AI 调用元数据表；前端已具备认证和项目 CRUD 页面。AI Gateway 当前提供默认关闭的 OpenAI
-Responses 适配器，前端聊天、项目成员、GitHub 绑定、文件存储、Redis 业务和 RAG 尚未实现。
+AI 调用元数据表；前端已具备认证、项目 CRUD 与同步对话页面。AI Gateway 当前提供默认关闭的 OpenAI
+Responses 适配器，项目成员、GitHub 绑定、文件存储、Redis 业务和 RAG 尚未实现。
 
 完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
-阶段验证状态见[验收记录](../docs/testing/foundation-acceptance.md)。
+阶段验证状态见[第一阶段验收记录](../docs/testing/foundation-acceptance.md)和
+[第二阶段对话验收记录](../docs/testing/ai-conversation-acceptance.md)。本地模型 Stub 不需要真实模型账户。
 
 ## 前置要求
 

@@ -284,6 +284,81 @@ class ConversationApiIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(invocation.has("prompt")).isFalse();
     }
 
+    @Test
+    void concurrentAndExpiredResponsesCannotOverwriteTheReplacementGeneration() throws Exception {
+        register("concurrent-owner");
+        String token = login("concurrent-owner");
+        long projectId = createProject(token, "Concurrency", null);
+        long conversationId = createConversation(token, projectId, "Lease fencing");
+        var entered = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        gateway.beforeReturn.set(() -> {
+            entered.countDown();
+            try {
+                if (!release.await(15, java.util.concurrent.TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Test release timed out");
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(exception);
+            }
+        });
+        try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            var old = executor.submit(() -> mockMvc.perform(post(
+                            "/projects/{projectId}/conversations/{conversationId}/messages", projectId, conversationId)
+                            .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(java.util.Map.of(
+                                    "clientRequestId", java.util.UUID.randomUUID().toString(), "content", "old"))))
+                    .andReturn().getResponse().getStatus());
+            try {
+                assertThat(entered.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+                String replacement = objectMapper.writeValueAsString(java.util.Map.of(
+                        "clientRequestId", java.util.UUID.randomUUID().toString(), "content", "replacement"));
+                expectError(post("/projects/{projectId}/conversations/{conversationId}/messages",
+                        projectId, conversationId).contentType(MediaType.APPLICATION_JSON).content(replacement), token, 409);
+                assertThat(gateway.calls.get()).isOne();
+                jdbc.update("UPDATE conversations SET generation_started_at=CURRENT_TIMESTAMP(6)-INTERVAL 10 MINUTE WHERE id=?",
+                        conversationId);
+                gateway.beforeReturn.set(null);
+                mockMvc.perform(post("/projects/{projectId}/conversations/{conversationId}/messages", projectId, conversationId)
+                                .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON).content(replacement))
+                        .andExpect(status().isOk());
+                release.countDown();
+                assertThat(old.get(10, java.util.concurrent.TimeUnit.SECONDS)).isEqualTo(503);
+                assertThat(gateway.calls.get()).isEqualTo(2);
+                assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM conversation_messages WHERE role='ASSISTANT'",
+                        Integer.class)).isOne();
+                assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_invocations WHERE status='SUCCEEDED'",
+                        Integer.class)).isOne();
+                assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_invocations WHERE status='FAILED' AND error_code='AI_REQUEST_EXPIRED'",
+                        Integer.class)).isOne();
+                assertThat(jdbc.queryForObject("SELECT generation_state FROM conversations WHERE id=?",
+                        String.class, conversationId)).isEqualTo("IDLE");
+            } finally {
+                release.countDown();
+            }
+        }
+    }
+
+    @Test
+    void messageLimitCountsUnicodeCodePointsAtTheExactBoundary() throws Exception {
+        register("unicode-owner");
+        String token = login("unicode-owner");
+        long projectId = createProject(token, "Unicode", null);
+        long conversationId = createConversation(token, projectId, "Boundary");
+        for (String content : java.util.List.of("   ", "😀".repeat(8001))) {
+            assertBadRequest(post("/projects/{projectId}/conversations/{conversationId}/messages", projectId, conversationId)
+                    .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(java.util.Map.of(
+                            "clientRequestId", java.util.UUID.randomUUID().toString(), "content", content))), token);
+        }
+        mockMvc.perform(post("/projects/{projectId}/conversations/{conversationId}/messages", projectId, conversationId)
+                        .header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of(
+                                "clientRequestId", java.util.UUID.randomUUID().toString(), "content", "😀".repeat(8000)))))
+                .andExpect(status().isOk());
+        assertThat(gateway.calls.get()).isOne();
+    }
+
     private void cleanDatabase() {
         jdbc.update("DELETE FROM ai_invocations");
         jdbc.update("DELETE FROM conversation_messages");
