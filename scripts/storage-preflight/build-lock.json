@@ -8,7 +8,7 @@
   "sourceDateEpoch": 1760549395,
   "imageTag": "devmate/minio-preflight:9e49d5e7a648-go1.26.5",
   "binarySha256": "2788cd3f1082a789905b3da10f61106849e31ddfc1443d11c89d16ff7ae0e36e",
-  "imageManifestDigest": "sha256:7be4f8a65f59b9963a004a8fb4625af935f9c43f2fb216fa933658381b3a81c2",
-  "imageConfigDigest": "sha256:215c82d5f260338d8adadcd90943505e4cf267e9b1734f2682176d10cc03b677",
+  "imageManifestDigest": "sha256:22d886b8a16cea295dcbbca55aea28fd8354e72a4e829eb269678ef07d07c923",
+  "imageConfigDigest": "sha256:5b7b9313d03bef5e8c4ac8bb9e538380c80ad80b4cdc4a0f072f3d41742d348f",
   "manifestMediaType": "application/vnd.docker.distribution.manifest.v2+json"
 }

@@ -92,6 +92,10 @@ def main():
     built = json.loads(metadata.read_text(encoding="utf-8"))
     print("Built manifest:", built["containerimage.digest"], "config:", built["containerimage.config.digest"])
     if built["containerimage.digest"] != LOCK["imageManifestDigest"]:
+        # Only the public Dockerfile configuration; credentials are generated later in tests.
+        with tarfile.open(image_archive) as exported:
+            manifest = json.load(exported.extractfile("manifest.json"))[0]
+            print("Public image config:", exported.extractfile(manifest["Config"]).read().decode("utf-8"))
         raise RuntimeError("Image manifest digest mismatch; do not run the changed image")
     command(["docker", "load", "--input", str(image_archive)], timeout=180, log=OUTPUT / "image-load.log")
     actual_id = command(["docker", "image", "inspect", LOCK["imageTag"], "--format", "{{.Id}}"])
