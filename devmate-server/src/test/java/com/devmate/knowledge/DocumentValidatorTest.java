@@ -5,6 +5,9 @@ import com.devmate.common.exception.BusinessException;
 import com.devmate.knowledge.application.DocumentValidator;
 import com.devmate.knowledge.config.KnowledgeProperties;
 import com.devmate.knowledge.infrastructure.UploadTempFiles;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.MessageDigest;
@@ -13,12 +16,78 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class DocumentValidatorTest {
     @TempDir Path directory;
+
+    @Test
+    void reportsTemporaryFileCreationFailureAsStorageUnavailableWithoutDiagnostics() throws Exception {
+        var files = mock(UploadTempFiles.class);
+        when(files.create()).thenThrow(new IOException("synthetic private filesystem diagnostic"));
+        var validator = new DocumentValidator(files, properties());
+        assertThatThrownBy(() -> validator.prepare(file("note.txt", "x")))
+                .isInstanceOfSatisfying(BusinessException.class, error -> {
+                    assertThat(error.getCode()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getCode());
+                    assertThat(error.getHttpStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(error.getMessage()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getMessage());
+                    assertThat(error.getCause()).isNull();
+                });
+        verify(files, never()).release(any());
+    }
+
+    @Test
+    void reportsUploadCopyFailureAsStorageUnavailableAndRemovesTemporaryFile() throws Exception {
+        var properties = properties();
+        try (var files = new UploadTempFiles(properties, Clock.systemUTC())) {
+            var validator = new DocumentValidator(files, properties);
+            var broken = new MockMultipartFile("file", "note.txt", "text/plain", new byte[]{'x'}) {
+                @Override public InputStream getInputStream() throws IOException {
+                    throw new IOException("synthetic private stream diagnostic");
+                }
+            };
+            assertThatThrownBy(() -> validator.prepare(broken))
+                    .isInstanceOfSatisfying(BusinessException.class, error -> {
+                        assertThat(error.getCode()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getCode());
+                        assertThat(error.getHttpStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                        assertThat(error.getMessage()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getMessage());
+                    });
+            try (var paths = Files.list(files.multipartDirectory().getParent())) {
+                assertThat(paths.noneMatch(path -> path.toString().endsWith(".bin"))).isTrue();
+            }
+        }
+    }
+
+    @Test
+    void reportsValidationReadFailureAsStorageUnavailableAndReleasesItsCopy() throws Exception {
+        Path copy = directory.resolve("validated-copy.bin");
+        var files = mock(UploadTempFiles.class);
+        when(files.create()).thenReturn(copy);
+        var validator = new DocumentValidator(files, properties());
+        var disappears = new MockMultipartFile("file", "note.txt", "text/plain", new byte[]{'x'}) {
+            @Override public InputStream getInputStream() {
+                return new ByteArrayInputStream(new byte[]{'x'}) {
+                    @Override public void close() throws IOException {
+                        super.close();
+                        Files.delete(copy);
+                    }
+                };
+            }
+        };
+        assertThatThrownBy(() -> validator.prepare(disappears))
+                .isInstanceOfSatisfying(BusinessException.class, error -> {
+                    assertThat(error.getCode()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getCode());
+                    assertThat(error.getHttpStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                    assertThat(error.getMessage()).isEqualTo(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE.getMessage());
+                    assertThat(error.getCause()).isNull();
+                });
+        verify(files).release(copy);
+        assertThat(copy).doesNotExist();
+    }
 
     @Test
     void validatesBomAndPreservesOriginalBytesAndTheirSha256() throws Exception {

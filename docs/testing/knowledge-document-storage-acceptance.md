@@ -76,6 +76,22 @@ OpenAPI 断言误命中 `inputTokens`，改为匹配完整字段名；运维 SQL
 提交后的持久化 `next_attempt_at` 对齐时钟。完整迁移测试遗漏 V6 的三张表清单，已补齐精确断言，未降低验证。
 固定 Temurin 镜像是 JRE，不能编译，替代脚本明确先在宿主 JDK 编译再执行测试。
 
+## 合并前审查补充验证
+
+2026-09-28 针对 #30 的审查补充修复临时文件故障分类：创建、上传复制或校验读取发生 I/O 故障时，
+返回安全的 `503 KNOWLEDGE_STORAGE_UNAVAILABLE`；畸形 UTF-8 仍返回 `400 INVALID_PARAMETER`。
+异常响应不包含原始诊断，已创建的临时副本继续释放。API 文档已有该 503 契约，无需修改接口。
+
+先添加创建与复制故障回归测试并执行
+`python -B scripts/verify-knowledge-backend.py --tests DocumentValidatorTest`：7 项中 2 项失败，
+均复现预期 503、实际 400。修复后增加校验读取故障测试并执行
+`python -B scripts/verify-knowledge-backend.py --tests DocumentValidatorTest,DocumentServiceTest,UploadTempFilesTest`：
+三组共 14 项通过，零失败、零错误、零跳过，其中 `DocumentValidatorTest` 现在为 8 项。
+两次命令均先设置 `JAVA_HOME` 为宿主 JDK 21，再使用上述固定 Linux JRE。
+
+上述为匹配本次修复的局部验证；前文 122 项完整结果属于初验，未作为补充修复后的全量结果。
+最新提交的完整 CI 状态以 #30 的 Checks 为准。
+
 ## 风险、运行前置与回滚
 
 唯一 PUT 的结果未知且对象缺失时，容量与定位可能持续保留，直到取得可信结束证据；五次重试耗尽不伪装为失败清理成功。

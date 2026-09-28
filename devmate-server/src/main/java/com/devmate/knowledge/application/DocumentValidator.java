@@ -54,6 +54,8 @@ public class DocumentValidator {
                         if (!Character.isWhitespace(value) && !Character.isSpaceChar(value)) content = true;
                     }
                 }
+            } catch (CharacterCodingException error) {
+                throw invalid();
             }
             if (!content) throw invalid();
             String sha = HexFormat.of().formatHex(hash.digest());
@@ -66,7 +68,7 @@ public class DocumentValidator {
             return new ValidatedDocument(path, filename, type, length, sha, HexFormat.of().formatHex(digest().digest(bytes.toByteArray())));
         } catch (IOException error) {
             if (path != null) temporary.release(path);
-            throw invalid();
+            throw new BusinessException(ErrorCode.KNOWLEDGE_STORAGE_UNAVAILABLE);
         } catch (RuntimeException error) {
             if (path != null) temporary.release(path);
             throw error;
