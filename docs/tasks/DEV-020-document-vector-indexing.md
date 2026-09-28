@@ -1,5 +1,8 @@
 # DEV-020：文档向量索引与有界恢复
 
+执行确认（2026-09-28）：所有者已明确回复“接受 ADR 0007 和上述全部提议，执行 DEV-020”。
+原任务验收标准保留；实现/API/实际验证见[索引验收记录](../testing/document-indexing-acceptance.md)。
+
 ## 输入与启动条件
 
 前置：[DEV-019 证据](../testing/embedding-index-preflight-acceptance.md)、

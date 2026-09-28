@@ -5,11 +5,13 @@ on:
     branches: [develop]
     paths:
       - scripts/embedding-preflight/**
+      - scripts/embedding-service/**
       - .github/workflows/embedding-preflight.yml
   push:
     branches: [develop]
     paths:
       - scripts/embedding-preflight/**
+      - scripts/embedding-service/**
       - .github/workflows/embedding-preflight.yml
   workflow_dispatch:
 
@@ -39,6 +41,7 @@ jobs:
           tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_offline.py
           tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_download_cache.py
           tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_http.py
+          tmp/dev-019/ci/bin/python -B scripts/embedding-service/test_service.py
       - name: Pull locked isolated database images
         run: python3 -B scripts/embedding-preflight/pull_images.py
       - name: Verify real Qdrant and MySQL contracts

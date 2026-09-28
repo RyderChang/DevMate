@@ -32,12 +32,12 @@ DEV-017 实现，受 [ADR 0005](../adr/0005-bound-processing-replays-and-retriev
 
 统一响应的 `data` 包含：
 
-| 字段            | 含义                                              |
-| --------------- | ------------------------------------------------- |
-| `latest`        | 最近一次处理记录；从未处理时为 null               |
-| `active`        | 当前完整发布的处理代；尚无完整代或已撤销时为 null |
-| `positionBasis` | 固定 `NORMALIZED_UNICODE_CODE_POINT`              |
-| `indexed`       | 当前固定 false；`CHUNKED` 不代表已索引            |
+| 字段            | 含义                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| `latest`        | 最近一次处理记录；从未处理时为 null                                       |
+| `active`        | 当前完整发布的处理代；尚无完整代或已撤销时为 null                         |
+| `positionBasis` | 固定 `NORMALIZED_UNICODE_CODE_POINT`                                      |
+| `indexed`       | 索引启用且当前处理代具备完整活动索引时为 true；`CHUNKED` 本身不代表已索引 |
 
 `latest` / `active` 的摘要字段为 `processingId`、`generation`、`state`、`sourceSha256`、
 `normalizedSha256`、`parserVersion`、`strategyVersion`、`chunkCount`、`textBytes`、`errorCode`。
@@ -46,7 +46,8 @@ DEV-017 实现，受 [ADR 0005](../adr/0005-bound-processing-replays-and-retriev
 暂存期间的数量仅是进度元数据，不能据此读取正文。
 
 接口不返回正文、文件名、对象 key、租约、内部诊断或片段列表。内部 `ProcessingTransactions.readActive`
-再次锁定有效归属和父文档，仅读取完整活动代，每页最多 100 块；没有对外片段、预览、下载、索引端点。
+再次锁定有效归属和父文档，仅读取完整活动代，每页最多 100 块；没有对外片段、预览或下载端点。
+显式索引与状态见[文档索引合同](document-indexing.md)，处理发布不自动触发索引。
 
 ## 限制与错误
 

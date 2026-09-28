@@ -39,6 +39,12 @@ logging:
 
 devmate:
   knowledge:
+    indexing:
+      enabled: ${KNOWLEDGE_INDEXING_ENABLED:false}
+      scheduling-enabled: ${KNOWLEDGE_INDEXING_SCHEDULING_ENABLED:true}
+      model-origin: ${EMBEDDING_LOCAL_ORIGIN:http://127.0.0.1:8091}
+      vector-origin: ${QDRANT_LOCAL_ORIGIN:http://127.0.0.1:6333}
+      collection: ${QDRANT_INDEX_COLLECTION:devmate_qwen3_v1}
     processing:
       enabled: ${KNOWLEDGE_PROCESSING_ENABLED:false}
       scheduling-enabled: ${KNOWLEDGE_PROCESSING_SCHEDULING_ENABLED:true}

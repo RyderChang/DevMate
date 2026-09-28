@@ -7,6 +7,10 @@ AI 调用元数据表；前端已具备认证、项目 CRUD 与同步对话页�
 Responses 与 DeepSeek 官方 Chat Completions 适配器；knowledge 已接入私有 MinIO 原文件存储。
 项目成员、GitHub 绑定、Redis 业务和 RAG 尚未实现。
 
+DEV-020 增加默认关闭的显式文档索引与状态 API、固定本地 Embedding/JDK 合同及 Qdrant 投影。
+配置与受控 Linux 模型复现见[索引运行说明](../docs/development/document-indexing.md)，
+实际验证与限制见[索引验收记录](../docs/testing/document-indexing-acceptance.md)。处理不自动索引，当前不提供检索。
+
 完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
 阶段验证状态见[第一阶段验收记录](../docs/testing/foundation-acceptance.md)和
 [第二阶段对话验收记录](../docs/testing/ai-conversation-acceptance.md)。本地模型 Stub 不需要真实模型账户。
