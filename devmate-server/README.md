@@ -154,7 +154,7 @@ GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_EN
 `store=false`、`stream=false`，不启用工具或提供商托管会话。AI 默认关闭时，读取和管理对话仍可用，
 生成接口返回 `503 AI_SERVICE_DISABLED`。
 
-完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V6 migration、
+完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V7 migration、
 Mapper、认证授权和项目 API 集成测试。合并前应在 Docker 可用的环境执行本 README 的 Maven
 Wrapper 命令。
 
@@ -162,7 +162,7 @@ Wrapper 命令。
 
 提供 `POST/GET /projects/{projectId}/documents` 和 `GET/DELETE /projects/{projectId}/documents/{documentId}`。
 完整字段、权限、错误和 UUID 重放语义见[文档 API](../docs/api/knowledge-documents.md)。仅接受 UTF-8 txt/md，
-单文件 5 MiB、请求 6 MiB、项目 100 份/100 MiB。`STORED` 只代表原文件完成；无解析、向量、文档页面或下载 URL。
+单文件 5 MiB、请求 6 MiB、项目 100 份/100 MiB。`STORED` 只代表原文件完成；解析须显式触发，向量、文档页面和下载 URL 尚未接入。
 
 knowledge 默认关闭，无存储凭据也能启动。启用时由环境先准备私有 bucket，并给应用最小的对象 PUT/GET/DELETE
 及 bucket HEAD 权限（用于区分对象缺失和 bucket 故障）；应用不创建 bucket 或更改策略。
@@ -187,3 +187,20 @@ knowledge 默认关闭，无存储凭据也能启动。启用时由环境先准�
 配置修改通过重启生效。关闭功能仍允许授权元数据查询、删除标记和临时文件清理，暂停对象清理；重新启用后扫描
 持久记录。未知写入结果持续占容量，不能凭租约过期或一次 HEAD 缺失清账。人工重试、备份与回滚见开发指南。
 生产适配器采用锁定 AWS SDK 2.55.6 同步 S3/URLConnection，仅声明已测试的 MinIO 组合，未验证其他服务商。
+
+## 文档解析与分块
+
+新增 `POST/GET /projects/{projectId}/documents/{documentId}/processing`，详细字段及重放规则见
+[处理 API](../docs/api/document-processing.md)。只处理已存储 txt/md；严格 UTF-8、BOM/换行规范化与固定字符窗口，
+位置是规范化文本的 Unicode code point 半开区间，分块目标 1,000、边界下限 800、硬上限 1,200、重叠 100。
+`CHUNKED` 只表示完整片段发布，尚无 Embedding、Qdrant 或 RAG。
+
+`KNOWLEDGE_PROCESSING_ENABLED` 独立默认 `false`，还要求原文件存储开关开启；上传不自动处理。
+`KNOWLEDGE_PROCESSING_SCHEDULING_ENABLED` 默认 `true`，隔离测试可关闭定时扫描。
+其余处理参数固定：每 60 秒扫描最多 20 条，实例并发最多 2，30 秒读取/解析截止，2 分钟租约，
+暂时读取故障最多三次重试（1/2/4 分钟）。每代至多 8,192 块/8 MiB，项目至多 256 MiB 文本与预留。
+同文档至多两代；请求映射每文档 100、每用户/项目 10,000 条。
+
+完整清单验证后才切换活动代，分批暂存不可见。文档及项目删除立即取消处理；派生清理完成前保留父文档，
+防止原文件先删除导致丢失恢复依据。关闭处理暂停领取并使旧尝试失效，数据库片段清理仍可继续。
+实际验证和兼容回滚见[验收记录](../docs/testing/document-processing-acceptance.md)。

@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface DocumentMapper {
+    @Select("SELECT id FROM knowledge_documents WHERE owner_user_id=#{owner} AND project_id=#{project} ORDER BY id LIMIT 100")
+    List<Long> allProjectDocuments(@Param("owner") long owner, @Param("project") long project);
     @Select("SELECT * FROM knowledge_documents WHERE id=#{id}")
     DocumentRow find(long id);
 

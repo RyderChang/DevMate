@@ -16,7 +16,7 @@ new corrective migration; Flyway `clean` is disabled and must never be used for 
 `V5__create_conversations_and_ai_invocations.sql` adds application-managed conversations,
 visible messages, generation leases, and auditable AI invocation metadata.
 
-The latest migration is `V6__create_knowledge_document_storage.sql`. It adds document metadata,
+`V6__create_knowledge_document_storage.sql` adds document metadata,
 per-project capacity reservations, and UUID/fingerprint mappings with 24-hour terminal retention.
 Composite foreign keys enforce user/project ownership. Check constraints reject unknown states,
 invalid digests, negative bytes and out-of-range counters. Indexes serve owner/project lists,
@@ -31,3 +31,12 @@ Rollback disables new storage operations while retaining pending records and pri
 Do not drop these tables, clear the bucket or edit an applied migration. Correct shared schemas
 with a new migration and resume cleanup after compatible application recovery. Application rollback
 cannot restore physically deleted content; backup retention is an operator policy.
+
+The latest migration is `V7__create_document_processing.sql`. It adds processing generations,
+bounded UTF-8 chunks, request replay retention and project chunk capacity. Composite foreign keys,
+position/byte checks, generation/ordinal uniqueness and a unique active document projection protect
+ownership and publication. The document stores its explicit active generation reference.
+Reservations and staging bytes share one capacity charge. Retirement and deletion retain the parent
+until all derived content and reservations are cleaned. Original V1–V6 files remain immutable.
+Disable processing for rollback, retain V7 and use application code that understands this cleanup
+handoff. A pre-V7 application cannot safely perform the new parent cleanup.

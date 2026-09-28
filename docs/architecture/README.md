@@ -27,3 +27,10 @@ knowledge 通过 project 公开应用服务检查所有权、锁定项目并分�
 原文件在私有对象存储，MySQL 管理归属、状态、幂等和容量。短事务预留/提交，远端 PUT/DELETE 在事务外；
 恢复仅为模块内有界扫描，尚未建立通用任务平台。唯一 PUT 的完成证据和条件更新保证未知结果保留、终态不复活。
 落实边界见 [ADR 0003](../adr/0003-knowledge-document-storage-and-recovery.md) 和[验收记录](../testing/knowledge-document-storage-acceptance.md)。
+
+DEV-017 继续在 knowledge 内提供显式文本处理和持久化有界扫描。MySQL 保存版本化片段、
+处理状态、活动代、请求映射与文本额度，只有完整发布代可授权读取。
+项目删除通过同步公开事件在同事务持久化取消，数据库扫描承担后续清理与恢复；
+删除和发布共用项目/文档锁，原文件先清理时仍保留父文档直到派生内容清理结束。
+解析使用固定 Unicode 字符窗口，不接入模型、向量投影或通用队列。
+接口与验证见[处理 API](../api/document-processing.md)和[DEV-017 验收记录](../testing/document-processing-acceptance.md)。

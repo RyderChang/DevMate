@@ -59,9 +59,9 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     @Test
     void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("7");
         assertThat(flyway.info().current().getScript())
-                .isEqualTo("V6__create_knowledge_document_storage.sql");
+                .isEqualTo("V7__create_document_processing.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
@@ -77,7 +77,8 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(tables).containsExactlyInAnyOrder(
                 "flyway_schema_history", "users", "role", "permission", "user_role", "role_permission",
                 "projects", "conversations", "conversation_messages", "ai_invocations",
-                "knowledge_document_requests", "knowledge_documents", "knowledge_project_capacity");
+                "knowledge_document_requests", "knowledge_documents", "knowledge_project_capacity",
+                "knowledge_processing_capacity", "knowledge_processing", "knowledge_processing_requests", "knowledge_chunks");
     }
 
     @Test

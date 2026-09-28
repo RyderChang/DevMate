@@ -27,10 +27,12 @@ public class DocumentTransactions {
     private final ProjectService projects;
     private final KnowledgeProperties properties;
     private final Clock clock;
+    private final ProcessingTransactions processing;
 
     public DocumentTransactions(DocumentMapper mapper, ProjectService projects, KnowledgeProperties properties,
-                                @Qualifier("knowledgeClock") Clock clock) {
+                                @Qualifier("knowledgeClock") Clock clock, ProcessingTransactions processing) {
         this.mapper = mapper; this.projects = projects; this.properties = properties; this.clock = clock;
+        this.processing = processing;
     }
 
     @Transactional
@@ -113,6 +115,7 @@ public class DocumentTransactions {
         projects.lockOwnedActiveProject(owner, project);
         DocumentRow row = mapper.lockOwned(owner, project, id);
         if (row == null || row.ownerUserId != owner || row.projectId != project) throw conflict(ErrorCode.DOCUMENT_NOT_FOUND);
+        processing.cancelDocument(id);
         if (row.storageState == DELETE_PENDING) return;
         change(row, value -> {
             value.storageState = DELETE_PENDING;
@@ -129,6 +132,7 @@ public class DocumentTransactions {
         for (long id : ids) {
             DocumentRow row = mapper.lock(id);
             if (row == null || row.storageState == DELETE_PENDING) continue;
+            processing.cancelDocument(id);
             change(row, value -> {
                 value.storageState = DELETE_PENDING; value.errorCode = "PROJECT_DELETED";
                 value.nextAttemptAt = now();
@@ -174,6 +178,10 @@ public class DocumentTransactions {
     public boolean completeCleanup(DocumentRow claim) {
         DocumentRow row = internalLock(claim.id);
         if (!owns(row, claim) || row.remotePhase != FINISHED || (row.storageState != FAILED && row.storageState != DELETE_PENDING)) return false;
+        if (!processing.removeForParent(row.id)) {
+            change(row, value -> { clearLease(value); value.nextAttemptAt = now().plusSeconds(60); });
+            return false;
+        }
         if (mapper.terminateRequest(row.id, row.storageState == FAILED ? "FAILED" : "DELETED", now().plusHours(24)) != 1
                 || mapper.releaseCapacity(row.ownerUserId, row.projectId, row.byteSize) != 1
                 || mapper.remove(row.id, row.operationVersion, row.storageState.name()) != 1) throw conflict(ErrorCode.INTERNAL_ERROR);

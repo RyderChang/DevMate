@@ -29,7 +29,7 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ProjectService(mapper);
+        service = new ProjectService(mapper, org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
     }
 
     @Test

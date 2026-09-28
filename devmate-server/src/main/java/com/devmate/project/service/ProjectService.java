@@ -15,6 +15,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.context.ApplicationEventPublisher;
 
 @Service
 public class ProjectService {
@@ -22,9 +23,11 @@ public class ProjectService {
     public static final int MAX_PAGE_SIZE = 100;
 
     private final ProjectMapper projectMapper;
+    private final ApplicationEventPublisher events;
 
-    public ProjectService(ProjectMapper projectMapper) {
+    public ProjectService(ProjectMapper projectMapper, ApplicationEventPublisher events) {
         this.projectMapper = projectMapper;
+        this.events = events;
     }
 
     @Transactional
@@ -77,6 +80,7 @@ public class ProjectService {
         if (projectMapper.softDeleteOwnedActive(projectId, currentUserId) == 0) {
             throw projectNotFound();
         }
+        events.publishEvent(new ProjectDeleted(currentUserId, projectId));
     }
 
     @Transactional(readOnly = true)

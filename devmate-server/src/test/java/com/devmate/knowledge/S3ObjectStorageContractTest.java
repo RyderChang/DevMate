@@ -75,10 +75,47 @@ class S3ObjectStorageContractTest {
             }
             ByteArrayOutputStream limited = new ByteArrayOutputStream();
             assertThatThrownBy(() -> storage.read(location, size - 1, limited)).isInstanceOf(StorageFailure.class);
+            assertThatThrownBy(() -> storage.read(location, size - 1, limited)).isInstanceOfSatisfying(StorageFailure.class,
+                    error -> assertThat(error.retryableRead()).isFalse());
             assertThat(limited.size()).isLessThanOrEqualTo(size - 1);
             storage.delete(location); storage.delete(location);
             assertThat(storage.inspect(location, size, sha, token)).isEqualTo(Verification.missing());
         }
+    }
+
+    @Test void productionReadFeedsStrictStreamingParserWithOriginalIntegrityAndNormalizedUnicodePositions() throws Exception {
+        String text = "\ufeff" + "😀中\r\n\r\n[link](https://example.invalid)\n".repeat(150);
+        byte[] input=text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var location=location(); Path file=directory.resolve(UUID.randomUUID().toString()); Files.write(file,input);
+        storage.put(location,file,input.length,sha(input),UUID.randomUUID().toString());
+        var parser=new TextChunker(input.length,sha(input),System.nanoTime()+30_000_000_000L,System::nanoTime);
+        storage.read(location,TextChunker.MAX_SOURCE_BYTES,parser); var result=parser.finish();
+        String normalized=text.substring(1).replace("\r\n","\n").replace('\r','\n');
+        assertThat(result.normalizedSha256()).isEqualTo(sha(normalized.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        int[] points=normalized.codePoints().toArray();
+        for (TextChunk chunk : result.chunks()) assertThat(chunk.text()).isEqualTo(new String(points,chunk.start(),chunk.end()-chunk.start()));
+        var wrong=new TextChunker(input.length,"a".repeat(64),System.nanoTime()+30_000_000_000L,System::nanoTime);
+        storage.read(location,TextChunker.MAX_SOURCE_BYTES,wrong);
+        assertThatThrownBy(wrong::finish).isInstanceOfSatisfying(ProcessingFailure.class,error -> assertThat(error.code()).isEqualTo("INTEGRITY_MISMATCH"));
+        storage.delete(location);
+    }
+
+    @Test void readDeadlineIsBoundedAndTimedOutReadHasOneAttempt() throws Exception {
+        var requests=new AtomicInteger(); var release=new CountDownLatch(1);
+        var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+        server.createContext("/",exchange -> {
+            requests.incrementAndGet();
+            try { release.await(5,TimeUnit.SECONDS); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+            exchange.close();
+        }); server.start();
+        try (var timedOut=new S3ObjectStorage(shortSettings(server))) {
+            assertThatThrownBy(() -> timedOut.read(location(),32,new ByteArrayOutputStream())).isInstanceOfSatisfying(StorageFailure.class,error -> {
+                assertThat(error.errorCode()).isEqualTo(com.devmate.common.api.ErrorCode.KNOWLEDGE_STORAGE_TIMEOUT);
+                assertThat(error.retryableRead()).isTrue(); assertThat(error.getCause()).isNull();
+            });
+            assertThat(requests.get()).isOne();
+        } finally { release.countDown(); server.stop(0); }
     }
 
     @Test void integrityInspectionUsesBytesRatherThanEtagOrClientMetadata() throws Exception {
