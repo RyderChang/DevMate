@@ -10,9 +10,9 @@ def main():
     required = {"com.devmate.knowledge." + name for name in (
         "DocumentApiIntegrationTest", "DocumentHttpIntegrationTest", "DocumentLifecycleIntegrationTest",
         "DocumentServiceTest", "DocumentValidatorTest", "KnowledgePropertiesTest",
-        "S3ObjectStorageContractTest", "UploadTempFilesTest")}
+        "S3ObjectStorageContractTest", "UploadTempFilesTest", "TextChunkerTest", "DocumentProcessingIntegrationTest", "ProcessingServiceTest")}
     if not required.issubset(suites):
-        raise RuntimeError("Required DEV-016 test suites are missing")
+        raise RuntimeError("Required knowledge storage/processing test suites are missing")
     totals = {key: sum(int(suite.attrib[key]) for suite in suites.values())
               for key in ("tests", "failures", "errors", "skipped")}
     if any(int(suites[name].attrib["tests"]) < 1 for name in required) or any(totals[key] for key in ("failures", "errors", "skipped")):

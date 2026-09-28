@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableScheduling
-@EnableConfigurationProperties(KnowledgeProperties.class)
+@EnableConfigurationProperties({KnowledgeProperties.class, ProcessingProperties.class})
 public class KnowledgeConfiguration {
     @Bean("knowledgeClock") Clock knowledgeClock() { return Clock.systemUTC(); }
     @Bean(destroyMethod = "close")

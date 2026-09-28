@@ -22,7 +22,9 @@ GitHub 集成首版只读。系统不会自动修改、执行或合并用户代�
 OpenAI Responses 首个适配器和项目对话后端；DEV-014 已实现前端同步对话，DEV-015 建立隔离联调与
 验收基线。第二阶段于 2026-09-27 经所有者确认收口，依据见[验收记录](../testing/ai-conversation-acceptance.md)。
 DEV-016 已实现默认关闭的 UTF-8 txt/md 原文件接入、私有对象存储、授权元数据与持久化补偿；
-`STORED` 仅表示原文件存储成功。解析、向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。
+`STORED` 仅表示原文件存储成功。DEV-017 已落实显式文本解析与版本化片段，`CHUNKED` 仅表示整代片段发布；
+向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。实际验证见
+[DEV-017 验收记录](../testing/document-processing-acceptance.md)。
 
 ## 核心非功能要求
 

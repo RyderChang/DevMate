@@ -74,9 +74,17 @@ public final class S3ObjectStorage implements ObjectStorage {
     }
     @Override public void read(ObjectLocation location, long maximumBytes, OutputStream destination) {
         if (maximumBytes < 1 || maximumBytes > 5L * 1024 * 1024) throw new IllegalArgumentException("Invalid internal read limit");
-        try { client.getObject(request -> request.bucket(location.bucket()).key(location.key()),
-                ResponseTransformer.toOutputStream(new DigestOutput(maximumBytes, destination))); }
-        catch (RuntimeException error) { throw safe(error, false); }
+        try { client.getObject(request -> request.bucket(location.bucket()).key(location.key()), (response, input) -> {
+            if (response.contentLength() > maximumBytes) throw StorageFailure.invalidRead();
+            try { input.transferTo(new DigestOutput(maximumBytes, destination)); }
+            catch (ReadLimitExceeded error) { throw StorageFailure.invalidRead(); }
+            return response;
+        }); }
+        catch (RuntimeException error) {
+            for (Throwable cause = error; cause != null; cause = cause.getCause())
+                if (cause instanceof StorageFailure failure) throw failure;
+            throw safe(error, false);
+        }
     }
     private boolean authoritativeRejection(RuntimeException error) {
         return error instanceof S3Exception s3 && (s3.statusCode() == 400 || s3.statusCode() == 401 || s3.statusCode() == 403 || s3.statusCode() == 404);
@@ -101,8 +109,11 @@ public final class S3ObjectStorage implements ObjectStorage {
         }
         @Override public void write(int value) throws IOException { write(new byte[]{(byte) value}, 0, 1); }
         @Override public void write(byte[] data, int offset, int length) throws IOException {
-            if (count + length > maximum) throw new IOException("Internal object read limit exceeded");
+            if (count + length > maximum) throw new ReadLimitExceeded();
             destination.write(data, offset, length); hash.update(data, offset, length); count += length;
         }
+    }
+    private static final class ReadLimitExceeded extends IOException {
+        ReadLimitExceeded() { super("Internal object read limit exceeded"); }
     }
 }

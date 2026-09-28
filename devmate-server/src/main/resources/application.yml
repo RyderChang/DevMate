@@ -39,6 +39,9 @@ logging:
 
 devmate:
   knowledge:
+    processing:
+      enabled: ${KNOWLEDGE_PROCESSING_ENABLED:false}
+      scheduling-enabled: ${KNOWLEDGE_PROCESSING_SCHEDULING_ENABLED:true}
     enabled: ${KNOWLEDGE_ENABLED:false}
     allow-local-http: ${KNOWLEDGE_ALLOW_LOCAL_HTTP:false}
     endpoint: ${KNOWLEDGE_ENDPOINT:}

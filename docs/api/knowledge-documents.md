@@ -81,5 +81,7 @@
 | 504       | `KNOWLEDGE_STORAGE_TIMEOUT`                                                                                                  |
 
 进入 trace filter 后的请求返回服务端生成的 `X-Trace-Id`；认证层提前拒绝的请求不保证该头。
-不提供原文件下载、预览或公开 URL。受限读取仅是内部存储边界，未来解析调用方仍须校验业务归属。
+不提供原文件下载、预览或公开 URL。受限读取仅是内部存储边界，DEV-017 解析调用方会再次校验业务归属。
+显式处理契约见[处理 API](document-processing.md)。删除会在同事务取消处理并撤销活动代；
+原文件即使先清理，父文档和原文件额度仍保留到派生片段、处理预留与恢复依据清完，再物理清账。
 OpenAPI 位于已认证的 `/v3/api-docs`，运行配置与人工处理见[本地开发指南](../development/local-development.md)。
