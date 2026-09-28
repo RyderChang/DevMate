@@ -2,9 +2,9 @@
 
 DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源、HikariCP、Flyway、
 MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
-以及按用户隔离的项目空间和项目对话 API。Flyway 负责创建认证、授权、项目、对话、消息与
+以及按用户隔离的项目空间、项目对话和知识文档元数据 API。Flyway 负责创建认证、授权、项目、对话、消息与
 AI 调用元数据表；前端已具备认证、项目 CRUD 与同步对话页面。AI Gateway 当前提供默认关闭的 OpenAI
-Responses 适配器，项目成员、GitHub 绑定、文件存储、Redis 业务和 RAG 尚未实现。
+Responses 适配器；knowledge 已接入私有 MinIO 原文件存储。项目成员、GitHub 绑定、Redis 业务和 RAG 尚未实现。
 
 完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
 阶段验证状态见[第一阶段验收记录](../docs/testing/foundation-acceptance.md)和
@@ -21,13 +21,16 @@ Responses 适配器，项目成员、GitHub 绑定、文件存储、Redis 业务
 
 在仓库根目录执行：
 
+首次运行完整测试须先按[存储核验指南](../docs/development/storage-preflight.md)构建固定 MinIO 测试镜像。
+Foundation Backend CI 从锁定源码构建镜像，再执行完整 `clean verify` 并检查必需验收报告。
+
 ```bash
 ./devmate-server/mvnw -f devmate-server/pom.xml test
 ./devmate-server/mvnw -f devmate-server/pom.xml clean package
 ./devmate-server/mvnw -f devmate-server/pom.xml dependency:tree
 ```
 
-数据库集成测试固定使用 `mysql:8.4.6`，创建临时空库并由 Flyway 迁移。测试连接信息由
+数据库集成测试固定使用 digest 锁定的 `mysql:8.4.6`，创建临时空库并由 Flyway 迁移。测试连接信息由
 测试基类的 `DynamicPropertySource` 注入，不读取 dev/prod 数据库凭据；无需预装
 MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试会失败而不会静默跳过。
 
@@ -151,6 +154,36 @@ GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_EN
 `store=false`、`stream=false`，不启用工具或提供商托管会话。AI 默认关闭时，读取和管理对话仍可用，
 生成接口返回 `503 AI_SERVICE_DISABLED`。
 
-完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V5 migration、
+完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V6 migration、
 Mapper、认证授权和项目 API 集成测试。合并前应在 Docker 可用的环境执行本 README 的 Maven
 Wrapper 命令。
+
+## 知识文档接入
+
+提供 `POST/GET /projects/{projectId}/documents` 和 `GET/DELETE /projects/{projectId}/documents/{documentId}`。
+完整字段、权限、错误和 UUID 重放语义见[文档 API](../docs/api/knowledge-documents.md)。仅接受 UTF-8 txt/md，
+单文件 5 MiB、请求 6 MiB、项目 100 份/100 MiB。`STORED` 只代表原文件完成；无解析、向量、文档页面或下载 URL。
+
+knowledge 默认关闭，无存储凭据也能启动。启用时由环境先准备私有 bucket，并给应用最小的对象 PUT/GET/DELETE
+及 bucket HEAD 权限（用于区分对象缺失和 bucket 故障）；应用不创建 bucket 或更改策略。
+禁止日志记录文件名、正文、bucket/key、凭据或 SDK 诊断；不要在运行环境启用 SQL/SDK wire 调试日志。
+
+| 环境变量                                                                                    | 默认值与用途                                                                 |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `KNOWLEDGE_ENABLED`                                                                         | `false`；启用上传与远端恢复                                                  |
+| `KNOWLEDGE_ENDPOINT`                                                                        | 空；启用时必填，生产 profile 强制 HTTPS                                      |
+| `KNOWLEDGE_ALLOW_LOCAL_HTTP`                                                                | `false`；仅隔离本地环境可显式启用                                            |
+| `KNOWLEDGE_REGION`                                                                          | `us-east-1`                                                                  |
+| `KNOWLEDGE_BUCKET`                                                                          | 空；环境创建的私有 bucket                                                    |
+| `KNOWLEDGE_ACCESS_KEY` / `KNOWLEDGE_SECRET_KEY`                                             | 空；服务端环境注入，不输出、不入库                                           |
+| `KNOWLEDGE_MAX_FILE_BYTES` / `KNOWLEDGE_MAX_REQUEST_BYTES`                                  | `5242880` / `6291456`，只允许在硬上限内收紧                                  |
+| `KNOWLEDGE_MAX_DOCUMENTS` / `KNOWLEDGE_MAX_PROJECT_BYTES`                                   | `100` / `104857600`，含所有未清理预留                                        |
+| `KNOWLEDGE_TEMP_MAX_BYTES` / `KNOWLEDGE_TEMP_DIRECTORY`                                     | `268435456` / JVM 临时目录下 `devmate-knowledge`；私有实例目录与共享持久预算 |
+| `KNOWLEDGE_MAX_CONCURRENT_UPLOADS`                                                          | `4`，实例上限，解析 multipart 前领取                                         |
+| `KNOWLEDGE_CONNECT_TIMEOUT` / `KNOWLEDGE_READ_TIMEOUT` / `KNOWLEDGE_OPERATION_TIMEOUT`      | `PT2S` / `PT10S` / `PT30S`；每个 SDK 操作最多一次尝试                        |
+| `KNOWLEDGE_OPERATION_LEASE`                                                                 | `PT2M`；必须比总操作超时至少多 30 秒                                         |
+| `KNOWLEDGE_SCAN_INTERVAL` / `KNOWLEDGE_SCAN_BATCH_SIZE` / `KNOWLEDGE_MAX_AUTOMATIC_RETRIES` | `PT60S` / `50` / `5`，退避 1/2/4/8/16 分钟                                   |
+
+配置修改通过重启生效。关闭功能仍允许授权元数据查询、删除标记和临时文件清理，暂停对象清理；重新启用后扫描
+持久记录。未知写入结果持续占容量，不能凭租约过期或一次 HEAD 缺失清账。人工重试、备份与回滚见开发指南。
+生产适配器采用锁定 AWS SDK 2.55.6 同步 S3/URLConnection，仅声明已测试的 MinIO 组合，未验证其他服务商。

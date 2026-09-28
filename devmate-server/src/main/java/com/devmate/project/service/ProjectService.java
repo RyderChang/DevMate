@@ -8,11 +8,13 @@ import com.devmate.project.dto.UpdateProjectRequest;
 import com.devmate.project.entity.ProjectEntity;
 import com.devmate.project.mapper.ProjectMapper;
 import com.devmate.project.vo.ProjectResponse;
+import com.devmate.project.vo.DeletedProjectReference;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 @Service
 public class ProjectService {
@@ -80,6 +82,28 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public void requireOwnedActiveProject(Long currentUserId, Long projectId) {
         findOwnedActiveProject(currentUserId, projectId);
+    }
+
+    /** Serializes dependent reservations and completion with project soft deletion. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lockOwnedActiveProject(Long currentUserId, Long projectId) {
+        if (!lockProjectForMaintenance(currentUserId, projectId)) throw projectNotFound();
+    }
+
+    /** Internal boundary for durable cleanup; deleted projects remain addressable internally. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean lockProjectForMaintenance(Long ownerUserId, Long projectId) {
+        requireCurrentUser(ownerUserId);
+        requireProjectId(projectId);
+        ProjectEntity project = projectMapper.lockOwnedById(projectId, ownerUserId);
+        if (project == null) throw projectNotFound();
+        return !Boolean.TRUE.equals(project.getDeleted());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeletedProjectReference> deletedProjectsForMaintenance(long afterId, int limit) {
+        if (afterId < 0 || limit < 1 || limit > 50) throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+        return projectMapper.deletedPage(afterId, limit);
     }
 
     private ProjectEntity findOwnedActiveProject(Long currentUserId, Long projectId) {

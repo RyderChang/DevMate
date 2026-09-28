@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -36,7 +37,7 @@ public class ConversationTransactionService {
     public ConversationTransactionService(ProjectService projectService, ConversationMapper conversationMapper,
                                           ConversationMessageMapper messageMapper,
                                           AiInvocationMapper invocationMapper, AiGateway aiGateway,
-                                          AiProperties properties, Clock clock) {
+                                          AiProperties properties, @Qualifier("conversationClock") Clock clock) {
         this.projectService = projectService;
         this.conversationMapper = conversationMapper;
         this.messageMapper = messageMapper;
