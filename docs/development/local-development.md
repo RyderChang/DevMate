@@ -1,9 +1,9 @@
 # 本地开发与验收
 
 DEV-016 的 SDK、MinIO 镜像及隔离运行组合见[实施前核验记录](storage-preflight.md)；
-其核验工具独立运行，不会启用文档接入或改变本文的既有环境。
+其核验工具独立运行。文档上传默认关闭；启用方式与完整验证见下方知识文档章节。
 
-适用于认证、项目空间和项目内同步对话；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
+适用于认证、项目空间、项目内同步对话和原文件接入；常规开发不启动真实 AI、Redis、Qdrant 或对象存储。先阅读
 [后端说明](../../devmate-server/README.md)、[前端说明](../../devmate-web/README.md)和
 [验收记录](../testing/foundation-acceptance.md)。
 
@@ -301,3 +301,81 @@ git diff --check
 `stop` 逐一验证标签后删除上述本任务容器、匿名数据库卷及专用网络；合成数据将不可恢复。
 不用于需保留的环境，不执行全局 prune。关闭设置了前端代理变量的终端，或恢复原值。
 若 npm 默认镜像不支持审计，使用 `npm audit --registry=https://registry.npmjs.org`，不修改用户全局配置或 lockfile。
+
+## 知识文档接入与存储验收
+
+上传默认关闭。完整自动测试先从锁定源码构建隔离 MinIO 镜像；详情见[准备记录](storage-preflight.md)，
+SDK 2.55.6、Go 工具链、镜像摘要和既有依赖不因本次功能实施而升级。
+
+```bash
+python3 -B scripts/storage-preflight/build-minio.py
+python3 -B scripts/storage-preflight/verify.py
+./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify
+python3 -B scripts/check-knowledge-test-reports.py
+python3 scripts/summarize-tests.py
+```
+
+Foundation Backend 在 Linux JDK 21 上执行上述源码构建与完整 Maven 测试，必需的八组 knowledge 测试缺失、失败或跳过
+均不通过。数据库、对象存储、端口、bucket 和凭据均由测试隔离创建；不调用私人账户。
+测试密码与 JWT secret 运行时生成，报告仅发布类名和计数，不上传原始 XML、SQL、Docker inspect 或 SDK 日志。
+
+本次 Windows Oracle JDK 21 的 loopback 不可用，因此本机使用以下替代命令，未跳过实际集成测试：
+
+```powershell
+$env:JAVA_HOME = 'C:/Program Files/Java/jdk-21'
+$env:PATH = $env:JAVA_HOME + '/bin;' + $env:PATH
+python -B scripts/verify-knowledge-backend.py
+```
+
+脚本先用宿主 JDK 21 `clean package -DskipTests` 编译主程序及测试，再在准备记录固定的 Linux Temurin 21.0.12
+**JRE** 容器内执行离线 `surefire:test`，检查所有报告零失败、零错误、零跳过。编译阶段的 `-DskipTests` 只是推迟执行，
+不是验收豁免。该镜像没有 javac，不能宣称在其中执行了 `clean verify`。CI 仍使用 JDK 的完整 `clean verify`。
+可用 `--tests DocumentLifecycleIntegrationTest,DocumentHttpIntegrationTest` 做开发局部检查，但不能代替完整验收。
+忽略目录 `tmp/dev-016` 的原始日志仅供本地排错。
+
+### 启用隔离手工上传
+
+继续使用上文隔离 MySQL 与 JWT 配置。先由受控管理会话在隔离 MinIO 创建私有 bucket，核对匿名 GET 被拒绝；
+应用账户仅获该 bucket 的 `s3:PutObject`、`s3:GetObject`、`s3:DeleteObject` 及 bucket HEAD 所需 `s3:ListBucket`，
+对象权限限制在 `users/*`。应用不拥有 bucket 创建或策略修改权限。测试镜像仅用于隔离测试，不指定生产存储方案。
+
+在当前 shell 注入 `KNOWLEDGE_ENABLED=true`、endpoint、bucket、region 和运行时生成的存储凭据；变量表见
+[后端说明](../../devmate-server/README.md)。隔离 loopback HTTP 显式设置 `KNOWLEDGE_ALLOW_LOCAL_HTTP=true`；
+生产必须使用 `prod` profile、HTTPS 和正确证书，不能关闭证书校验或把该开关用于公共 endpoint。
+凭据不放入请求、前端、配置文件、终端输出或 Git。重启后用有效 JWT 调用[文档 API](../api/knowledge-documents.md)。
+知识文件不会进入现有对话上下文。
+
+临时目录应为专用本地目录，限制磁盘和所有者权限；默认总预算 256 MiB。每请求在解析前预留 servlet spool 与
+校验副本的最坏容量；多个实例共享目录时用文件锁协调预算。实例拥有锁定私有子目录、随机文件名；结束请求清理，
+每次扫描至多检查 50 个实例目录、每目录 500 个条目并清理至多 50 个识别文件。十分钟后仅回收已失去实例锁的
+遗留目录，不跟随 symlink、不递归删除未知文件。目录异常或预算不足安全返回 503，应由运维检查占用而非无限扩容。
+
+### 持久化恢复、人工处理与回滚
+
+扫描器默认每 60 秒最多领取 50 条，上传租约 2 分钟，总 SDK 操作超时 30 秒、连接 2 秒/读取 10 秒。
+SDK 每个操作只尝试一次，扫描不重新 PUT。项目锁、操作版本与持久化租约防止多实例重复领取和旧响应覆盖删除。
+失败后最多五次自动重试，退避 1/2/4/8/16 分钟；耗尽时保留状态、定位、容量并置 `needs_manual=1`。
+租约过期只允许调查；`remote_phase=POSSIBLE` 且对象缺失不能证明 PUT 已停止，必须保留。
+完整且带原写入 token 的原子对象或可信 PUT receipt 才确认该唯一 PUT 已结束。
+
+经授权的数据库运维会话可以只查看安全列：
+
+```sql
+SELECT id, storage_state, error_code, retry_count, needs_manual
+FROM knowledge_documents
+WHERE needs_manual = 1
+ORDER BY id
+LIMIT 50;
+```
+
+确认目标 ID 和存储故障恢复后，在同一 UTC 数据库会话设置数值 `@devmate_document_id`，执行
+[人工重试 SQL](../../scripts/retry-knowledge-document.sql)。脚本只恢复核对/清理、增加操作版本，不改变终态、写入阶段或额度；
+活动租约不能被抢占。若唯一 PUT 结果始终未知，再次重试仍可能进入人工清单；不能将 `POSSIBLE` 手动改为 `FINISHED`，
+不能删除定位或强行释放额度。进一步处理须取得远端不再写入的明确证据并单独审查修复方案。
+无公开重试、故障注入或清理 API。
+
+回滚优先设置 `KNOWLEDGE_ENABLED=false` 并重启兼容应用；上传拒绝、远端清理暂停，但授权元数据与删除标记继续可用。
+保留 V6 表和原始对象，故障修复后重新启用，持久化待处理记录继续扫描。不得修改已执行 migration、清空 bucket 或数据库。
+失败/删除完成物理清理后仅保留请求终态 24 小时；已删除原文件无法通过应用回滚恢复。
+本任务未部署任何环境，也未建立备份。上线前所有者须另行确定 MySQL/对象存储一致备份、保留期及删除履约政策；
+备份中的副本可能超过应用物理删除时间，不能把一分钟扫描间隔当成删除 SLA。

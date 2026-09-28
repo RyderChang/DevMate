@@ -13,5 +13,21 @@ pull request. Production rollback normally restores compatible application code 
 new corrective migration; Flyway `clean` is disabled and must never be used for rollback.
 
 `V1__baseline.sql` is the infrastructure baseline. It deliberately creates no application table.
-The current latest migration is `V5__create_conversations_and_ai_invocations.sql`, which adds
-application-managed conversations, visible messages, generation leases, and auditable AI invocation metadata.
+`V5__create_conversations_and_ai_invocations.sql` adds application-managed conversations,
+visible messages, generation leases, and auditable AI invocation metadata.
+
+The latest migration is `V6__create_knowledge_document_storage.sql`. It adds document metadata,
+per-project capacity reservations, and UUID/fingerprint mappings with 24-hour terminal retention.
+Composite foreign keys enforce user/project ownership. Check constraints reject unknown states,
+invalid digests, negative bytes and out-of-range counters. Indexes serve owner/project lists,
+due recovery, project cleanup and terminal expiry. Original bytes and credentials are never stored here.
+
+Remote PUT/DELETE runs outside transactions; project locks, leases and conditional state/version
+updates protect reservations and cleanup. Capacity is released only when cleanup and the terminal
+request mapping commit together. No object deletion is implemented as a database cascade.
+V1–V5 remain unchanged. V6 is verified from an empty digest-pinned MySQL 8.4.6 container.
+
+Rollback disables new storage operations while retaining pending records and private objects.
+Do not drop these tables, clear the bucket or edit an applied migration. Correct shared schemas
+with a new migration and resume cleanup after compatible application recovery. Application rollback
+cannot restore physically deleted content; backup retention is an operator policy.
