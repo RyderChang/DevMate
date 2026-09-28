@@ -4,6 +4,22 @@
 `9721fc42030c3014858fd8720126660184b9b520`。Git 直连刷新失败后，通过 GitHub compare API 确认该 SHA
 与当时 `develop` identical。#30、#31 已合并。#32 是独立 DeepSeek 对话适配器，本分支不包含其改动。
 
+## 最终 CI 与合并补充
+
+2026-09-28 最终发布提交 `48d34c528cc81d2f191af8bfc45c49256f548887` 的
+[Foundation CI](https://github.com/RyderChang/DevMate/actions/runs/36415681962) 全部成功。
+`./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify`：162 项，失败、错误、跳过均为 0；
+`python3 -B scripts/check-knowledge-test-reports.py` 门禁通过；前端及文档/工作流检查全部通过。
+Git 直连失败后用连接器发布，文件树 `6abd4d3835e0df93aac15210473e71212f23e1b5` 与
+本地已验证的 `654b620` 完全一致，原提交保留在本地 `refs/devmate/dev-017/prepublication`。
+
+所有者随后明确要求自行合并，[PR #33](https://github.com/RyderChang/DevMate/pull/33) 已合并，
+merge SHA `cd511aa6f11516086fe18b3194c5c4c68c43bb03`。
+已审查的 [PR #32](https://github.com/RyderChang/DevMate/pull/32) 也已合并，
+合并后的 `develop` 为 `4a154c7d48598b752e3765e03afd1fb8ae2140ed`；集成 CI 单独核对。
+以下“待合并”“未取得 CI”等表述保留提交时的历史，当前结果以上述补充为准。
+本次没有部署或启用解析、真实模型、索引或 RAG。
+
 ## 实现范围
 
 新增 V7：处理记录、归属一致的片段、请求映射与项目片段容量；父文档保存活动代和递增代号。

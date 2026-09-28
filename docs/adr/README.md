@@ -11,7 +11,7 @@ ADR 使用四位递增编号，文件名格式为 `NNNN-short-title.md`。状态
 - [0000：ADR 模板](0000-template.md)
 - [0001：首版采用模块化单体](0001-use-modular-monolith.md) — Accepted
 - [0002：AI Gateway 与应用侧会话状态](0002-ai-gateway-and-application-managed-conversations.md) — Accepted
-- [0003：知识文档存储与恢复边界](0003-knowledge-document-storage-and-recovery.md) — Accepted；DEV-016 尚未实施
+- [0003：知识文档存储与恢复边界](0003-knowledge-document-storage-and-recovery.md) — Accepted；DEV-016 已实施并合并
 - [0004：文档解析、分块与索引边界](0004-document-processing-and-index-boundaries.md) — Superseded by 0005；保留原始接受结论
 - [0005：处理请求映射与向量检索的有界恢复](0005-bound-processing-replays-and-retrieval.md) — Accepted；所有者明确接受映射额度、固定保留窗口与检索补足修订
 - [0006：新增 DeepSeek 官方对话适配器](0006-add-deepseek-chat-provider.md) — Accepted；显式提供商选择，非思考、非流式、纯文本
