@@ -84,6 +84,15 @@ MySQL 临时密码不入库、不输出；没有留下常驻模型或数据库�
 另执行 `pull_images.py`，两种锁定摘要均能从 registry 拉取；`node scripts/check-docs.mjs --format-changed origin/develop`
 通过 54 份 Markdown / 206 个相对链接及改动格式；Python 全部脚本语法、工作流 Prettier 和 `git diff --check` 通过。
 
+## PR 合同 CI 补充
+
+[PR #35](https://github.com/RyderChang/DevMate/pull/35) 的脚本提交
+`c11f5616fbe90ca1fd9a9efce229463730bd1f38` 已通过
+[Embedding Preflight run 36428284804](https://github.com/RyderChang/DevMate/actions/runs/36428284804)：
+Ubuntu 24.04 / Python 3.12.3，官方 hash 锁 wheel 安装成功，offline 7 / HTTP 3 / 真实数据库 7 项均通过，
+无失败、错误或跳过。没有下载权重、访问模型账户或调用收费 API。
+后续仅文档补充未改变该脚本/资产树；Foundation 前后端结果以最终 PR 检查与合并后 CI 为准。
+
 ## 核验中的修正与剩余验收
 
 首次响应 oracle 接受可表示为 float64 但无法表示为 float32 的 1e308，回归子例失败；

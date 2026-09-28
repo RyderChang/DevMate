@@ -42,9 +42,10 @@
 
 document 不加角色或指令前缀。未来 query 使用固定英文前缀：
 
-```text
-Instruct: Given a software engineering question, retrieve relevant Java and Spring project documentation
-Query:
+```json
+{
+  "query_prefix": "Instruct: Given a software engineering question, retrieve relevant Java and Spring project documentation\nQuery: "
+}
 ```
 
 其中 `Query:` 后有一个 ASCII 空格，随后直接连接查询文本；该空格属于规格和 token 计数。
