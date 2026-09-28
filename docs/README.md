@@ -27,7 +27,7 @@
 
 ## 第三阶段任务
 
-- [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：已确认的知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；已实现原文件后端，待 PR 审核。
+- [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；原文件后端已合并。
 - [ADR 0003：知识文档存储与恢复边界](adr/0003-knowledge-document-storage-and-recovery.md)：已接受的存储职责、失败状态、幂等及清理决策。
 - [DEV-016 实施前核验](development/storage-preflight.md)：SDK 依赖锁、固定源码 MinIO 测试镜像、运行环境和复现命令；保存准备阶段历史证据。
 - [知识文档 API](api/knowledge-documents.md)：上传、元数据、权限、UUID 重放、错误与删除契约。
@@ -45,13 +45,14 @@
 
 ## 国内模型对话接入
 
-- [DEV-018：DeepSeek 官方对话提供商](tasks/DEV-018-deepseek-chat-provider.md)：独立适配器、配置及验证范围。
+- [DEV-018：DeepSeek 官方对话提供商](tasks/DEV-018-deepseek-chat-provider.md)：独立适配器、配置及验证范围；[PR #32](https://github.com/RyderChang/DevMate/pull/32) 已合并。
 - [ADR 0006](adr/0006-add-deepseek-chat-provider.md)：提供商选择、协议、安全与成本边界。
 - [DeepSeek 接入验收](testing/deepseek-chat-provider-acceptance.md)：实际验证、修改文件与真实冒烟限制。
 
 ## 文档处理的后续任务
 
-- [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：确定性解析、版本化片段、接口与资源上限已落实，待功能 PR 审核；DEV-016 [PR #30](https://github.com/RyderChang/DevMate/pull/30) 已合并。
+- [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：确定性解析、版本化片段、接口与资源上限已落实，[PR #33](https://github.com/RyderChang/DevMate/pull/33) 已合并。
+- [DEV-019：国内 Embedding 与索引实施准备](tasks/DEV-019-embedding-index-preparation.md)：下一任务，先核验模型、精确 token 计数、费用与 Qdrant 合同，再独立实施索引。
 - [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Superseded by ADR 0005；区分存储、处理和向量投影，索引模型及费用需另行确认。
-- [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引默认模型、token 和预算建议；区分方案与尚未启动的实现。
-- [ADR 0005：处理请求映射与向量检索的有界恢复](adr/0005-bound-processing-replays-and-retrieval.md)：Proposed；合并前审查的资源与检索完整性修订，待所有者确认。
+- [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引备选模型、token 和预算建议；最新实施顺序见 DEV-019。
+- [ADR 0005：处理请求映射与向量检索的有界恢复](adr/0005-bound-processing-replays-and-retrieval.md)：Accepted；已接受的资源与检索完整性修订，处理部分已实施。
