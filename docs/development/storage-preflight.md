@@ -4,6 +4,11 @@
 [ADR 0003](../adr/0003-knowledge-document-storage-and-recovery.md)。本记录只核验依赖与隔离运行条件，
 不代表文档接入功能、失败恢复、权限隔离或生产部署已实现。
 
+此页保存 #29 准备阶段历史证据。2026-09-28 合并 #29 后，DEV-016 功能实现与新环境验证见
+[文档接入验收](../testing/knowledge-document-storage-acceptance.md)，以下历史说明不替代实现结果。
+当前 `verify.py` 检测 SDK 已接入时，按[后端基线锁](../../scripts/storage-preflight/backend-baseline.lock.json)
+比较已合并准备基线的 143 项及 30 项锁定 SDK 增量，拒绝其他依赖变化；未接入时仍执行临时候选 POM 比较。
+
 ## 基线与范围
 
 2026-09-27 刷新远端后，`origin/develop` 为 `0fc422907f2792dc557ae6bd73b899257c2a51c5`；
@@ -148,7 +153,7 @@ CI 定义见 [Storage Preflight](../../.github/workflows/storage-preflight.yml)�
 `484255f8199b426e248d5cdbbd0c8301cfec0de9`，对应
 [Storage Preflight 成功记录](https://github.com/RyderChang/DevMate/actions/runs/36329754148)
 和 [Foundation 前后端成功记录](https://github.com/RyderChang/DevMate/actions/runs/36329754167)。
-本节证据补录仅更新文档；审阅时仍以 [PR #29](https://github.com/RyderChang/DevMate/pull/29)
+本节为准备阶段历史证据；审阅时仍以 [PR #29](https://github.com/RyderChang/DevMate/pull/29)
 最新 head 的检查状态为准，后续变更不能沿用历史结果。
 
 | 实际执行                                           | 结果                                                                                                                   |

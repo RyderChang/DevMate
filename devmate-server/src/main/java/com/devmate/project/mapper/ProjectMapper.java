@@ -2,6 +2,7 @@ package com.devmate.project.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.devmate.project.entity.ProjectEntity;
+import com.devmate.project.vo.DeletedProjectReference;
 import java.util.List;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -12,6 +13,13 @@ import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface ProjectMapper extends BaseMapper<ProjectEntity> {
+
+    @Select("SELECT id, owner_user_id, name, description, deleted, create_time, update_time, delete_time "
+            + "FROM projects WHERE id=#{projectId} AND owner_user_id=#{ownerUserId} FOR UPDATE")
+    ProjectEntity lockOwnedById(@Param("projectId") Long projectId, @Param("ownerUserId") Long ownerUserId);
+
+    @Select("SELECT id, owner_user_id FROM projects WHERE deleted=1 AND id>#{afterId} ORDER BY id LIMIT #{limit}")
+    List<DeletedProjectReference> deletedPage(@Param("afterId") long afterId, @Param("limit") int limit);
 
     @Insert("INSERT INTO projects(owner_user_id, name, description) "
             + "VALUES(#{ownerUserId}, #{name}, #{description})")

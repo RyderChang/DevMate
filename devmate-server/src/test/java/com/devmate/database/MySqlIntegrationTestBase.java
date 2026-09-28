@@ -14,6 +14,7 @@ import org.springframework.test.annotation.DirtiesContext;
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class MySqlIntegrationTestBase {
+    private static final String JWT_SECRET = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID();
 
     @DynamicPropertySource
     static void integrationProperties(DynamicPropertyRegistry registry) {
@@ -22,15 +23,21 @@ public abstract class MySqlIntegrationTestBase {
         registry.add("spring.datasource.password", MYSQL::getPassword);
 
         registry.add("devmate.jwt.secret",
-                () -> "test-only-jwt-secret-that-is-at-least-32-bytes-long");
+                () -> JWT_SECRET);
         registry.add("devmate.jwt.expiration",
                 () -> "PT1H");
     }
 
     @Container
     protected static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>("mysql:8.4.6")
+            new MySQLContainer<>(org.testcontainers.utility.DockerImageName.parse(
+                    "mysql@sha256:c296d65ee6ab3ce2f608c1d1b2bdd3c08b087a5834101d76a6db2e00875216cc").asCompatibleSubstituteFor("mysql"))
                     .withDatabaseName("devmate_test")
                     .withUsername("devmate_test")
-                    .withPassword("test-only-password");
+                    .withPassword(java.util.UUID.randomUUID().toString())
+                    .withCreateContainerCmdModifier(command -> command.getHostConfig().withPortBindings(
+                            new com.github.dockerjava.api.model.PortBinding(
+                                    com.github.dockerjava.api.model.Ports.Binding.bindIpAndPort("127.0.0.1", 0),
+                                    new com.github.dockerjava.api.model.ExposedPort(3306))))
+                    .withCommand("--default-time-zone=+00:00");
 }

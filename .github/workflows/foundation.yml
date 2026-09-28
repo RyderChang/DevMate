@@ -18,7 +18,7 @@ jobs:
   backend:
     name: Foundation Backend
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -26,13 +26,21 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "21.0.12+8.0.LTS"
           cache: maven
           cache-dependency-path: devmate-server/pom.xml
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.26.5"
+          cache: false
       - name: Check Docker
         run: docker info
+      - name: Build the locked MinIO contract-test image
+        run: python3 -B scripts/storage-preflight/build-minio.py
       - name: Verify backend
         run: ./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify
+      - name: Require storage acceptance reports without skipped tests
+        run: python3 -B scripts/check-knowledge-test-reports.py
       - name: Create sanitized test summary
         if: always()
         run: python3 scripts/summarize-tests.py

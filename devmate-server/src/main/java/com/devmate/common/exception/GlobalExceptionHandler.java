@@ -17,9 +17,21 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Result<Void>> handleMultipartSize() {
+        return ResponseEntity.status(413).body(Result.error(ErrorCode.DOCUMENT_TOO_LARGE));
+    }
+
+    @ExceptionHandler({MultipartException.class, ServletRequestBindingException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Result<Void>> handleMalformedRequest() { return invalidParameter(""); }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     @ExceptionHandler(BusinessException.class)

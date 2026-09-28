@@ -24,6 +24,8 @@ mybatis-plus:
 
 server:
   port: ${SERVER_PORT:8080}
+  tomcat:
+    max-swallow-size: 6MB
 
 management:
   endpoints:
@@ -36,6 +38,28 @@ logging:
     root: INFO
 
 devmate:
+  knowledge:
+    enabled: ${KNOWLEDGE_ENABLED:false}
+    allow-local-http: ${KNOWLEDGE_ALLOW_LOCAL_HTTP:false}
+    endpoint: ${KNOWLEDGE_ENDPOINT:}
+    region: ${KNOWLEDGE_REGION:us-east-1}
+    bucket: ${KNOWLEDGE_BUCKET:}
+    access-key: ${KNOWLEDGE_ACCESS_KEY:}
+    secret-key: ${KNOWLEDGE_SECRET_KEY:}
+    max-file-bytes: ${KNOWLEDGE_MAX_FILE_BYTES:5242880}
+    max-request-bytes: ${KNOWLEDGE_MAX_REQUEST_BYTES:6291456}
+    max-documents: ${KNOWLEDGE_MAX_DOCUMENTS:100}
+    max-project-bytes: ${KNOWLEDGE_MAX_PROJECT_BYTES:104857600}
+    temp-max-bytes: ${KNOWLEDGE_TEMP_MAX_BYTES:268435456}
+    temp-directory: ${KNOWLEDGE_TEMP_DIRECTORY:${java.io.tmpdir}/devmate-knowledge}
+    max-concurrent-uploads: ${KNOWLEDGE_MAX_CONCURRENT_UPLOADS:4}
+    connect-timeout: ${KNOWLEDGE_CONNECT_TIMEOUT:PT2S}
+    read-timeout: ${KNOWLEDGE_READ_TIMEOUT:PT10S}
+    operation-timeout: ${KNOWLEDGE_OPERATION_TIMEOUT:PT30S}
+    operation-lease: ${KNOWLEDGE_OPERATION_LEASE:PT2M}
+    scan-interval: ${KNOWLEDGE_SCAN_INTERVAL:PT60S}
+    scan-batch-size: ${KNOWLEDGE_SCAN_BATCH_SIZE:50}
+    max-automatic-retries: ${KNOWLEDGE_MAX_AUTOMATIC_RETRIES:5}
   jwt:
     secret: ${JWT_SECRET:}
     expiration: ${JWT_EXPIRATION:PT2H}

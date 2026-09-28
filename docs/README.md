@@ -27,15 +27,16 @@
 
 ## 第三阶段任务
 
-- [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：已确认的知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；尚未实施。
+- [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：已确认的知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；已实现原文件后端，待 PR 审核。
 - [ADR 0003：知识文档存储与恢复边界](adr/0003-knowledge-document-storage-and-recovery.md)：已接受的存储职责、失败状态、幂等及清理决策。
-- [DEV-016 实施前核验](development/storage-preflight.md)：SDK 依赖锁、固定源码 MinIO 测试镜像、运行环境和复现命令；功能尚未实施。
+- [DEV-016 实施前核验](development/storage-preflight.md)：SDK 依赖锁、固定源码 MinIO 测试镜像、运行环境和复现命令；保存准备阶段历史证据。
+- [知识文档 API](api/knowledge-documents.md)：上传、元数据、权限、UUID 重放、错误与删除契约。
+- [知识文档接入验收](testing/knowledge-document-storage-acceptance.md)：真实存储合同、MySQL 状态机、竞态、输入及回归证据。
 
 ## 计划中的文档
 
 以下内容尚未建立，当前不提供虚假链接：
 
-- API 文档；
 - 部署与运维指南；
 - 安全与威胁模型；
 - 测试策略。

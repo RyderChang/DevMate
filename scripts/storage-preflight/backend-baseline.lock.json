@@ -1,0 +1,292 @@
+{
+  "baselineCommit": "c0ad179070c70996a9e308d610205403d0a972e7",
+  "artifacts": {
+    "ch.qos.logback:logback-classic:jar:": ["1.5.18", "compile"],
+    "ch.qos.logback:logback-core:jar:": ["1.5.18", "compile"],
+    "com.baomidou:mybatis-plus-annotation:jar:": ["3.5.14", "compile"],
+    "com.baomidou:mybatis-plus-core:jar:": ["3.5.14", "compile"],
+    "com.baomidou:mybatis-plus-extension:jar:": ["3.5.14", "compile"],
+    "com.baomidou:mybatis-plus-spring-boot-autoconfigure:jar:": [
+      "3.5.14",
+      "compile"
+    ],
+    "com.baomidou:mybatis-plus-spring-boot3-starter:jar:": [
+      "3.5.14",
+      "compile"
+    ],
+    "com.baomidou:mybatis-plus-spring:jar:": ["3.5.14", "compile"],
+    "com.baomidou:mybatis-plus:jar:": ["3.5.14", "compile"],
+    "com.fasterxml.jackson.core:jackson-annotations:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml.jackson.core:jackson-core:jar:": ["2.19.2", "compile"],
+    "com.fasterxml.jackson.core:jackson-databind:jar:": ["2.19.2", "compile"],
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml.jackson.module:jackson-module-parameter-names:jar:": [
+      "2.19.2",
+      "compile"
+    ],
+    "com.fasterxml:classmate:jar:": ["1.7.0", "compile"],
+    "com.github.docker-java:docker-java-api:jar:": ["3.4.2", "test"],
+    "com.github.docker-java:docker-java-transport-zerodep:jar:": [
+      "3.4.2",
+      "test"
+    ],
+    "com.github.docker-java:docker-java-transport:jar:": ["3.4.2", "test"],
+    "com.jayway.jsonpath:json-path:jar:": ["2.9.0", "test"],
+    "com.mysql:mysql-connector-j:jar:": ["9.4.0", "runtime"],
+    "com.vaadin.external.google:android-json:jar:": [
+      "0.0.20131108.vaadin1",
+      "test"
+    ],
+    "com.zaxxer:HikariCP:jar:": ["6.3.3", "compile"],
+    "io.jsonwebtoken:jjwt-api:jar:": ["0.12.6", "compile"],
+    "io.jsonwebtoken:jjwt-impl:jar:": ["0.12.6", "runtime"],
+    "io.jsonwebtoken:jjwt-jackson:jar:": ["0.12.6", "runtime"],
+    "io.lettuce:lettuce-core:jar:": ["6.6.0.RELEASE", "compile"],
+    "io.micrometer:micrometer-commons:jar:": ["1.15.4", "compile"],
+    "io.micrometer:micrometer-core:jar:": ["1.15.4", "compile"],
+    "io.micrometer:micrometer-jakarta9:jar:": ["1.15.4", "compile"],
+    "io.micrometer:micrometer-observation:jar:": ["1.15.4", "compile"],
+    "io.netty:netty-buffer:jar:": ["4.1.127.Final", "compile"],
+    "io.netty:netty-codec:jar:": ["4.1.127.Final", "compile"],
+    "io.netty:netty-common:jar:": ["4.1.127.Final", "compile"],
+    "io.netty:netty-handler:jar:": ["4.1.127.Final", "compile"],
+    "io.netty:netty-resolver:jar:": ["4.1.127.Final", "compile"],
+    "io.netty:netty-transport-native-unix-common:jar:": [
+      "4.1.127.Final",
+      "compile"
+    ],
+    "io.netty:netty-transport:jar:": ["4.1.127.Final", "compile"],
+    "io.projectreactor:reactor-core:jar:": ["3.7.11", "compile"],
+    "io.swagger.core.v3:swagger-annotations-jakarta:jar:": [
+      "2.2.36",
+      "compile"
+    ],
+    "io.swagger.core.v3:swagger-core-jakarta:jar:": ["2.2.36", "compile"],
+    "io.swagger.core.v3:swagger-models-jakarta:jar:": ["2.2.36", "compile"],
+    "jakarta.activation:jakarta.activation-api:jar:": ["2.1.4", "compile"],
+    "jakarta.annotation:jakarta.annotation-api:jar:": ["2.1.1", "compile"],
+    "jakarta.validation:jakarta.validation-api:jar:": ["3.0.2", "compile"],
+    "jakarta.xml.bind:jakarta.xml.bind-api:jar:": ["4.0.2", "compile"],
+    "junit:junit:jar:": ["4.13.2", "test"],
+    "net.bytebuddy:byte-buddy-agent:jar:": ["1.17.7", "test"],
+    "net.bytebuddy:byte-buddy:jar:": ["1.17.7", "test"],
+    "net.java.dev.jna:jna:jar:": ["5.13.0", "test"],
+    "net.minidev:accessors-smart:jar:": ["2.5.2", "test"],
+    "net.minidev:json-smart:jar:": ["2.5.2", "test"],
+    "org.apache.commons:commons-compress:jar:": ["1.24.0", "test"],
+    "org.apache.commons:commons-lang3:jar:": ["3.17.0", "compile"],
+    "org.apache.logging.log4j:log4j-api:jar:": ["2.24.3", "compile"],
+    "org.apache.logging.log4j:log4j-to-slf4j:jar:": ["2.24.3", "compile"],
+    "org.apache.tomcat.embed:tomcat-embed-core:jar:": ["10.1.46", "compile"],
+    "org.apache.tomcat.embed:tomcat-embed-el:jar:": ["10.1.46", "compile"],
+    "org.apache.tomcat.embed:tomcat-embed-websocket:jar:": [
+      "10.1.46",
+      "compile"
+    ],
+    "org.apiguardian:apiguardian-api:jar:": ["1.1.2", "test"],
+    "org.assertj:assertj-core:jar:": ["3.27.4", "test"],
+    "org.awaitility:awaitility:jar:": ["4.2.2", "test"],
+    "org.flywaydb:flyway-core:jar:": ["11.7.2", "compile"],
+    "org.flywaydb:flyway-mysql:jar:": ["11.7.2", "compile"],
+    "org.hamcrest:hamcrest-core:jar:": ["3.0", "test"],
+    "org.hamcrest:hamcrest:jar:": ["3.0", "test"],
+    "org.hdrhistogram:HdrHistogram:jar:": ["2.2.2", "runtime"],
+    "org.hibernate.validator:hibernate-validator:jar:": [
+      "8.0.3.Final",
+      "compile"
+    ],
+    "org.jboss.logging:jboss-logging:jar:": ["3.6.1.Final", "compile"],
+    "org.jetbrains:annotations:jar:": ["17.0.0", "test"],
+    "org.jspecify:jspecify:jar:": ["1.0.0", "compile"],
+    "org.junit.jupiter:junit-jupiter-api:jar:": ["5.12.2", "test"],
+    "org.junit.jupiter:junit-jupiter-engine:jar:": ["5.12.2", "test"],
+    "org.junit.jupiter:junit-jupiter-params:jar:": ["5.12.2", "test"],
+    "org.junit.jupiter:junit-jupiter:jar:": ["5.12.2", "test"],
+    "org.junit.platform:junit-platform-commons:jar:": ["1.12.2", "test"],
+    "org.junit.platform:junit-platform-engine:jar:": ["1.12.2", "test"],
+    "org.latencyutils:LatencyUtils:jar:": ["2.0.3", "runtime"],
+    "org.mockito:mockito-core:jar:": ["5.17.0", "test"],
+    "org.mockito:mockito-junit-jupiter:jar:": ["5.17.0", "test"],
+    "org.mybatis:mybatis-spring:jar:": ["3.0.5", "compile"],
+    "org.mybatis:mybatis:jar:": ["3.5.19", "compile"],
+    "org.objenesis:objenesis:jar:": ["3.3", "test"],
+    "org.opentest4j:opentest4j:jar:": ["1.3.0", "test"],
+    "org.ow2.asm:asm:jar:": ["9.7.1", "test"],
+    "org.reactivestreams:reactive-streams:jar:": ["1.0.4", "compile"],
+    "org.rnorth.duct-tape:duct-tape:jar:": ["1.0.8", "test"],
+    "org.skyscreamer:jsonassert:jar:": ["1.5.3", "test"],
+    "org.slf4j:jul-to-slf4j:jar:": ["2.0.17", "compile"],
+    "org.slf4j:slf4j-api:jar:": ["2.0.17", "compile"],
+    "org.springdoc:springdoc-openapi-starter-common:jar:": [
+      "2.8.13",
+      "compile"
+    ],
+    "org.springdoc:springdoc-openapi-starter-webmvc-api:jar:": [
+      "2.8.13",
+      "compile"
+    ],
+    "org.springdoc:springdoc-openapi-starter-webmvc-ui:jar:": [
+      "2.8.13",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-actuator-autoconfigure:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-actuator:jar:": ["3.5.6", "compile"],
+    "org.springframework.boot:spring-boot-autoconfigure:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-actuator:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-data-redis:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-jdbc:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-json:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-logging:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-security:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-test:jar:": ["3.5.6", "test"],
+    "org.springframework.boot:spring-boot-starter-tomcat:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-validation:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter-web:jar:": [
+      "3.5.6",
+      "compile"
+    ],
+    "org.springframework.boot:spring-boot-starter:jar:": ["3.5.6", "compile"],
+    "org.springframework.boot:spring-boot-test-autoconfigure:jar:": [
+      "3.5.6",
+      "test"
+    ],
+    "org.springframework.boot:spring-boot-test:jar:": ["3.5.6", "test"],
+    "org.springframework.boot:spring-boot-testcontainers:jar:": [
+      "3.5.6",
+      "test"
+    ],
+    "org.springframework.boot:spring-boot:jar:": ["3.5.6", "compile"],
+    "org.springframework.data:spring-data-commons:jar:": ["3.5.4", "compile"],
+    "org.springframework.data:spring-data-keyvalue:jar:": ["3.5.4", "compile"],
+    "org.springframework.data:spring-data-redis:jar:": ["3.5.4", "compile"],
+    "org.springframework.security:spring-security-config:jar:": [
+      "6.5.5",
+      "compile"
+    ],
+    "org.springframework.security:spring-security-core:jar:": [
+      "6.5.5",
+      "compile"
+    ],
+    "org.springframework.security:spring-security-crypto:jar:": [
+      "6.5.5",
+      "compile"
+    ],
+    "org.springframework.security:spring-security-web:jar:": [
+      "6.5.5",
+      "compile"
+    ],
+    "org.springframework:spring-aop:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-beans:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-context-support:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-context:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-core:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-expression:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-jcl:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-jdbc:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-oxm:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-test:jar:": ["6.2.11", "test"],
+    "org.springframework:spring-tx:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-web:jar:": ["6.2.11", "compile"],
+    "org.springframework:spring-webmvc:jar:": ["6.2.11", "compile"],
+    "org.testcontainers:database-commons:jar:": ["1.21.3", "test"],
+    "org.testcontainers:jdbc:jar:": ["1.21.3", "test"],
+    "org.testcontainers:junit-jupiter:jar:": ["1.21.3", "test"],
+    "org.testcontainers:mysql:jar:": ["1.21.3", "test"],
+    "org.testcontainers:testcontainers:jar:": ["1.21.3", "test"],
+    "org.webjars:swagger-ui:jar:": ["5.28.1", "compile"],
+    "org.webjars:webjars-locator-lite:jar:": ["1.1.0", "compile"],
+    "org.xmlunit:xmlunit-core:jar:": ["2.10.4", "test"],
+    "org.yaml:snakeyaml:jar:": ["2.4", "compile"],
+    "redis.clients.authentication:redis-authx-core:jar:": [
+      "0.1.1-beta2",
+      "compile"
+    ]
+  },
+  "sdkVersion": "2.55.6",
+  "sdkAdditions": {
+    "software.amazon.awssdk:annotations:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:arns:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:auth:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:aws-core:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:aws-query-protocol:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:aws-xml-protocol:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:checksums-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:checksums:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:crt-core:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:endpoints-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:http-auth-aws-eventstream:jar:": [
+      "2.55.6",
+      "compile"
+    ],
+    "software.amazon.awssdk:http-auth-aws:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:http-auth-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:http-auth:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:http-client-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:identity-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:json-utils:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:metrics-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:profiles:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:protocol-core:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:regions:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:retries-spi:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:retries:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:s3:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:sdk-core:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:third-party-jackson-core:jar:": [
+      "2.55.6",
+      "compile"
+    ],
+    "software.amazon.awssdk:url-connection-client:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:utils-lite:jar:": ["2.55.6", "compile"],
+    "software.amazon.awssdk:utils:jar:": ["2.55.6", "compile"],
+    "software.amazon.eventstream:eventstream:jar:": ["1.0.1", "compile"]
+  }
+}

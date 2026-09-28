@@ -29,17 +29,24 @@ def compare_backend(prefix, env):
     ET.register_namespace("", namespace[1:-1])
     backend = ROOT / "devmate-server/pom.xml"
     candidate = ET.parse(backend)
+    integrated = candidate.getroot().find(namespace + "properties/" + namespace + "aws-sdk.version") is not None
+    if integrated:
+        lock = json.loads((HERE / "backend-baseline.lock.json").read_text())
+        if candidate.getroot().findtext(namespace + "properties/" + namespace + "aws-sdk.version") != lock["sdkVersion"]:
+            raise RuntimeError("The implemented SDK version differs from the accepted lock")
     probe = ET.parse(HERE / "pom.xml").getroot()
-    candidate.getroot().find(namespace + "properties").append(
-        copy.deepcopy(probe.find(namespace + "properties/" + namespace + "aws-sdk.version")))
-    candidate.getroot().append(copy.deepcopy(probe.find(namespace + "dependencyManagement")))
-    for dependency in probe.find(namespace + "dependencies"):
-        if dependency.findtext(namespace + "groupId") == "software.amazon.awssdk":
-            candidate.getroot().find(namespace + "dependencies").append(copy.deepcopy(dependency))
+    if not integrated:
+        candidate.getroot().find(namespace + "properties").append(
+            copy.deepcopy(probe.find(namespace + "properties/" + namespace + "aws-sdk.version")))
+        candidate.getroot().append(copy.deepcopy(probe.find(namespace + "dependencyManagement")))
+        for dependency in probe.find(namespace + "dependencies"):
+            if dependency.findtext(namespace + "groupId") == "software.amazon.awssdk":
+                candidate.getroot().find(namespace + "dependencies").append(copy.deepcopy(dependency))
     candidate_path = OUTPUT / "server-candidate-pom.xml"
     candidate.write(candidate_path, encoding="utf-8", xml_declaration=True)
     graphs = []
-    for name, pom in (("backend-base", backend), ("backend-candidate", candidate_path)):
+    inputs = (("backend-implemented", backend),) if integrated else (("backend-base", backend), ("backend-candidate", candidate_path))
+    for name, pom in inputs:
         output = OUTPUT / (name + ".json")
         execute([*prefix, "-B", "-ntp", "-f", str(pom), "dependency:tree", "-DoutputType=json",
                  "-DoutputFile=" + str(output)], name, env=env, maven=True)
@@ -47,15 +54,17 @@ def compare_backend(prefix, env):
             result = {}
             for child in node.get("children", []):
                 key = ":".join(child.get(part, "") for part in ("groupId", "artifactId", "type", "classifier"))
-                result[key] = (child["version"], child.get("scope", ""))
+                result[key] = [child["version"], child.get("scope", "")]
                 result.update(flatten(child))
             return result
         graphs.append(flatten(json.loads(output.read_text(encoding="utf-8"))))
-    before, after = graphs
+    before, after = (lock["artifacts"], graphs[0]) if integrated else graphs
     if any(after.get(key) != value for key, value in before.items()):
         raise RuntimeError("The SDK candidate changes existing backend dependencies; review before proceeding")
+    if integrated and after != before | lock["sdkAdditions"]:
+        raise RuntimeError("The implemented dependency graph differs from the accepted baseline plus SDK additions")
     print(f"PASS: {len(before)} existing backend artifacts retain their versions and scopes; "
-          f"{len(after.keys() - before.keys())} SDK artifacts added only in the temporary candidate")
+          f"{len(after.keys() - before.keys())} locked SDK artifacts added ({'implementation' if integrated else 'temporary candidate'})")
 
 
 def main():
