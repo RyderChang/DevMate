@@ -1,6 +1,7 @@
 # 0004：文档解析、分块与索引边界
 
-- 状态：Accepted
+- 状态：Superseded
+- 替代决策：[ADR 0005](0005-bound-processing-replays-and-retrieval.md)；继承本文其他决策，修订请求映射保留并补充检索补足，本文保留原始接受结论。
 - 日期：2026-09-28
 - 关联任务：[DEV-017](../tasks/DEV-017-document-processing-boundaries.md)
 - 确认日期：2026-09-28
