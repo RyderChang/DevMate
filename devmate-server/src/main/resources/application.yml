@@ -81,3 +81,7 @@ devmate:
       base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:}
+    deepseek:
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      api-key: ${DEEPSEEK_API_KEY:}
+      model: ${DEEPSEEK_MODEL:}

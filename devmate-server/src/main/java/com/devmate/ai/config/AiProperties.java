@@ -18,6 +18,7 @@ public class AiProperties implements InitializingBean {
     private Duration generationLease = Duration.ofMinutes(2);
     private int maxResponseBytes = 1_048_576;
     private final OpenAi openai = new OpenAi();
+    private final DeepSeek deepseek = new DeepSeek();
 
     @Override
     public void afterPropertiesSet() {
@@ -33,6 +34,13 @@ public class AiProperties implements InitializingBean {
         if (generationLease == null || !generationLease.minus(readTimeout).isPositive()) {
             throw new IllegalStateException("devmate.ai.generation-lease must be greater than read-timeout");
         }
+        if (!"openai".equals(provider) && !"deepseek".equals(provider)) {
+            throw new IllegalStateException("devmate.ai.provider must be openai or deepseek");
+        }
+        if ("deepseek".equals(provider)) {
+            validateDeepSeek();
+            return;
+        }
         URI baseUri;
         try {
             baseUri = URI.create(openai.baseUrl);
@@ -46,6 +54,29 @@ public class AiProperties implements InitializingBean {
                 || !openai.apiKey.equals(openai.apiKey.strip())
                 || !openai.model.equals(openai.model.strip()) || openai.model.length() > 100)) {
             throw new IllegalStateException("Enabled AI requires provider=openai, api-key and model");
+        }
+    }
+
+    private void validateDeepSeek() {
+        URI uri;
+        try {
+            uri = URI.create(deepseek.baseUrl);
+        } catch (RuntimeException exception) {
+            // Configuration errors must not echo credentials embedded in an invalid URI.
+            throw new IllegalStateException("Invalid devmate.ai.deepseek.base-url");
+        }
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || !"api.deepseek.com".equalsIgnoreCase(uri.getHost())
+                || uri.getRawUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null
+                || (uri.getPort() != -1 && uri.getPort() != 443)
+                || !(uri.getPath().isEmpty() || uri.getPath().equals("/") || uri.getPath().equals("/v1")
+                || uri.getPath().equals("/v1/"))) {
+            throw new IllegalStateException("DeepSeek requires the official HTTPS API base URL");
+        }
+        if (enabled && (isBlank(deepseek.apiKey) || isBlank(deepseek.model)
+                || !deepseek.apiKey.equals(deepseek.apiKey.strip()) || deepseek.apiKey.chars().anyMatch(Character::isISOControl)
+                || !deepseek.model.equals(deepseek.model.strip()) || deepseek.model.length() > 100
+                || deepseek.model.chars().anyMatch(Character::isISOControl))) {
+            throw new IllegalStateException("Enabled DeepSeek requires api-key and model");
         }
     }
 
@@ -80,9 +111,24 @@ public class AiProperties implements InitializingBean {
     public int getMaxResponseBytes() { return maxResponseBytes; }
     public void setMaxResponseBytes(int maxResponseBytes) { this.maxResponseBytes = maxResponseBytes; }
     public OpenAi getOpenai() { return openai; }
+    public DeepSeek getDeepseek() { return deepseek; }
+    public String selectedModel() { return "deepseek".equals(provider) ? deepseek.model : openai.model; }
 
     public static class OpenAi {
         private String baseUrl = "https://api.openai.com/v1";
+        private String apiKey = "";
+        private String model = "";
+
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+        public String getModel() { return model; }
+        public void setModel(String model) { this.model = model; }
+    }
+
+    public static class DeepSeek {
+        private String baseUrl = "https://api.deepseek.com";
         private String apiKey = "";
         private String model = "";
 

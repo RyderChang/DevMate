@@ -1,6 +1,7 @@
 package com.devmate.ai.config;
 
 import com.devmate.ai.application.AiGateway;
+import com.devmate.ai.infrastructure.deepseek.DeepSeekChatGateway;
 import com.devmate.ai.infrastructure.openai.OpenAiResponsesGateway;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,15 +16,18 @@ import org.springframework.web.client.RestClient;
 public class AiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "devmate.ai", name = "enabled", havingValue = "true")
-    AiGateway openAiGateway(AiProperties properties, ObjectMapper objectMapper) {
+    AiGateway enabledAiGateway(AiProperties properties, ObjectMapper objectMapper) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeout());
         requestFactory.setReadTimeout(properties.getReadTimeout());
         RestClient restClient = RestClient.builder()
-                .baseUrl(properties.getOpenai().getBaseUrl())
+                .baseUrl("deepseek".equals(properties.getProvider())
+                        ? properties.getDeepseek().getBaseUrl() : properties.getOpenai().getBaseUrl())
                 .requestFactory(requestFactory)
                 .build();
-        return new OpenAiResponsesGateway(restClient, objectMapper, properties);
+        return "deepseek".equals(properties.getProvider())
+                ? new DeepSeekChatGateway(restClient, objectMapper, properties)
+                : new OpenAiResponsesGateway(restClient, objectMapper, properties);
     }
 
     @Bean

@@ -15,7 +15,7 @@ final class DisabledAiGateway implements AiGateway {
 
     @Override public boolean enabled() { return false; }
     @Override public String provider() { return properties.getProvider(); }
-    @Override public String model() { return properties.getOpenai().getModel(); }
+    @Override public String model() { return properties.selectedModel(); }
 
     @Override
     public AiChatResult chat(AiChatRequest request) {

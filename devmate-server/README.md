@@ -4,7 +4,8 @@ DevMate 的 Java 21 / Spring Boot 3 后端。当前已接通 MySQL 8 数据源�
 MyBatis-Plus 基础能力，并提供统一响应、异常转换、健康检查、基于 JWT/RBAC 的用户认证，
 以及按用户隔离的项目空间、项目对话和知识文档元数据 API。Flyway 负责创建认证、授权、项目、对话、消息与
 AI 调用元数据表；前端已具备认证、项目 CRUD 与同步对话页面。AI Gateway 当前提供默认关闭的 OpenAI
-Responses 适配器；knowledge 已接入私有 MinIO 原文件存储。项目成员、GitHub 绑定、Redis 业务和 RAG 尚未实现。
+Responses 与 DeepSeek 官方 Chat Completions 适配器；knowledge 已接入私有 MinIO 原文件存储。
+项目成员、GitHub 绑定、Redis 业务和 RAG 尚未实现。
 
 完整启动步骤见[本地开发指南](../docs/development/local-development.md)，
 阶段验证状态见[第一阶段验收记录](../docs/testing/foundation-acceptance.md)和
@@ -54,10 +55,13 @@ MySQL，也不得用共享或生产数据库代替。Docker 不可用时测试�
 | `JWT_SECRET`                    | JWT HMAC 签名密钥（至少 32 字节） | 无，必填                                   | 无，必填    |
 | `JWT_EXPIRATION`                | JWT 有效期（ISO-8601 Duration）   | `PT2H`                                     | `PT2H`      |
 | `AI_ENABLED`                    | 是否启用模型生成                  | `false`                                    | `false`     |
-| `AI_PROVIDER`                   | AI 提供商（当前仅 `openai`）      | `openai`                                   | `openai`    |
+| `AI_PROVIDER`                   | `openai` 或 `deepseek`            | `openai`                                   | `openai`    |
 | `OPENAI_BASE_URL`               | 服务端 OpenAI API 基础 URL        | `https://api.openai.com/v1`                | 同左        |
-| `OPENAI_API_KEY`                | OpenAI API Key                    | 空；启用 AI 时必填                         | 空；必填    |
-| `OPENAI_MODEL`                  | 经部署者确认的模型 ID             | 空；启用 AI 时必填                         | 空；必填    |
+| `OPENAI_API_KEY`                | OpenAI API Key                    | 空；启用 openai 时必填                     | 同左        |
+| `OPENAI_MODEL`                  | 经部署者确认的 OpenAI 模型 ID     | 空；启用 openai 时必填                     | 同左        |
+| `DEEPSEEK_BASE_URL`             | 官方 HTTPS 基础 URL               | `https://api.deepseek.com`                 | 同左        |
+| `DEEPSEEK_API_KEY`              | DeepSeek API Key                  | 空；启用 deepseek 时必填                   | 同左        |
+| `DEEPSEEK_MODEL`                | 经部署者确认的 DeepSeek 模型 ID   | 空；启用 deepseek 时必填                   | 同左        |
 | `AI_CONNECT_TIMEOUT`            | 连接超时                          | `PT5S`                                     | `PT5S`      |
 | `AI_READ_TIMEOUT`               | 读取超时，最大 `PT120S`           | `PT60S`                                    | `PT60S`     |
 | `AI_MAX_OUTPUT_TOKENS`          | 单次最大输出 Token                | `1024`                                     | `1024`      |
@@ -134,8 +138,12 @@ MyBatis-Plus 使用同一数据源，开启 snake_case 到 camelCase 映射，�
 
 除注册、登录和健康检查外，Spring Security 默认要求 JWT 认证，OpenAPI 与 Swagger UI 也不在
 白名单中。JWT 密钥只从 `JWT_SECRET` 注入，不提供仓库内明文默认值。当前不应配置 Redis、
-GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_ENABLED=true` 并注入 OpenAI Key
-和模型时启用；默认关闭状态不读取或要求这些值。
+GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_ENABLED=true` 并注入所选提供商密钥
+和模型时启用；默认关闭状态不要求这些值。
+国内试用可设置 `AI_PROVIDER=deepseek`、`DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL=deepseek-flash`，
+无需 OpenAI 凭据。既有 `AI_PROVIDER=openai` 配置保留；默认 provider 仍为 openai，AI 默认关闭。
+DeepSeek 地址默认 `https://api.deepseek.com`，只接受官方 HTTPS 空路径或 `/v1`；
+完整安全注入与真实冒烟步骤见[本地开发指南](../docs/development/local-development.md)。
 
 进入 MVC trace filter 的 HTTP 请求由服务端生成 UUID 格式的 traceId，通过 `X-Trace-Id`
 响应头返回，并用于关联该请求产生的 AI 调用审计日志。认证过滤器在此之前拒绝的 401 响应
@@ -150,8 +158,10 @@ GitHub 或其他未实现服务的凭据。AI 仅在部署者显式设置 `AI_EN
 - `POST /projects/{projectId}/conversations/{conversationId}/messages`：同步生成非流式回复。
 
 生成请求必须提供 UUID `clientRequestId`。同一 ID 不会重复调用模型；同一对话同一时间只允许一个
-生成请求。模型调用在数据库事务之外执行，成功和失败都会记录安全的调用状态。请求显式使用
-`store=false`、`stream=false`，不启用工具或提供商托管会话。AI 默认关闭时，读取和管理对话仍可用，
+生成请求。模型调用在数据库事务之外执行，成功和失败都会记录安全的调用状态。两种协议均显式使用
+`stream=false`，不启用工具或提供商托管会话；OpenAI 请求使用 `store=false`，DeepSeek 请求使用
+`thinking.type=disabled` 和 `max_tokens`，仅返回完整可见文本，不保存隐藏推理。
+AI 默认关闭时，读取和管理对话仍可用，
 生成接口返回 `503 AI_SERVICE_DISABLED`。
 
 完整测试需要 Docker，以便 Testcontainers 在隔离的 MySQL 8.4.6 空库上执行 V1 至 V7 migration、
