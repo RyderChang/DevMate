@@ -38,6 +38,7 @@
 - `contract.py`、`test_offline.py`：离线计数、6000 边界与响应结构/float32/usage 拒绝合同。
 - `test_http.py`：纯 loopback 合成 HTTP、超时、429、重定向、大小和 UTF-8；不接触外部模型。
 - `test_vector.py`、`isolation.py`：真实隔离 Qdrant/MySQL，SQL journal 只是提议合同 fixture，非业务表。
+- `download_cache.py`、`test_download_cache.py`：按固定权重 SHA 隔离缓存，最终摘要失败清除确定块并验证下次恢复。
 - `fetch_model.py`、`verify_goldens.py`、`probe_model.py`：明确执行的可选数据下载/官方核对/CPU 冒烟。
 
 响应 fixture 中的 basis vectors 是人工合成，不能当作 Qwen 模型结果。
@@ -53,6 +54,7 @@ Windows PowerShell：
 python -m venv tmp/dev-019/minimal
 tmp/dev-019/minimal/Scripts/python.exe -m pip install --no-deps --require-hashes -r scripts/embedding-preflight/requirements-tokenizer.txt
 tmp/dev-019/minimal/Scripts/python.exe -B scripts/embedding-preflight/test_offline.py
+tmp/dev-019/minimal/Scripts/python.exe -B scripts/embedding-preflight/test_download_cache.py
 tmp/dev-019/minimal/Scripts/python.exe -B scripts/embedding-preflight/test_http.py
 python -B scripts/embedding-preflight/pull_images.py
 python -B scripts/embedding-preflight/test_vector.py
@@ -87,6 +89,8 @@ docker volume ls --filter label=devmate.embedding-preflight
 仅下载官方数据，不运行模型仓库自定义代码。下载脚本固定目标为忽略目录 `tmp/dev-019/frozen-model`，
 有文件大小、范围、摘要、最多三次尝试与整体截止；8 路范围下载仅为本次大文件复现。整体 30 分钟截止阻止新下载请求，每次网络读取最多 90 秒。
 镜像当前字节不符固定摘要时立即失败，不能绕过检查或改锁来迁就下载。
+权重块缓存按固定 SHA 分目录；组装结果不符时移除已知块及无效组装文件，下次执行重新下载，
+不会一直复用同长度损坏缓存，也不会删除该目录下无关文件。
 
 ```powershell
 python -B scripts/embedding-preflight/fetch_model.py --mirror

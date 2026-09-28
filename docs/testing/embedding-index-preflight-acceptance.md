@@ -44,7 +44,8 @@ MySQL 管理活动完整处理代并经归属校验分页读取，DEV-020 应复
 | `tmp/dev-019/venv/Scripts/python.exe -B scripts/embedding-preflight/verify_goldens.py tmp/dev-019/modelscope`                                | 官方 fast 与 slow+NFC/EOS 的 20 个样例全部一致；HTTP 两行 token 为 3/6，合计 9   |
 | `tmp/dev-019/minimal/Scripts/python.exe -B scripts/embedding-preflight/fetch_model.py --mirror`                                              | 已有固定缓存路径的校验通过，不重新下载、不加载权重                               |
 
-常规合同合计 **17 个 unittest 方法**，失败/错误/跳过均为 0；20 个 golden 和异常子例不另冒充方法数。
+基础合同合计 **17 个 unittest 方法**，失败/错误/跳过均为 0；20 个 golden 和异常子例不另冒充方法数。
+审查修正新增 1 个缓存恢复回归方法，完整门禁现为 **18 个方法**。
 离线响应测试拒绝错模型、缺/重复/Boolean index、错维、非有限/Boolean 数值、float32 溢出、
 下溢零向量、非单位范数、usage 缺失/错误、重复 JSON 字段及错误 UTF-8。
 HTTP 测试执行有界读取、拒绝重定向，超时/429 后没有自动重发。
@@ -92,6 +93,19 @@ MySQL 临时密码不入库、不输出；没有留下常驻模型或数据库�
 Ubuntu 24.04 / Python 3.12.3，官方 hash 锁 wheel 安装成功，offline 7 / HTTP 3 / 真实数据库 7 项均通过，
 无失败、错误或跳过。没有下载权重、访问模型账户或调用收费 API。
 后续仅文档补充未改变该脚本/资产树；Foundation 前后端结果以最终 PR 检查与合并后 CI 为准。
+
+## 下载缓存审查修正
+
+[PR 缓存审查](https://github.com/RyderChang/DevMate/pull/35#discussion_r4122669344)指出：长度相同的损坏块
+会在每次重试时继续复用，最终摘要始终失败。回归测试先对旧装配行为复现断言失败，再修正为：
+缓存目录按权重 SHA 隔离，整文件摘要/长度失败时只移除本轮确定块名和无效组装文件，下次重新下载。
+不清空整个目录、不触碰其他缓存，也不绕过最终摘要验证。
+
+实际执行 `tmp/dev-019/minimal/Scripts/python.exe -B scripts/embedding-preflight/test_download_cache.py`：
+修正后 1 项通过，0.011 秒；涵盖同长度损坏、旧块失效、无关文件保留及下一轮成功恢复。
+本机 Windows Codex 沙箱访问 tempfile 的 ACL 曾失败，使用本机测试权限后完成上述真实失败/通过核验。
+另重跑 `fetch_model.py --mirror` 的已有缓存路径和 offline 7 项（0.411 秒），均通过。
+HTTP/向量代码、模型资产与推理路径未改变；最终 CI 按新的 18 项门禁执行。
 
 ## 核验中的修正与剩余验收
 

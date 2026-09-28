@@ -34,9 +34,10 @@ jobs:
           python3 --version
           python3 -m venv tmp/dev-019/ci
           tmp/dev-019/ci/bin/python -m pip install --no-deps --require-hashes -r scripts/embedding-preflight/requirements-tokenizer.txt
-      - name: Verify bundled tokenizer and loopback HTTP contracts
+      - name: Verify tokenizer, cache recovery and loopback HTTP contracts
         run: |
           tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_offline.py
+          tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_download_cache.py
           tmp/dev-019/ci/bin/python -B scripts/embedding-preflight/test_http.py
       - name: Pull locked isolated database images
         run: python3 -B scripts/embedding-preflight/pull_images.py

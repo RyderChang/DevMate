@@ -8,6 +8,7 @@ import urllib.request
 import uuid
 
 from assets import HERE, LOCK, verify, verify_model
+from download_cache import assemble
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--mirror", action="store_true", help="Use Qwen's ModelScope mirror, accepting only the frozen HF digest")
@@ -15,8 +16,8 @@ args = parser.parse_args()
 root = HERE.parents[1]
 folder = root / "tmp/dev-019/frozen-model"
 folder.mkdir(parents=True, exist_ok=True)
-parts = folder / "weight-parts"
-parts.mkdir(exist_ok=True)
+parts = folder / "weight-parts" / LOCK["files"]["model.safetensors"]["sha256"]
+parts.mkdir(parents=True, exist_ok=True)
 deadline = time.monotonic() + 1800
 base = ("https://modelscope.cn/models/" + LOCK["repository"] + "/resolve/master/" if args.mirror else
         "https://huggingface.co/" + LOCK["repository"] + "/resolve/" + LOCK["revision"] + "/")
@@ -77,8 +78,6 @@ if not valid:
         for number, result in enumerate(concurrent.futures.as_completed([executor.submit(block, o) for o in offsets]), 1):
             result.result()
             print("weight block", number, "/", len(offsets), flush=True)
-    with target.open("wb") as stream:
-        for offset in offsets:
-            stream.write((parts / str(offset)).read_bytes())
+    assemble(target, parts, offsets, entry)
 verify_model(folder)
 print("verified frozen model in tmp/dev-019/frozen-model; not loaded")
