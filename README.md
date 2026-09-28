@@ -6,7 +6,9 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 > 可审计且按项目隔离的对话后端、OpenAI 与 DeepSeek 对话适配器和同步前端聊天交互。
 > 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。
 > DEV-016 原文件接入、DEV-017 解析分块与 DEV-018 DeepSeek 对话接入均已合并。
-> 下一任务为 [DEV-019：国内 Embedding 与索引实施准备](docs/tasks/DEV-019-embedding-index-preparation.md)。
+> [DEV-019](docs/tasks/DEV-019-embedding-index-preparation.md) 已交付国内 Embedding 与真实向量合同准备，
+> [核验证据](docs/testing/embedding-index-preflight-acceptance.md)与 Proposed ADR 0007 待审查；下一任务为
+> [DEV-020：文档向量索引](docs/tasks/DEV-020-document-vector-indexing.md)，启动条件见任务书。
 
 ## 核心能力规划
 

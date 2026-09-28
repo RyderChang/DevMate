@@ -12,6 +12,11 @@
 先核验国内模型、tokenizer、费用和向量合同，形成具体决策，再进入独立索引实现。
 下文保留原方案参考；OpenAI 配置和美元预算不作为国内模型的既定规格或已授权支出。
 
+DEV-019 执行补充：已形成[国内候选/冻结合同说明](embedding-index-preflight.md)和
+[真实核验记录](../testing/embedding-index-preflight-acceptance.md)。首选为本地固定 Qwen 的
+[Proposed ADR 0007](../adr/0007-freeze-local-embedding-and-vector-contracts.md)，
+下一独立功能任务为 [DEV-020](../tasks/DEV-020-document-vector-indexing.md)；架构、资源额度与启用条件尚待接受。
+
 ## 1. 顺序与交付物
 
 | 顺序   | 工作                        | 独立交付与完成依据                                                                         |
