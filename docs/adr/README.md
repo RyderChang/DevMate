@@ -12,3 +12,4 @@ ADR 使用四位递增编号，文件名格式为 `NNNN-short-title.md`。状态
 - [0001：首版采用模块化单体](0001-use-modular-monolith.md) — Accepted
 - [0002：AI Gateway 与应用侧会话状态](0002-ai-gateway-and-application-managed-conversations.md) — Accepted
 - [0003：知识文档存储与恢复边界](0003-knowledge-document-storage-and-recovery.md) — Accepted；DEV-016 尚未实施
+- [0004：文档解析、分块与索引边界](0004-document-processing-and-index-boundaries.md) — Proposed；待所有者确认，未授权实现

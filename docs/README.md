@@ -30,6 +30,8 @@
 - [开发任务 DEV-016](tasks/DEV-016-knowledge-document-storage.md)：已确认的知识文档接入与存储边界，覆盖上传、元数据、私有对象存储与失败清理；尚未实施。
 - [ADR 0003：知识文档存储与恢复边界](adr/0003-knowledge-document-storage-and-recovery.md)：已接受的存储职责、失败状态、幂等及清理决策。
 - [DEV-016 实施前核验](development/storage-preflight.md)：SDK 依赖锁、固定源码 MinIO 测试镜像、运行环境和复现命令；功能尚未实施。
+- [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：Proposed；单独确认确定性解析、版本化片段、接口与资源上限，未授权实现；DEV-016 实现见待合并的 [PR #30](https://github.com/RyderChang/DevMate/pull/30)。
+- [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Proposed；区分存储、处理和向量投影，索引模型及费用需另行确认。
 
 ## 计划中的文档
 
