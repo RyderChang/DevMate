@@ -40,3 +40,10 @@
 - 部署与运维指南；
 - 安全与威胁模型；
 - 测试策略。
+
+## 文档处理的后续任务
+
+- [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：2026-09-28 已确认确定性解析、版本化片段、接口与资源上限，功能尚未实现；DEV-016 实现见待合并的 [PR #30](https://github.com/RyderChang/DevMate/pull/30)。
+- [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Accepted；区分存储、处理和向量投影，索引模型及费用需另行确认。
+- [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引默认模型、token 和预算建议；区分方案与尚未启动的实现。
+- [ADR 0005：处理请求映射与向量检索的有界恢复](adr/0005-bound-processing-replays-and-retrieval.md)：Proposed；合并前审查的资源与检索完整性修订，待所有者确认。
