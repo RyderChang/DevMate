@@ -14,3 +14,4 @@ ADR 使用四位递增编号，文件名格式为 `NNNN-short-title.md`。状态
 - [0003：知识文档存储与恢复边界](0003-knowledge-document-storage-and-recovery.md) — Accepted；DEV-016 尚未实施
 - [0004：文档解析、分块与索引边界](0004-document-processing-and-index-boundaries.md) — Superseded by 0005；保留原始接受结论
 - [0005：处理请求映射与向量检索的有界恢复](0005-bound-processing-replays-and-retrieval.md) — Accepted；所有者明确接受映射额度、固定保留窗口与检索补足修订
+- [0006：新增 DeepSeek 官方对话适配器](0006-add-deepseek-chat-provider.md) — Accepted；显式提供商选择，非思考、非流式、纯文本

@@ -3,7 +3,7 @@
 DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手平台。
 
 > **当前状态：第三阶段——知识文档接入基础。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
-> 可审计且按项目隔离的对话后端、首个 OpenAI Responses 适配器和同步前端聊天交互。
+> 可审计且按项目隔离的对话后端、OpenAI 与 DeepSeek 对话适配器和同步前端聊天交互。
 > 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。
 > DEV-016 已实现默认关闭的文档上传、元数据 API、私有 MinIO 存储与持久化恢复；待实现 PR 审核。
 
@@ -23,7 +23,8 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 - 工程能力：Flyway、OpenAPI、JUnit 5、Testcontainers、Docker Compose、GitHub Actions。
 
 已接入部分的具体版本以构建文件为准；Redis 业务和 Qdrant 尚未接入；MinIO 仅接入原文件存储边界。AI Gateway
-当前只提供 OpenAI Responses 适配器，且默认关闭，不配置密钥也可构建和测试。
+提供 OpenAI Responses 与 DeepSeek 官方 Chat Completions 适配器，且默认关闭，不配置密钥也可构建和测试。
+国内试用可显式选择 `AI_PROVIDER=deepseek`；配置与真实冒烟步骤见[本地开发指南](docs/development/local-development.md)。
 
 ## Monorepo 目录
 

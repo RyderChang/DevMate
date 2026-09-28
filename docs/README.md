@@ -41,6 +41,12 @@
 - 安全与威胁模型；
 - 测试策略。
 
+## 国内模型对话接入
+
+- [DEV-018：DeepSeek 官方对话提供商](tasks/DEV-018-deepseek-chat-provider.md)：独立适配器、配置及验证范围。
+- [ADR 0006](adr/0006-add-deepseek-chat-provider.md)：提供商选择、协议、安全与成本边界。
+- [DeepSeek 接入验收](testing/deepseek-chat-provider-acceptance.md)：实际验证、修改文件与真实冒烟限制。
+
 ## 文档处理的后续任务
 
 - [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：2026-09-28 已确认确定性解析、版本化片段、接口与资源上限，功能尚未实现；DEV-016 实现见待合并的 [PR #30](https://github.com/RyderChang/DevMate/pull/30)。

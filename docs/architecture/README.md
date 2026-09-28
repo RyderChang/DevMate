@@ -3,7 +3,7 @@
 本目录用于记录系统边界、组件关系、模块设计和关键技术视图。影响长期演进的具体决策应另行写入 [ADR](../adr/README.md)。
 
 > 下图是目标架构概览，并非完整的当前部署图。仓库已实现应用侧对话状态、
-> AI Gateway 和首个 OpenAI Responses 适配器，以及 knowledge 原文件存储边界。RAG、通用异步任务和其余外部集成仍是目标能力。
+> AI Gateway、OpenAI Responses 与 DeepSeek 官方对话适配器，以及 knowledge 原文件存储边界。RAG、通用异步任务和其余外部集成仍是目标能力。
 
 ```mermaid
 flowchart LR

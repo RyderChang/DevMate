@@ -19,9 +19,45 @@ DEV-016 的 SDK、MinIO 镜像及隔离运行组合见[实施前核验记录](st
 必要时在选定的 Node 安装中执行 `npm install --global npm@10.9.3`。
 PowerShell 下可使用 `npm.cmd` 避免执行策略拦截。
 
-AI Gateway 默认关闭，因此本地构建和自动测试不需要 `OPENAI_API_KEY`，也不会访问公共模型服务。
-如项目所有者选择单独执行真实模型冒烟测试，需在当前 shell 注入 `AI_ENABLED=true`、
-`OPENAI_API_KEY` 和 `OPENAI_MODEL`；不得把值写入仓库、日志或命令记录。真实模型冒烟不是合并门禁。
+AI Gateway 默认关闭，本地构建和自动测试不需要模型密钥，也不会访问公共模型服务。
+真实模型冒烟不是合并门禁；选择 `openai` 时注入 `OPENAI_API_KEY` 与 `OPENAI_MODEL`。
+DeepSeek 官方试用推荐显式设置 `AI_PROVIDER=deepseek`，步骤如下；无需 OpenAI 凭据。
+
+### DeepSeek 官方试用
+
+先在本地开发环境准备隔离 MySQL、随机 JWT 密钥和前后端；不要使用共享生产数据。
+在自己的 PowerShell 中输入以下配置（密钥通过隐藏输入读取，不要粘贴到命令、聊天或仓库文件）：
+
+```powershell
+$env:AI_PROVIDER = 'deepseek'
+$env:DEEPSEEK_MODEL = 'deepseek-flash'
+$env:AI_ENABLED = 'true'
+$taskDeepSeekSecret = Read-Host 'DeepSeek API Key' -AsSecureString
+$env:DEEPSEEK_API_KEY = [System.Net.NetworkCredential]::new('', $taskDeepSeekSecret).Password
+Remove-Variable taskDeepSeekSecret
+```
+
+启动后端 dev profile 与前端，通过页面注册/登录自己的测试账号、创建测试项目和对话，
+发送一条不含私密代码或文档的合成中文问题，例如“请用一句话说明 Java 接口的作用”。
+确认回复成功，并在发送消息接口的响应 `data.invocation` 摘要核对 `provider=deepseek`、配置模型与非空 token 用量；
+当前页面不展示提供商和用量，不能把页面上的成功回复当作提供商配置核验。
+一次失败不能自动生成新 UUID 重试，应先核对安全错误和官方账户状态。
+当前适配器显式关闭思考与流式输出，默认最多生成 1,024 tokens，不展示或保存隐藏推理。
+
+默认地址 `https://api.deepseek.com`；仅接受官方 HTTPS origin 及空路径或 `/v1`，
+不接受第三方代理 URL。具体模型名和费用以
+[官方模型与价格](https://api-docs.deepseek.com/quick_start/pricing/)为准，不使用字符数量估算账单。
+当前只有 token 记录，没有应用金额预算；先使用充值有限的专用账户，少量试用后查看官方账单。
+记录脱敏结果：模型、成功/安全错误、tokens、耗时与实际账单，不上传密钥、完整请求或原始响应。
+
+试用结束停止本地后端，并清除当前 shell 的密钥与开关：
+
+```powershell
+Remove-Item Env:DEEPSEEK_API_KEY -ErrorAction SilentlyContinue
+$env:AI_ENABLED = 'false'
+```
+
+官方接口不可达、凭据/余额错误或超时与模型质量分别记录，不能把 Mock 通过当作真实冒烟通过。
 
 ## 先运行自动化检查
 
