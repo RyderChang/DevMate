@@ -1,0 +1,26 @@
+{
+  "qdrant": {
+    "version": "1.19.1",
+    "image": "qdrant/qdrant@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10",
+    "platform": "linux/amd64"
+  },
+  "mysql": {
+    "version": "8.4.6",
+    "image": "mysql@sha256:c296d65ee6ab3ce2f608c1d1b2bdd3c08b087a5834101d76a6db2e00875216cc",
+    "platform": "linux/amd64"
+  },
+  "spec": {
+    "id": "qwen3-0.6b-1024-cosine-v1",
+    "model": "Qwen/Qwen3-Embedding-0.6B",
+    "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+    "dimensions": 1024,
+    "distance": "Cosine",
+    "document_prefix": "",
+    "query_prefix": "Instruct: Given a software engineering question, retrieve relevant Java and Spring project documentation\nQuery: ",
+    "max_input_tokens": 6000,
+    "max_batch_inputs": 4,
+    "max_batch_tokens": 6000,
+    "max_padded_tokens": 6000,
+    "max_response_bytes": 1048576
+  }
+}

@@ -119,3 +119,14 @@ ADR 0005 的 topK、资格刷新和有界补足留到检索任务实施。
 
 本任务之后依次为独立索引实现、检索与 RAG 对话。任务编号在创建时分配，不提前建立占位业务。
 文档前端、流式对话和部署不并入本任务。
+
+## 8. 执行证据补充
+
+2026-09-28，所有者明确要求“那么请你按照你的安排执行”，从最新 `develop` 的
+`c4f2782b9301e05483b2f7ae1ba4e1d70717a0e5` 执行准备核验。
+交付[候选与复现说明](../development/embedding-index-preflight.md)、
+[实际验收记录](../testing/embedding-index-preflight-acceptance.md)、
+[Proposed ADR 0007](../adr/0007-freeze-local-embedding-and-vector-contracts.md)及
+[DEV-020 独立索引任务书](DEV-020-document-vector-indexing.md)。
+上文“当前没有下载模型”等保留安排时历史，本次权重核验与真实运行以验收记录为准。
+准备任务已形成可审查证据，不表示已有 INDEXED 或已接受新架构/资源额度；不自动进入 DEV-020。

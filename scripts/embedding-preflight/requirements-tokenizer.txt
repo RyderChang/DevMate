@@ -1,0 +1,5 @@
+# Isolated preflight only; no backend/frontend dependency change.
+# CPython >=3.9, Windows amd64 or Linux glibc amd64.
+tokenizers==0.22.1 \
+    --hash=sha256:65fd6e3fb11ca1e78a6a93602490f134d1fdeb13bcef99389d5102ea318ed138 \
+    --hash=sha256:e2ef6063d7a84994129732b47e7915e8710f27f99f3a3260b8a38fc7ccd083f4

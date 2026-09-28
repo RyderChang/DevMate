@@ -1,0 +1,16 @@
+{
+  "request": {
+    "model": "Qwen/Qwen3-Embedding-0.6B",
+    "input": [
+      "hello world",
+      "foo bar baz qux"
+    ],
+    "dimensions": 1024,
+    "encoding_format": "float"
+  },
+  "token_counts": [
+    3,
+    6
+  ],
+  "expected_tokens": 9
+}
