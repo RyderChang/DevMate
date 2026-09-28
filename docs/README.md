@@ -32,6 +32,7 @@
 - [DEV-016 实施前核验](development/storage-preflight.md)：SDK 依赖锁、固定源码 MinIO 测试镜像、运行环境和复现命令；功能尚未实施。
 - [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：2026-09-28 已确认确定性解析、版本化片段、接口与资源上限，功能尚未实现；DEV-016 实现见待合并的 [PR #30](https://github.com/RyderChang/DevMate/pull/30)。
 - [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Accepted；区分存储、处理和向量投影，索引模型及费用需另行确认。
+- [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引默认模型、token 和预算建议；区分方案与尚未启动的实现。
 
 ## 计划中的文档
 
