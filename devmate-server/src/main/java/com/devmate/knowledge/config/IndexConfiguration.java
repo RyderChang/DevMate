@@ -7,10 +7,10 @@ import org.springframework.context.annotation.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @Configuration
-@EnableConfigurationProperties(IndexProperties.class)
+@EnableConfigurationProperties({IndexProperties.class,RetrievalProperties.class})
 public class IndexConfiguration {
-    @Bean EmbeddingGateway embeddingGateway(IndexProperties properties) {
-        return new LocalEmbeddingGateway(properties.getModelOrigin(),properties.isEnabled());
+    @Bean EmbeddingGateway embeddingGateway(IndexProperties properties,RetrievalProperties retrieval) {
+        return new SerializedEmbeddingGateway(new LocalEmbeddingGateway(properties.getModelOrigin(),properties.isEnabled() || retrieval.isEnabled()));
     }
     @Bean VectorStore vectorStore(IndexProperties properties) {
         return new QdrantVectorStore(properties.getVectorOrigin(),properties.getCollection(),properties.isEnabled());

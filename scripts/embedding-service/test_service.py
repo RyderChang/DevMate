@@ -65,6 +65,19 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual("SUCCEEDED", self.supervisor.operation(body["operation_id"])["state"])
         self.assertEqual(409, self.supervisor.embed(body)[0])
 
+    def test_frozen_query_prefix_fixture_and_query_token_boundaries(self):
+        tokens = self.supervisor.tokens
+        cases = json.loads((Path(__file__).resolve().parents[1]/"embedding-preflight/fixtures/tokenizer-cases.json").read_text(encoding="utf-8"))["cases"]
+        for case in cases:
+            if case["role"] == "query":
+                self.assertEqual(case["ids"], tokens.encode(SPEC["query_prefix"]+case["text"]).ids)
+        prefix = SPEC["query_prefix"]
+        text = prefix + "图"*(6001-len(tokens.encode(prefix).ids))
+        self.assertLessEqual(len(text),8000)
+        self.assertEqual([6000],counts(tokens,[text],inference=True))
+        with self.assertRaises(ValueError):
+            counts(tokens,[text+"图"],inference=True)
+
     def test_deadline_terminates_and_joins_before_recording_ended(self):
         body = self.body("timeout")
         started = time.monotonic()

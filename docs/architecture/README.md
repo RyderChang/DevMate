@@ -34,3 +34,8 @@ DEV-017 继续在 knowledge 内提供显式文本处理和持久化有界扫描�
 删除和发布共用项目/文档锁，原文件先清理时仍保留父文档直到派生内容清理结束。
 解析使用固定 Unicode 字符窗口，不接入模型、向量投影或通用队列。
 接口与验证见[处理 API](../api/document-processing.md)和[DEV-017 验收记录](../testing/document-processing-acceptance.md)。
+
+DEV-020 的完整活动索引是文档向量投影的可见性边界。DEV-021 的 knowledge 检索服务先从 MySQL 取得完整活动来源组合，
+通过独立 Embedding 能力生成固定 query 向量，再用 Qdrant 服务端归属/来源/排除过滤与 MySQL 二次校验完成有界补足。
+查询和索引共享单个无队列推理槽及现有日 token/容量行，独立 query journal 保存未知操作，不依赖可删除父记录。
+返回纯文本片段及版本/位置，不生成 RAG 回答；合同见[检索 API](../api/document-retrieval.md)。
