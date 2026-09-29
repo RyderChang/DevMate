@@ -7,9 +7,10 @@
 - `conversation_env.py`、`ai-stub.mjs`：隔离对话联调与 Stub，使用方式见[开发指南](../docs/development/local-development.md)。
 - `storage-preflight/`：SDK/hash 锁、固定源码 MinIO 构建和真实存储/数据库预检，见[准备记录](../docs/development/storage-preflight.md)。
 - `verify-knowledge-backend.py`：JDK 21 编译、固定 Linux JRE 执行完整后端；失败/缺失/跳过均拒绝。
-- `check-knowledge-test-reports.py`：Foundation CI 的完整报告门禁，要求八组存储和三组解析分块验收，所有测试零跳过。
+- `check-knowledge-test-reports.py`：Foundation CI 的完整报告门禁，要求八组存储、三组解析分块及三组索引/HTTP/向量验收，所有测试零跳过。
 - `retry-knowledge-document.sql`：经授权运维会话恢复已审查 ID 的核对/清理；不改变终态或释放未知写入的容量。
 - `embedding-preflight/`：冻结 Qwen tokenizer/HTTP、真实 Qdrant/MySQL 与可选本地模型探针，见[准备说明](../docs/development/embedding-index-preflight.md)和[核验记录](../docs/testing/embedding-index-preflight-acceptance.md)；不是业务索引服务。
+- `embedding-service/`：DEV-020 单进程本地模型 supervisor、冻结 Linux CPU wheel、合成进程测试与真实 HTTP 冒烟；见[运行说明](../docs/development/document-indexing.md)和[索引验收记录](../docs/testing/document-indexing-acceptance.md)。
 
 知识文档的配置、隔离测试、清理和人工处理步骤见[开发指南](../docs/development/local-development.md)，
 实际命令与结果见[验收记录](../docs/testing/knowledge-document-storage-acceptance.md)。

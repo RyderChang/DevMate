@@ -10,7 +10,9 @@ def main():
     required = {"com.devmate.knowledge." + name for name in (
         "DocumentApiIntegrationTest", "DocumentHttpIntegrationTest", "DocumentLifecycleIntegrationTest",
         "DocumentServiceTest", "DocumentValidatorTest", "KnowledgePropertiesTest",
-        "S3ObjectStorageContractTest", "UploadTempFilesTest", "TextChunkerTest", "DocumentProcessingIntegrationTest", "ProcessingServiceTest")}
+        "S3ObjectStorageContractTest", "UploadTempFilesTest", "TextChunkerTest", "DocumentProcessingIntegrationTest", "ProcessingServiceTest",
+        "DocumentIndexingIntegrationTest", "QdrantVectorStoreIntegrationTest")}
+    required.add("com.devmate.ai.LocalEmbeddingGatewayTest")
     if not required.issubset(suites):
         raise RuntimeError("Required knowledge storage/processing test suites are missing")
     totals = {key: sum(int(suite.attrib[key]) for suite in suites.values())

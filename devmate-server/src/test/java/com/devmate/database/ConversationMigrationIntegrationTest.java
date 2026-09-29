@@ -40,7 +40,7 @@ class ConversationMigrationIntegrationTest extends MySqlIntegrationTestBase {
                 .containsExactly("conversation_id", "client_request_id");
         flyway.validate();
         assertThat(jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history "
-                + "WHERE success=1", Integer.class)).isEqualTo(7);
+                + "WHERE success=1", Integer.class)).isEqualTo(8);
     }
 
     @Test

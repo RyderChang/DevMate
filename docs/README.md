@@ -54,8 +54,10 @@
 - [DEV-017：文档解析与分块任务边界](tasks/DEV-017-document-processing-boundaries.md)：确定性解析、版本化片段、接口与资源上限已落实，[PR #33](https://github.com/RyderChang/DevMate/pull/33) 已合并。
 - [DEV-019：国内 Embedding 与索引实施准备](tasks/DEV-019-embedding-index-preparation.md)：已交付国内候选、冻结 tokenizer 和真实数据库合同证据。
 - [Embedding 准备说明](development/embedding-index-preflight.md)与[核验记录](testing/embedding-index-preflight-acceptance.md)：复现、版本/hash、实际结果与限制。
-- [ADR 0007](adr/0007-freeze-local-embedding-and-vector-contracts.md)：Proposed，本地 Qwen 规格、资源额度与未知写入恢复提议。
-- [DEV-020：文档向量索引](tasks/DEV-020-document-vector-indexing.md)：下一独立功能任务，开始前接受 ADR 与资源额度。
+- [ADR 0007](adr/0007-freeze-local-embedding-and-vector-contracts.md)：Accepted；所有者接受固定本地 Qwen、资源额度与未知写入债务边界。
+- [DEV-020：文档向量索引](tasks/DEV-020-document-vector-indexing.md)：显式索引、版本化完整发布和有界恢复。
+- [索引 API](api/document-indexing.md)、[运行说明](development/document-indexing.md)与[索引验收记录](testing/document-indexing-acceptance.md)：默认关闭、真实 Linux 模型服务与测试边界。
+- [DEV-020 审核修复](testing/document-indexing-review.md)：明确拒绝的操作证明、关闭索引后的实际恢复及回归证据。
 - [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Superseded by ADR 0005；区分存储、处理和向量投影，索引模型及费用需另行确认。
 - [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引备选模型、token 和预算建议；最新实施顺序见 DEV-019。
 - [ADR 0005：处理请求映射与向量检索的有界恢复](adr/0005-bound-processing-replays-and-retrieval.md)：Accepted；已接受的资源与检索完整性修订，处理部分已实施。

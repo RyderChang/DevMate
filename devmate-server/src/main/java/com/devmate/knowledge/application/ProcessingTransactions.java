@@ -4,7 +4,9 @@ import com.devmate.common.api.ErrorCode;
 import com.devmate.common.exception.BusinessException;
 import com.devmate.knowledge.config.KnowledgeProperties;
 import com.devmate.knowledge.config.ProcessingProperties;
+import com.devmate.knowledge.config.IndexProperties;
 import com.devmate.knowledge.infrastructure.DocumentMapper;
+import com.devmate.knowledge.infrastructure.IndexJournal;
 import com.devmate.knowledge.infrastructure.DocumentRow;
 import com.devmate.knowledge.infrastructure.ProcessingMapper;
 import com.devmate.knowledge.infrastructure.ProcessingRequestRow;
@@ -32,10 +34,14 @@ public class ProcessingTransactions {
     private final ProcessingProperties properties;
     private final KnowledgeProperties storageProperties;
     private final Clock clock;
+    private final IndexJournal indexes;
+    private final IndexProperties indexing;
     public ProcessingTransactions(ProcessingMapper mapper, DocumentMapper documents, ProjectService projects,
-            ProcessingProperties properties, KnowledgeProperties storageProperties, @Qualifier("knowledgeClock") Clock clock) {
+            ProcessingProperties properties, KnowledgeProperties storageProperties, @Qualifier("knowledgeClock") Clock clock, IndexJournal indexes, IndexProperties indexing) {
         this.mapper = mapper; this.documents = documents; this.projects = projects;
         this.properties = properties; this.storageProperties = storageProperties; this.clock = clock;
+        this.indexes = indexes;
+        this.indexing = indexing;
     }
     public boolean enabled() { return properties.isEnabled() && storageProperties.isEnabled(); }
 
@@ -155,7 +161,7 @@ public class ProcessingTransactions {
             require(mapper.chunks(row.id, offset, 128).equals(parsed.chunks().subList(offset, end)));
         }
         var active = mapper.current(row.documentId);
-        if (active != null) { active.active = false; save(active); }
+        if (active != null) { indexes.cancel(row.documentId, now()); active.active = false; save(active); }
         release(row, row.reservedBytes); row.reservedBytes = 0;
         row.normalizedSha256 = parsed.normalizedSha256(); row.state = "CHUNKED"; row.active = true;
         clearLease(row); save(row); require(mapper.setActive(row.documentId, row.id) == 1);
@@ -184,6 +190,7 @@ public class ProcessingTransactions {
     /** Called with the parent project/document locks already held, including project deletion events. */
     @Transactional(propagation=Propagation.MANDATORY)
     public void cancelDocument(long id) {
+        indexes.cancel(id, now());
         require(mapper.setActive(id, null) == 1);
         for (long record : mapper.documentRecords(id)) {
             var row = mapper.lock(record);
@@ -269,7 +276,8 @@ public class ProcessingTransactions {
     }
     private boolean terminal(ProcessingRow row) { return "FAILED".equals(row.state) || "CANCELLED".equals(row.state); }
     private ProcessingResponse response(ProcessingRow latest, ProcessingRow active) {
-        return new ProcessingResponse(latest == null ? null : latest.summary(), active == null ? null : active.summary());
+        return new ProcessingResponse(latest == null ? null : latest.summary(), active == null ? null : active.summary(),
+                "NORMALIZED_UNICODE_CODE_POINT", indexing.isEnabled() && enabled() && active != null && indexes.active(active.documentId) != null);
     }
     private void release(ProcessingRow row, long bytes) { if (bytes != 0) require(mapper.release(row.ownerUserId, row.projectId, bytes) == 1); }
     private void clearLease(ProcessingRow row) { row.leaseOwner = null; row.leaseUntil = null; }
