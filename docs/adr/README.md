@@ -16,3 +16,4 @@ ADR 使用四位递增编号，文件名格式为 `NNNN-short-title.md`。状态
 - [0005：处理请求映射与向量检索的有界恢复](0005-bound-processing-replays-and-retrieval.md) — Accepted；所有者明确接受映射额度、固定保留窗口与检索补足修订
 - [0006：新增 DeepSeek 官方对话适配器](0006-add-deepseek-chat-provider.md) — Accepted；显式提供商选择，非思考、非流式、纯文本
 - [0007：冻结本地 Embedding 与向量恢复合同](0007-freeze-local-embedding-and-vector-contracts.md) — Accepted；所有者接受全部任务额度与受控本地模型测试进程，付费 CNY 0
+- [0008：RAG 对话编排与引用快照的有界合同](0008-bound-rag-conversation-and-citations.md) — Accepted；独立依赖分支，11/12 分钟截止、来源检查与长期记录额度

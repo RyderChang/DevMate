@@ -2,7 +2,7 @@
 
 DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手平台。
 
-> **当前状态：第三阶段——知识文档检索。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
+> **当前状态：第三阶段——带引用的 RAG 对话后端。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
 > 可审计且按项目隔离的对话后端、OpenAI 与 DeepSeek 对话适配器和同步前端聊天交互。
 > 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。
 > DEV-016 原文件接入、DEV-017 解析分块与 DEV-018 DeepSeek 对话接入均已合并。
@@ -10,7 +10,9 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 > ADR 0007 与全部资源额度已由所有者接受。[DEV-020](docs/tasks/DEV-020-document-vector-indexing.md) 实现显式文档索引、
 > 独立清理债务及受控本地模型服务；[索引验收记录](docs/testing/document-indexing-acceptance.md)区分实际测试与后续限制。
 > [DEV-021](docs/tasks/DEV-021-document-retrieval.md) 提供完整来源过滤、资格重校验与有界补足的文档检索；默认关闭。
-> 检索验证见[验收记录](docs/testing/document-retrieval-acceptance.md)，RAG 对话与生产部署待独立任务。
+> [DEV-022](docs/tasks/DEV-022-rag-conversation.md) 接入默认关闭的 RAG 对话、可验证来源、幂等与长期记录额度；
+> [RAG API](docs/api/rag-conversation.md)与[验收记录](docs/testing/rag-conversation-acceptance.md)说明验证和限制。
+> 本实施分支依赖未合并的 #36/#37；前端引用展示、生产启用与真实付费调用另行决定。
 
 ## 核心能力规划
 

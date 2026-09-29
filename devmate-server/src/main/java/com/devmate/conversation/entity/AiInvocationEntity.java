@@ -26,6 +26,16 @@ public class AiInvocationEntity {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 
+    private String mode;
+    private String requestSha256;
+    private LocalDateTime leaseExpiresAt;
+    public String getMode() { return mode; }
+    public void setMode(String value) { mode = value; }
+    public String getRequestSha256() { return requestSha256; }
+    public void setRequestSha256(String value) { requestSha256 = value; }
+    public LocalDateTime getLeaseExpiresAt() { return leaseExpiresAt; }
+    public void setLeaseExpiresAt(LocalDateTime value) { leaseExpiresAt = value; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getConversationId() { return conversationId; }

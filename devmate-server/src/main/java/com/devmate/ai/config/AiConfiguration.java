@@ -17,7 +17,13 @@ public class AiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "devmate.ai", name = "enabled", havingValue = "true")
     AiGateway enabledAiGateway(AiProperties properties, ObjectMapper objectMapper) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory() {
+            @Override protected void prepareConnection(java.net.HttpURLConnection connection, String method) throws java.io.IOException {
+                super.prepareConnection(connection, method);
+                connection.setConnectTimeout((int) Math.max(1, com.devmate.ai.application.CallBudget.cap(properties.getConnectTimeout()).toMillis()));
+                connection.setReadTimeout((int) Math.max(1, com.devmate.ai.application.CallBudget.cap(properties.getReadTimeout()).toMillis()));
+            }
+        };
         requestFactory.setConnectTimeout(properties.getConnectTimeout());
         requestFactory.setReadTimeout(properties.getReadTimeout());
         RestClient restClient = RestClient.builder()

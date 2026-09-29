@@ -2,7 +2,12 @@ name: Embedding Preflight
 
 on:
   pull_request:
-    branches: [develop, feature/dev-020-document-vector-indexing]
+    branches:
+      [
+        develop,
+        feature/dev-020-document-vector-indexing,
+        feature/dev-021-document-retrieval,
+      ]
     paths:
       - scripts/embedding-preflight/**
       - scripts/embedding-service/**

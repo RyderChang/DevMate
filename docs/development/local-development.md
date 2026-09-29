@@ -415,3 +415,9 @@ LIMIT 50;
 失败/删除完成物理清理后仅保留请求终态 24 小时；已删除原文件无法通过应用回滚恢复。
 本任务未部署任何环境，也未建立备份。上线前所有者须另行确定 MySQL/对象存储一致备份、保留期及删除履约政策；
 备份中的副本可能超过应用物理删除时间，不能把一分钟扫描间隔当成删除 SLA。
+
+## RAG 对话后端
+
+DEV-022 入口由 `RAG_ENABLED=false` 默认关闭；恢复扫描由 `RAG_SCHEDULING_ENABLED=true` 控制，关闭新调用后仍可结束过期请求。
+启用前需同时具备知识存储/处理/索引/检索和 AI Gateway；本任务没有授权生产启用或真实收费调用。
+[运行与恢复说明](rag-conversation.md)、[API](../api/rag-conversation.md)及[验收](../testing/rag-conversation-acceptance.md)提供配置与实际验证结果。
