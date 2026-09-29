@@ -46,6 +46,7 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
     @Autowired RagProperties rag;
     @org.springframework.test.context.bean.override.mockito.MockitoSpyBean RagSourceEligibility eligibility;
     @Autowired ConversationService conversations;
+    @Autowired ConversationTransactionService plainTransactions;
     @Autowired ObjectMapper json;
     @MockitoBean AiGateway gateway;
     @MockitoBean(name="conversationClock") Clock conversationClock;
@@ -237,6 +238,24 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations WHERE id=?",String.class,abandoned.context().invocation())).isEqualTo("FAILED");
         assertThat(jdbc.queryForObject("SELECT generation_state FROM conversations",String.class)).isEqualTo("IDLE");
         verify(model,times(1)).embed(anyString(),anyList(),anyList());
+    }
+    @Test void bothChatEntrypointsMarkAbandonedDispatchUnknownWhenTakingAnExpiredLease() {
+        for (boolean plain : List.of(true,false)) {
+            long current=conversations.create(owner,project,new CreateConversationRequest("takeover")).id();
+            String abandonedId=uuid();
+            var abandoned=ragTransactions.begin(owner,project,current,abandonedId,"Spring rollback").context();
+            // Simulate a process exiting after its durable send checkpoint, before receiving a receipt.
+            jdbc.update("UPDATE rag_invocation_details SET chat_state='DISPATCHED' WHERE invocation_id=?",abandoned.invocation());
+            time.set(time.get().plus(Duration.ofMinutes(12)));
+            if (plain) plainTransactions.begin(owner,project,current,uuid(),"next request");
+            else ragTransactions.begin(owner,project,current,uuid(),"next request");
+            assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations WHERE id=?",String.class,abandoned.invocation())).isEqualTo("FAILED");
+            assertThat(jdbc.queryForObject("SELECT chat_state FROM rag_invocation_details WHERE invocation_id=?",String.class,abandoned.invocation())).isEqualTo("UNKNOWN");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM ai_invocations WHERE conversation_id=? AND status='PENDING'",Long.class,current)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT records FROM rag_record_capacity WHERE scope='CONVERSATION' AND scope_id=?",Long.class,current)).isEqualTo(plain?1:2);
+            failed(ErrorCode.AI_REQUEST_EXPIRED,()->service.send(owner,project,current,request(abandonedId)));
+        }
+        verify(gateway,never()).chat(any());verifyNoInteractions(model,vectors);
     }
     @Test void strictModelOutputFailureRetainsUsageAndReplaysStableError() {
         ready();String id=uuid();when(gateway.chat(any())).thenReturn(result("{\"answer\":\"forged [C9]\",\"citationIds\":[\"C9\"]}"));

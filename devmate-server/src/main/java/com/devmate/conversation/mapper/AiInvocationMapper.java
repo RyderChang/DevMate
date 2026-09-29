@@ -32,8 +32,11 @@ public interface AiInvocationMapper extends BaseMapper<AiInvocationEntity> {
     LocalDateTime pendingDeadline(@Param("conversationId") Long conversationId,
                                   @Param("startedAt") LocalDateTime startedAt);
 
-    @Update("UPDATE ai_invocations SET status='FAILED',error_code=#{errorCode},completed_at=#{completedAt} "
-            + "WHERE conversation_id=#{conversationId} AND status='PENDING'")
+    // Both chat entrypoints may reclaim a crashed RAG lease while its scheduler is disabled.
+    @Update("UPDATE ai_invocations i LEFT JOIN rag_invocation_details r ON r.invocation_id=i.id "
+            + "SET i.status='FAILED',i.error_code=#{errorCode},i.completed_at=#{completedAt},"
+            + "r.chat_state=CASE WHEN r.chat_state='DISPATCHED' THEN 'UNKNOWN' ELSE r.chat_state END "
+            + "WHERE i.conversation_id=#{conversationId} AND i.status='PENDING'")
     int failPendingForConversation(@Param("conversationId") Long conversationId,
                                    @Param("errorCode") String errorCode,
                                    @Param("completedAt") LocalDateTime completedAt);
