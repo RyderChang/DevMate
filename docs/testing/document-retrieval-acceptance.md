@@ -52,6 +52,14 @@ Python supervisor/query 合并后 9 项通过；本轮 Java 回归 49 项通过�
 python -B scripts/verify-knowledge-backend.py --tests DocumentRetrievalIntegrationTest,LocalEmbeddingGatewayTest,DocumentIndexingIntegrationTest,QdrantVectorStoreIntegrationTest
 ```
 
+完整 CI 随后发现依赖修复引入的默认装配问题：关闭写入后保留的真实 Qdrant 对象也实现 VectorSearch，
+与专用检索 Bean 形成两个候选。受影响套件替换了 VectorStore，未覆盖该真实运行类型。
+新增不替换适配器的 RetrievalConfigurationTest，先复现 1 项执行/1 错误，再把专用检索 Bean 明确为 Primary；
+禁用检索仍选择其受控禁用实现，索引清理适配器继续保留。默认装配回归纳入完整报告门禁。
+修复后 `python -B scripts/verify-knowledge-backend.py --tests RetrievalConfigurationTest,DevMateApplicationTests`
+两项通过，失败/错误/跳过均 0；完整默认应用在真实 MySQL 中启动，没有替换两个适配器。
+原 `7c5f4b0` 完整后端 CI 因装配歧义失败，不记通过；最终修复 head 的完整 CI 由 PR 核验并记录。
+
 ## 边界与恢复
 
 查询共享已有 token/容量行，失败不退款；终态首次发送后固定 24 小时有界回收。

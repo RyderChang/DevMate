@@ -7,7 +7,7 @@ import org.springframework.context.annotation.*;
 
 @Configuration
 public class RetrievalConfiguration {
-    @Bean VectorSearch vectorSearch(RetrievalProperties retrieval, IndexProperties index){
+    @Bean @Primary VectorSearch vectorSearch(RetrievalProperties retrieval, IndexProperties index){
         if(retrieval.isEnabled()) return new QdrantVectorStore(index.getVectorOrigin(),index.getCollection());
         return (owner,project,spec,sources,vector,excluded,limit)->{throw new EmbeddingFailure("RETRIEVAL_DISABLED",true);};
     }

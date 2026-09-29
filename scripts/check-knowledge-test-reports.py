@@ -11,7 +11,7 @@ def main():
         "DocumentApiIntegrationTest", "DocumentHttpIntegrationTest", "DocumentLifecycleIntegrationTest",
         "DocumentServiceTest", "DocumentValidatorTest", "KnowledgePropertiesTest",
         "S3ObjectStorageContractTest", "UploadTempFilesTest", "TextChunkerTest", "DocumentProcessingIntegrationTest", "ProcessingServiceTest",
-        "DocumentIndexingIntegrationTest", "DocumentRetrievalIntegrationTest", "QdrantVectorStoreIntegrationTest")}
+        "DocumentIndexingIntegrationTest", "DocumentRetrievalIntegrationTest", "RetrievalConfigurationTest", "QdrantVectorStoreIntegrationTest")}
     required.add("com.devmate.ai.LocalEmbeddingGatewayTest")
     if not required.issubset(suites):
         raise RuntimeError("Required knowledge storage/processing/indexing/retrieval suites are missing")
