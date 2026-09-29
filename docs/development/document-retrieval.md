@@ -20,6 +20,8 @@ CI 不启动真实权重、不用私人账户。工作流只增加本次堆叠 P
 `KNOWLEDGE_RETRIEVAL_ENABLED=false`、`KNOWLEDGE_RETRIEVAL_SCHEDULING_ENABLED=true`。
 启用还要求存储/处理/索引开关；固定 origin/collection 和模型运行时沿用[索引运行说明](document-indexing.md)。
 索引和查询共享一个无排队推理槽，本地竞争且确定未发送是失败；远端不确定仍须持久证明。
+固定服务的 NOT_STARTED 必须同时核验 429 BUSY/JOURNAL_FULL、操作 ID、spec 和 fingerprint，不能把普通限流或 ABSENT 当作证明。
+所有写入开关关闭后仍保留不在启动联网的恢复适配器；已有债务触发时才核验模型状态/既有 Qdrant collection。
 
 查询共享项目/全局日 token 行，预留现有容量中的一条债务、4096 逻辑字节和 0 持久点，不另加预算。
 终态操作首次发送后固定 24 小时、每轮最多 20 条清理；UNKNOWN 无 TTL。

@@ -22,9 +22,11 @@ class QdrantVectorStoreIntegrationTest {
             .withExposedPorts(6333).withCreateContainerCmdModifier(command->command.getHostConfig().withPortBindings(new com.github.dockerjava.api.model.PortBinding(
                     com.github.dockerjava.api.model.Ports.Binding.bindIpAndPort("127.0.0.1",0),new com.github.dockerjava.api.model.ExposedPort(6333))));
     final ObjectMapper json=new ObjectMapper();HttpServer relay;HttpClient upstream;String origin,path;QdrantVectorStore store;volatile boolean drop;
+    final java.util.concurrent.atomic.AtomicInteger requests=new java.util.concurrent.atomic.AtomicInteger();
     @BeforeEach void start()throws Exception{
         upstream=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();relay=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         relay.createContext("/",exchange->{try{
+            requests.incrementAndGet();
             var request=HttpRequest.newBuilder(URI.create("http://"+QDRANT.getHost()+":"+QDRANT.getMappedPort(6333)+exchange.getRequestURI())).timeout(Duration.ofSeconds(30)).header("Content-Type","application/json")
                     .method(exchange.getRequestMethod(),HttpRequest.BodyPublishers.ofByteArray(exchange.getRequestBody().readAllBytes())).build();
             var response=upstream.send(request,HttpResponse.BodyHandlers.ofByteArray());
@@ -60,5 +62,13 @@ class QdrantVectorStoreIntegrationTest {
         var work=work(1,2,3,4,5);
         assertThatThrownBy(()->store.query(2,2,EmbeddingSpec.ID,List.of(source(work)),vector().getFirst(),Set.of(),100)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->store.query(1,2,"different",List.of(source(work)),vector().getFirst(),Set.of(),100)).isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test void disablingNewIndexingKeepsActualCleanupAndDoesNotCreateMissingCollection()throws Exception{
+        var work=work(1,2,3,4,5);var point=point();store.upsert(work,List.of(point),vector());
+        var context=new org.springframework.boot.test.context.runner.ApplicationContextRunner().withUserConfiguration(com.devmate.knowledge.config.IndexConfiguration.class)
+            .withPropertyValues("devmate.knowledge.indexing.vector-origin="+origin);
+        requests.set(0);context.withPropertyValues("devmate.knowledge.indexing.collection="+path.substring("/collections/".length())).run(c->{assertThat(requests).hasValue(0);assertThat(c.getBean(VectorStore.class).deleteAndVerify(work,List.of(point))).isTrue();assertThat(store.matches(work,List.of(point))).isFalse();});
+        String missing="devmate_qwen3_v1_missing";
+        context.withPropertyValues("devmate.knowledge.indexing.collection="+missing).run(c->{assertThatThrownBy(()->c.getBean(VectorStore.class).deleteAndVerify(work,List.of(point))).isInstanceOf(EmbeddingFailure.class);var response=upstream.send(HttpRequest.newBuilder(URI.create(origin+"/collections/"+missing)).GET().build(),HttpResponse.BodyHandlers.discarding());assertThat(response.statusCode()).isEqualTo(404);});
     }
 }

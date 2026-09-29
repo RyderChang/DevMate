@@ -89,6 +89,13 @@ class DocumentIndexingIntegrationTest extends MySqlIntegrationTestBase {
     private String path(long document){return "/projects/"+project+"/documents/"+document+"/indexing";}
     private String body(String request){return "{\"clientRequestId\":\""+request+"\"}";}
     private long capacity(){return jdbc.queryForObject("SELECT points FROM knowledge_index_capacity WHERE project_id=0",Long.class);}
+    @Test void rejectedBeforeInferenceDoesNotLeaveUnknownOrDisableRollbackCleanup(){
+        long document=chunked("synthetic");long id=start(document);
+        when(model.embed(anyString(),anyList(),anyList())).thenThrow(new EmbeddingFailure("MODEL_NOT_STARTED",true));when(model.ended(anyString())).thenReturn(false);finish(id);
+        assertThat(journal.find(id).state()).isEqualTo("FAILED");assertThat(journal.operations(id)).singleElement().satisfies(op->assertThat(op.state()).isEqualTo("ENDED"));
+        indexing.setEnabled(false);recovery.runOnce();assertThat(journal.find(id).cleaned()).isTrue();assertThat(capacity()).isZero();
+        verify(model,never()).ended(anyString());verify(vectors,never()).upsert(any(),anyList(),anyList());
+    }
     @Test void completeManifestPublishesOnlyAfterAllBatchesAndReplayDoesNotCallAgain(){
         long document=chunked("synthetic Java Spring documentation ".repeat(240));assertThat(journal.latest(document)).isNull();
         String request=uuid();long id=service.start(owner,project,document,request).response().latest().indexId();int chunks=journal.find(id).chunks();assertThat(chunks).isGreaterThan(4);

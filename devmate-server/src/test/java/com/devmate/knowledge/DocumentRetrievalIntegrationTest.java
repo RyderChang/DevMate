@@ -190,4 +190,12 @@ class DocumentRetrievalIntegrationTest extends MySqlIntegrationTestBase {
         assertThatThrownBy(()->service.search(owner,project,new RetrievalRequest("active",1))).isInstanceOf(BusinessException.class);
         assertThat(receiptState()).isEqualTo("FAILED");verify(model,never()).ended(anyString());verifyNoInteractions(vectors);
     }
+    @Test void verifiedModelRejectionDoesNotCreateUnknownAndStillChargesTheFrozenAttempt(){
+        indexed("active");clearInvocations(model);long baseline=bytes();when(model.ended(anyString())).thenReturn(false);
+        when(model.embed(anyString(),anyList(),anyList())).thenThrow(new EmbeddingFailure("MODEL_NOT_STARTED",true));
+        assertThatThrownBy(()->service.search(owner,project,new RetrievalRequest("active",1))).isInstanceOf(BusinessException.class);
+        assertThat(receiptState()).isEqualTo("FAILED");verify(model,never()).ended(anyString());verifyNoInteractions(vectors);
+        assertThat(jdbc.queryForObject("SELECT tokens FROM knowledge_index_daily_tokens WHERE project_id=0",Long.class)).isEqualTo(6);
+        assertThat(bytes()).isEqualTo(baseline+4096);time.set(time.get().plus(Duration.ofHours(25)));recovery.runOnce();assertThat(receiptCount()).isZero();assertThat(bytes()).isEqualTo(baseline);
+    }
 }

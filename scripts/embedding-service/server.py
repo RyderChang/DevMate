@@ -16,6 +16,7 @@ from spec import metadata, tokenizer, inputs, counts, SPEC
 from worker import serve
 from runtime_limits import exclusive, verify_linux_envelope
 
+JOURNAL_LIMIT = 100000
 
 def unique(pairs):
     result = {}
@@ -79,20 +80,27 @@ class Supervisor:
         identity = str(uuid.UUID(body["operation_id"]))
         if identity != body["operation_id"]:
             raise ValueError("canonical operation required")
-        if not self.slot.acquire(blocking=False):
-            return 429, {**metadata(), "code": "BUSY"}
-        try:
-            deadline = time.monotonic() + self.deadline
-            fingerprint = hashlib.sha256(json.dumps([SPEC["id"], texts], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
-            with self.db_lock:
+        fingerprint = hashlib.sha256(json.dumps([SPEC["id"], texts], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+        # Check identity, acquire the slot and insert atomically. A replay while
+        # busy must never receive proof that an existing operation was not started.
+        with self.db_lock:
+            if self.db.execute("SELECT id FROM operations WHERE id=?", (identity,)).fetchone():
+                return 409, {**metadata(), "code": "OPERATION_REPLAY"}
+            if not self.slot.acquire(blocking=False):
+                return 429, {**metadata(), "operation_id": identity, "state": "NOT_STARTED", "code": "BUSY"}
+            try:
                 self.db.execute("DELETE FROM operations WHERE id IN (SELECT id FROM operations WHERE state IN ('SUCCEEDED','TERMINATED') AND created<? LIMIT 20)", (time.time()-86400,))
-                prior = self.db.execute("SELECT fingerprint FROM operations WHERE id=?", (identity,)).fetchone()
-                if prior:
-                    return 409, {**metadata(), "code": "OPERATION_REPLAY"}
-                if self.db.execute("SELECT COUNT(*) FROM operations").fetchone()[0] >= 100000:
-                    return 429, {**metadata(), "code": "JOURNAL_FULL"}
+                if self.db.execute("SELECT COUNT(*) FROM operations").fetchone()[0] >= JOURNAL_LIMIT:
+                    self.db.commit()
+                    self.slot.release()
+                    return 429, {**metadata(), "operation_id": identity, "state": "NOT_STARTED", "code": "JOURNAL_FULL"}
                 self.db.execute("INSERT INTO operations VALUES(?,?,'RUNNING',?)", (identity, fingerprint, time.time()))
                 self.db.commit()
+            except BaseException:
+                self.slot.release()
+                raise
+        try:
+            deadline = time.monotonic() + self.deadline
             ended = False
             try:
                 if not self.process.is_alive():

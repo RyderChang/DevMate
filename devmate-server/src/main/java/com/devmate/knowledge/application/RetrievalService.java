@@ -64,7 +64,7 @@ public class RetrievalService {
             return response(operation,tokens,topK,rounds,checked.size(),incomplete,reason,finalHits);
         }catch(RuntimeException error){
             if(operation!=null){
-                boolean proof=ended || error instanceof EmbeddingFailure local && local.code().equals("LOCAL_NOT_SENT") || model.ended(operation);
+                boolean proof=ended || error instanceof EmbeddingFailure local && Set.of("LOCAL_NOT_SENT","MODEL_NOT_STARTED").contains(local.code()) || model.ended(operation);
                 try{transactions.finish(operation,proof?"FAILED":"UNKNOWN",proof?"RETRIEVAL_FAILED":"MODEL_UNCONFIRMED",elapsed(start));}
                 catch(RuntimeException stateError){LOG.warn("Retrieval state unconfirmed traceId={} retrievalId={} code=STATE_UNCONFIRMED",MDC.get("traceId"),operation);}
             }

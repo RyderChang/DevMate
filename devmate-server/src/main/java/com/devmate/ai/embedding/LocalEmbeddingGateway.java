@@ -10,19 +10,31 @@ import java.util.UUID;
 public final class LocalEmbeddingGateway implements EmbeddingGateway, AutoCloseable {
     private final LocalJsonClient http;
     private final Duration inferenceDeadline;
-    public LocalEmbeddingGateway(String origin) { this(origin, Duration.ofSeconds(300)); }
+    private volatile boolean ready;
+    public LocalEmbeddingGateway(String origin) { this(origin, Duration.ofSeconds(300),true); }
+    /** Disabled writes retain a status-only recovery path without requiring startup network access. */
+    public LocalEmbeddingGateway(String origin,boolean verifyAtStartup) { this(origin,Duration.ofSeconds(300),verifyAtStartup); }
     public LocalEmbeddingGateway(String origin, Duration inferenceDeadline) {
+        this(origin,inferenceDeadline,true);
+    }
+    private LocalEmbeddingGateway(String origin,Duration inferenceDeadline,boolean verifyAtStartup) {
         http = new LocalJsonClient(origin); this.inferenceDeadline = inferenceDeadline;
-        try {
-            check(http.call("GET", "/spec", null, Duration.ofSeconds(10)));
-            if (!count(List.of("hello", "e\u0301", "<|endoftext|>")).equals(List.of(2, 2, 2))) throw new EmbeddingFailure("SPEC_MISMATCH", true);
-        } catch (RuntimeException failure) { close(); throw failure; }
+        if(verifyAtStartup)try { ensureReady(); } catch (RuntimeException failure) { close(); throw failure; }
+    }
+    private synchronized void ensureReady(){
+        if(ready)return;
+        check(http.call("GET", "/spec", null, Duration.ofSeconds(10)));
+        if(!tokenize(List.of("hello", "e\u0301", "<|endoftext|>")).equals(List.of(2,2,2)))throw new EmbeddingFailure("SPEC_MISMATCH",true);
+        ready=true;
     }
     private void check(JsonNode node) {
         if (!EmbeddingSpec.FINGERPRINT.equals(node.path("fingerprint").asText()) || !EmbeddingSpec.ID.equals(node.path("spec").asText()))
             throw new EmbeddingFailure("SPEC_MISMATCH", true);
     }
     @Override public List<Integer> count(List<String> texts) {
+        ensureReady();return tokenize(texts);
+    }
+    private List<Integer> tokenize(List<String> texts){
         EmbeddingSpec.inputs(texts);
         JsonNode response = http.call("POST", "/tokenize", Map.of("spec", EmbeddingSpec.ID, "input", texts), Duration.ofSeconds(10));
         check(response); var result = new ArrayList<Integer>();
@@ -31,8 +43,9 @@ public final class LocalEmbeddingGateway implements EmbeddingGateway, AutoClosea
         return List.copyOf(result);
     }
     @Override public List<float[]> embed(String operation, List<String> texts, List<Integer> counts) {
+        ensureReady();
         UUID.fromString(operation); EmbeddingSpec.inputs(texts); EmbeddingSpec.counts(counts, texts.size());
-        JsonNode response = http.call("POST", "/embeddings", Map.of("spec", EmbeddingSpec.ID, "operation_id", operation, "input", texts), inferenceDeadline);
+        JsonNode response = http.call("POST", "/embeddings", Map.of("spec", EmbeddingSpec.ID, "operation_id", operation, "input", texts), inferenceDeadline,operation);
         check(response);
         if (!EmbeddingSpec.MODEL.equals(response.path("model").asText()) || !operation.equals(response.path("operation_id").asText())
                 || !"list".equals(response.path("object").asText()) || !response.path("data").isArray() || response.path("data").size() != texts.size())
