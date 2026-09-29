@@ -35,6 +35,12 @@
 - [DEV-017 验收记录](testing/document-processing-acceptance.md)：算法、迁移、处理 API 与竞态的实际验证结果。
 - [知识文档接入验收](testing/knowledge-document-storage-acceptance.md)：真实存储合同、MySQL 状态机、竞态、输入及回归证据。
 
+## 文档检索
+
+- [DEV-021](tasks/DEV-021-document-retrieval.md)：依赖 #36 的独立检索实现，暂不合并前置 PR。
+- [检索 API](api/document-retrieval.md)：归属、完整活动来源、去重补足、用量与不完整结果。
+- [检索运行说明](development/document-retrieval.md)与[验收记录](testing/document-retrieval-acceptance.md)：真实 MySQL/Qdrant、query prefix 和受控模型样本。
+
 ## 计划中的文档
 
 以下内容尚未建立，当前不提供虚假链接：

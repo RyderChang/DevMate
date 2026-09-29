@@ -2,14 +2,15 @@
 
 DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手平台。
 
-> **当前状态：第三阶段——知识文档索引。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
+> **当前状态：第三阶段——知识文档检索。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、
 > 可审计且按项目隔离的对话后端、OpenAI 与 DeepSeek 对话适配器和同步前端聊天交互。
 > 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。
 > DEV-016 原文件接入、DEV-017 解析分块与 DEV-018 DeepSeek 对话接入均已合并。
 > [DEV-019](docs/tasks/DEV-019-embedding-index-preparation.md) 已交付国内 Embedding 与真实向量合同准备，
 > ADR 0007 与全部资源额度已由所有者接受。[DEV-020](docs/tasks/DEV-020-document-vector-indexing.md) 实现显式文档索引、
 > 独立清理债务及受控本地模型服务；[索引验收记录](docs/testing/document-indexing-acceptance.md)区分实际测试与后续限制。
-> 索引默认关闭，检索/RAG 与生产部署待独立任务。
+> [DEV-021](docs/tasks/DEV-021-document-retrieval.md) 提供完整来源过滤、资格重校验与有界补足的文档检索；默认关闭。
+> 检索验证见[验收记录](docs/testing/document-retrieval-acceptance.md)，RAG 对话与生产部署待独立任务。
 
 ## 核心能力规划
 
@@ -47,7 +48,7 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 - [x] 前端认证
 - [x] 前端项目空间
 - [x] AI 对话
-- [ ] RAG 知识库（原文件、解析分块及显式索引已实现；检索/RAG 待实施）
+- [ ] RAG 知识库（原文件、解析分块、显式索引及文档检索已实现；RAG 对话待实施）
 - [ ] GitHub 只读分析
 - [ ] AI 代码审查
 - [ ] 测试生成

@@ -2,7 +2,7 @@ name: Foundation
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, feature/dev-020-document-vector-indexing]
   push:
     branches: [develop]
   workflow_dispatch:

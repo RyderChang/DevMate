@@ -3,6 +3,7 @@ package com.devmate.knowledge;
 import com.devmate.ai.embedding.*;
 import com.devmate.knowledge.index.*;
 import com.devmate.knowledge.infrastructure.QdrantVectorStore;
+import com.devmate.knowledge.retrieval.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
 import java.net.*;
@@ -40,4 +41,24 @@ class QdrantVectorStoreIntegrationTest {
     @Test void sameNumberWithWrongOrdinalAndDigestFailsManifestValidation()throws Exception{var work=work(1,2,3,4,5);var point=point();store.upsert(work,List.of(point),vector());var payload=new HashMap<>(QdrantVectorStore.payload(work,point));payload.put("ordinal",1);call("POST","/points/payload?wait=true",Map.of("payload",payload,"points",List.of(point.id())));assertThat(store.matches(work,List.of(point))).isFalse();}
     @Test void lostAcknowledgementIsUnknownEvenWhenPointExists(){var work=work(1,2,3,4,5);var point=point();drop=true;assertThatThrownBy(()->store.upsert(work,List.of(point),vector())).isInstanceOf(EmbeddingFailure.class);drop=false;assertThat(store.matches(work,List.of(point))).isTrue();}
     @Test void incompatibleExistingCollectionFailsReadiness()throws Exception{String collection="devmate_qwen3_v1_incompatible";String target="/collections/"+collection;upstream.send(HttpRequest.newBuilder(URI.create(origin+target)).header("Content-Type","application/json").PUT(HttpRequest.BodyPublishers.ofString("{\"vectors\":{\"size\":4,\"distance\":\"Dot\"}}")).build(),HttpResponse.BodyHandlers.ofByteArray());assertThatThrownBy(()->new QdrantVectorStore(origin,collection)).isInstanceOf(EmbeddingFailure.class);}
+    private RetrievalSource source(IndexWork work){return new RetrievalSource(work.owner(),work.project(),work.document(),work.processing(),work.id(),work.spec(),work.sourceSha(),"synthetic.md",1,1,"parser","strategy");}
+    @Test void retrievalFiltersHundredsOfRetiredPointsAndCrossTuplesBeforeRankingAndExcludesCheckedIds(){
+        long owner=9007199254740993L;var first=work(owner,42,101,31,41);var second=work(owner,42,102,32,42);var retired=work(owner,42,101,30,40);
+        for(int batch=0;batch<51;batch++){var points=new ArrayList<IndexPoint>();var vectors=new ArrayList<float[]>();for(int n=0;n<4;n++){points.add(new IndexPoint(batch*4+n,UUID.randomUUID().toString(),"c".repeat(64),3,false));vectors.add(vector().getFirst());}store.upsert(retired,points,vectors);}
+        float[] lower=new float[1024];lower[0]=0.8f;lower[1]=0.6f;var a=point();var b=point();store.upsert(first,List.of(a),Collections.singletonList(lower));store.upsert(second,List.of(b),Collections.singletonList(lower));
+        for(var decoy:List.of(work(owner,42,101,32,42),work(owner,42,102,31,41),work(owner-1,42,101,31,41),work(owner,43,101,31,41)))store.upsert(decoy,List.of(point()),vector());
+        var sources=List.of(source(first),source(second));var found=store.query(owner,42,EmbeddingSpec.ID,sources,vector().getFirst(),Set.of(),100);
+        assertThat(found.stream().map(VectorCandidate::pointId).toList()).containsExactlyInAnyOrder(a.id(),b.id());assertThat(found).allSatisfy(hit->assertThat(hit.score()).isCloseTo(0.8,within(0.001)));
+        var next=store.query(owner,42,EmbeddingSpec.ID,sources,vector().getFirst(),Set.of(a.id()),100);assertThat(next).singleElement().satisfies(hit->assertThat(hit.pointId()).isEqualTo(b.id()));
+        assertThat(store.query(owner,42,EmbeddingSpec.ID,sources,vector().getFirst(),Set.of(a.id(),b.id()),100)).isEmpty();
+    }
+    @Test void retrievalRejectsPayloadThatSpoofsAQualifiedSourceKey()throws Exception{
+        var work=work(1,2,3,4,5);var point=point();store.upsert(work,List.of(point),vector());call("POST","/points/payload?wait=true",Map.of("payload",Map.of("document_id","99"),"points",List.of(point.id())));
+        assertThatThrownBy(()->store.query(1,2,EmbeddingSpec.ID,List.of(source(work)),vector().getFirst(),Set.of(),100)).isInstanceOf(EmbeddingFailure.class);
+    }
+    @Test void retrievalCannotAcceptCrossOwnerSourceListsOrDifferentSpec(){
+        var work=work(1,2,3,4,5);
+        assertThatThrownBy(()->store.query(2,2,EmbeddingSpec.ID,List.of(source(work)),vector().getFirst(),Set.of(),100)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(()->store.query(1,2,"different",List.of(source(work)),vector().getFirst(),Set.of(),100)).isInstanceOf(IllegalArgumentException.class);
+    }
 }

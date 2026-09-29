@@ -11,6 +11,7 @@
 - `retry-knowledge-document.sql`：经授权运维会话恢复已审查 ID 的核对/清理；不改变终态或释放未知写入的容量。
 - `embedding-preflight/`：冻结 Qwen tokenizer/HTTP、真实 Qdrant/MySQL 与可选本地模型探针，见[准备说明](../docs/development/embedding-index-preflight.md)和[核验记录](../docs/testing/embedding-index-preflight-acceptance.md)；不是业务索引服务。
 - `embedding-service/`：DEV-020 单进程本地模型 supervisor、冻结 Linux CPU wheel、合成进程测试与真实 HTTP 冒烟；见[运行说明](../docs/development/document-indexing.md)和[索引验收记录](../docs/testing/document-indexing-acceptance.md)。
+- DEV-021 的 `query_smoke.py`、`RetrievalSmoke.java` 与新增报告门禁覆盖 query prefix、真实 Qdrant 排除和受控模型查询；见[检索运行说明](../docs/development/document-retrieval.md)和[检索验收记录](../docs/testing/document-retrieval-acceptance.md)。
 
 知识文档的配置、隔离测试、清理和人工处理步骤见[开发指南](../docs/development/local-development.md)，
 实际命令与结果见[验收记录](../docs/testing/knowledge-document-storage-acceptance.md)。

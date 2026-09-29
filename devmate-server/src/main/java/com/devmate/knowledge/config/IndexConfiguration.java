@@ -7,10 +7,10 @@ import org.springframework.context.annotation.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @Configuration
-@EnableConfigurationProperties(IndexProperties.class)
+@EnableConfigurationProperties({IndexProperties.class,RetrievalProperties.class})
 public class IndexConfiguration {
-    @Bean EmbeddingGateway embeddingGateway(IndexProperties properties) {
-        if(properties.isEnabled()) return new LocalEmbeddingGateway(properties.getModelOrigin());
+    @Bean EmbeddingGateway embeddingGateway(IndexProperties properties,RetrievalProperties retrieval) {
+        if(properties.isEnabled() || retrieval.isEnabled()) return new SerializedEmbeddingGateway(new LocalEmbeddingGateway(properties.getModelOrigin()));
         return new EmbeddingGateway() {
             public java.util.List<Integer> count(java.util.List<String> input){throw new EmbeddingFailure("INDEX_DISABLED",true);}
             public java.util.List<float[]> embed(String id,java.util.List<String> input,java.util.List<Integer> counts){throw new EmbeddingFailure("INDEX_DISABLED",true);}

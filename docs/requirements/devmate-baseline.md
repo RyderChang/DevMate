@@ -23,8 +23,11 @@ OpenAI Responses 首个适配器和项目对话后端；DEV-014 已实现前端�
 验收基线。第二阶段于 2026-09-27 经所有者确认收口，依据见[验收记录](../testing/ai-conversation-acceptance.md)。
 DEV-016 已实现默认关闭的 UTF-8 txt/md 原文件接入、私有对象存储、授权元数据与持久化补偿；
 `STORED` 仅表示原文件存储成功。DEV-017 已落实显式文本解析与版本化片段，`CHUNKED` 仅表示整代片段发布；
-向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。实际验证见
+该任务交付时向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。实际验证见
 [DEV-017 验收记录](../testing/document-processing-acceptance.md)。
+
+后续 DEV-020 已实现默认关闭的显式索引与独立恢复；DEV-021 提供完整活动来源过滤、重校验及有界补足的文档检索。
+本分支依赖尚未合并的 #36；实际结果见[检索验收](../testing/document-retrieval-acceptance.md)。RAG 对话、文档前端与部署仍留在后续任务。
 
 ## 核心非功能要求
 

@@ -75,7 +75,7 @@ public class IndexRecovery {
             if(!transactions.acknowledge(claim,operation))return true;
             if(journal.confirmed(id,claim.chunks()))transactions.publish(claim);else transactions.yield(claim);
         }catch(EmbeddingFailure failure){
-            boolean ended=operation==null || (operation.kind().equals("MODEL") ? model.ended(operation.id()) : failure.ended());
+            boolean ended=operation==null || (operation.kind().equals("MODEL") ? failure.code().equals("LOCAL_NOT_SENT") || model.ended(operation.id()) : failure.ended());
             // A vector response validation failure follows a completed write; an HTTP failure remains UNKNOWN.
             transactions.fail(claim,operation,failure.code(),ended);
         }catch(BusinessException failure){transactions.fail(claim,operation,"TOKEN_CAPACITY",operation==null);}

@@ -43,4 +43,17 @@ class LocalEmbeddingGatewayTest {
     @Test void rejectsInvalidIndexNumericUsageUtf8AndDuplicateFields(){try(var gateway=new LocalEmbeddingGateway(origin)){for(String value:List.of("duplicate","boolean","overflow","underflow","norm","usage","utf8","keys","oversize","redirect")){mode=value;assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("a","b"),List.of(2,2))).as(value).isInstanceOf(EmbeddingFailure.class);}}}
     @Test void totalDeadlineIncludesSlowBodyAndDoesNotRetry(){try(var gateway=new LocalEmbeddingGateway(origin,Duration.ofMillis(100))){mode="slow";long start=System.nanoTime();assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("a","b"),List.of(2,2))).isInstanceOf(EmbeddingFailure.class);assertThat(Duration.ofNanos(System.nanoTime()-start)).isLessThan(Duration.ofSeconds(1));assertThat(calls).hasValue(1);}}
     @Test void paddingLimitsAndFloatOverflowAreIndependentOfSum(){EmbeddingSpec.counts(List.of(1500,1500,1500,1500),4);assertThatThrownBy(()->EmbeddingSpec.counts(List.of(3000,1500,1),3)).isInstanceOf(EmbeddingFailure.class);assertThatThrownBy(()->EmbeddingSpec.counts(List.of(6001),1)).isInstanceOf(EmbeddingFailure.class);}
+    @Test void indexingAndQueriesShareOneInferenceSlotWithoutAQueue()throws Exception{
+        var entered=new CountDownLatch(1);var release=new CountDownLatch(1);var calls=new java.util.concurrent.atomic.AtomicInteger();
+        EmbeddingGateway delegate=new EmbeddingGateway(){
+            public List<Integer> count(List<String> texts){return List.of(2);}
+            public List<float[]> embed(String operation,List<String> texts,List<Integer> counts){calls.incrementAndGet();entered.countDown();try{if(!release.await(5,TimeUnit.SECONDS))throw new IllegalStateException("fixture deadline");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException("fixture interrupted");}float[] value=new float[1024];value[0]=1;return Collections.singletonList(value);}
+            public boolean ended(String operation){return false;}
+        };
+        try(var gateway=new SerializedEmbeddingGateway(delegate);var executor=Executors.newSingleThreadExecutor()){
+            var first=executor.submit(()->gateway.embed(UUID.randomUUID().toString(),List.of("index"),List.of(2)));assertThat(entered.await(2,TimeUnit.SECONDS)).isTrue();
+            try{assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("query"),List.of(2))).isInstanceOfSatisfying(EmbeddingFailure.class,e->{assertThat(e.code()).isEqualTo("LOCAL_NOT_SENT");assertThat(e.ended()).isTrue();});assertThat(calls).hasValue(1);}finally{release.countDown();}
+            assertThat(first.get(2,TimeUnit.SECONDS)).hasSize(1);assertThat(gateway.embed(UUID.randomUUID().toString(),List.of("query"),List.of(2))).hasSize(1);assertThat(calls).hasValue(2);
+        }
+    }
 }
