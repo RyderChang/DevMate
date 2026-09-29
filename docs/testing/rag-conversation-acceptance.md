@@ -3,6 +3,7 @@
 日期：2026-09-29。分支 `feature/dev-022-rag-conversation`，基线 #37 `0432cafeda9e4be8d30f698a91fb76ffb90d7bab`。
 所有者接受 ADR 0008 全部提议及独立依赖分支；#36/#37 未合并。仅后端、默认关闭、付费金额 CNY 0。
 实现提交 `6c5dc79c0a11cdfc91cd9692e587be65a2380876`；独立草稿 [PR #39](https://github.com/RyderChang/DevMate/pull/39) 以 #37 分支为目标。
+恢复修复提交 `fb63396b62dc0ecc601c365818d8e04d6e2475be`，以下完整验收对应这一源码；后续验收说明提交不改实现。
 
 ## 验证记录
 
@@ -20,7 +21,10 @@
 - 复核新增“调度关闭、两入口接管已发送但无回执的过期 RAG”回归：20 项中 1 failure / 0 error / 0 skipped，证明旧状态错误地保留 DISPATCHED；修复同一 MySQL 事务内的 UNKNOWN 更新。
 - `python -B scripts/verify-knowledge-backend.py --tests RagConversationIntegrationTest,ConversationIntegrationTest`：修复后实际执行 RAG 集成 20 项全部通过，失败/错误/跳过 0。后一个过滤名称没有匹配测试类，普通聊天完整回归以 Foundation 为准，不将其记为额外测试。
 
-恢复修复后的完整 CI 以 PR 最新提交为准，完成后补录；上述真实网络仅连接测试 loopback Stub，未调用真实收费模型。
+- 恢复修复提交 `fb63396` 的 [Foundation](https://github.com/RyderChang/DevMate/actions/runs/36541659294) 与 [Embedding Preflight](https://github.com/RyderChang/DevMate/actions/runs/36541659243) 均 completed/success。实际执行 `./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify`：261 项，失败/错误/跳过均 0；`python3 -B scripts/check-knowledge-test-reports.py` 无跳过门禁通过，包含真实 MySQL 8 空库和 V9→V10 迁移、MinIO、Qdrant。普通聊天 API 与两家适配器的完整回归包含在这 261 项中。
+- 同一修复提交的 Foundation 前端：14 文件 / 89 项及 type-check、lint、format、build、audit、Stub fixture、文档与 workflow 检查全部通过；67 Markdown / 269 相对链接，audit 为 0 vulnerabilities。没有修改前端实现。
+
+PR 最新 head 的检查状态仍须在合并前核对；上述真实网络仅连接测试 loopback Stub，未调用真实收费模型。
 
 ## 合成证据样本逐项核对
 
