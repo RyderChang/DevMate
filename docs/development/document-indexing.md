@@ -95,9 +95,15 @@ collection 默认 `devmate_qwen3_v1`，可带测试后缀；启动验证 Qdrant 
 
 每次跨外部边界前冻结操作并检查资格/版本/租约；响应后再检查。数据库不可写时没有新的远程发送。
 崩溃后已发请求不自动重发；模型结束须从同一 operation journal 取得 SUCCEEDED/TERMINATED 证据。
+唯一例外是同次发送收到固定 supervisor 的 429 BUSY/JOURNAL_FULL，且回执同时匹配 operation_id、
+spec、fingerprint 和 NOT_STARTED。服务在同一锁内检查旧操作并持久登记新操作，已有 UUID 永远不能获得这种拒绝证明。
+明确未启动记为终止失败，token 不退款；普通 429、畸形或错配回执、ABSENT 和超时仍为 UNKNOWN。
 向量 UNKNOWN 没有可证明的自动终止依据，保留定位和容量，定期有界删除但不自动清账。
 父文件、片段和处理记录可独立删除，journal 继承来源、点 UUID、摘要及预留。
 当前没有人工清账 API；人工处理须先证明生产者停止与远端操作结束，再经有记录的修复和审计清理。
 
 回滚关闭索引开关和读取资格；清理扫描仍尝试已存在债务。继续保留 V8 和债务，不删表或修改旧 migration。
+模型状态与 Qdrant 清理适配器在关闭开关后仍保留，启动不联网；只有已有债务才触发有界状态核验/删除。
+清理按固定指纹/版本/collection 规格核验；恢复模式不创建缺失 collection 或 payload 索引，服务不可用时保留债务。
+继续运行同一可信 loopback 服务并保持 scheduling-enabled，不能用重开索引写入来替代清理。
 检索/RAG、生产部署及检索质量评估属于独立后续任务。

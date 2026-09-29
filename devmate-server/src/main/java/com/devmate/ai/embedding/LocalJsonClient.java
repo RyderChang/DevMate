@@ -29,18 +29,29 @@ public final class LocalJsonClient implements AutoCloseable {
                 || !(origin.getPath().isEmpty() || "/".equals(origin.getPath()))) throw new IllegalArgumentException("Local origin must be a literal loopback HTTP origin");
     }
     public JsonNode call(String method, String path, Object body, Duration deadline) {
+        return call(method,path,body,deadline,null);
+    }
+    /** Only the frozen supervisor can prove this particular inference was rejected before dispatch. */
+    public JsonNode call(String method, String path, Object body, Duration deadline, String operation) {
         CompletableFuture<HttpResponse<byte[]>> task = null;
         try {
                 var request = HttpRequest.newBuilder(origin.resolve(path)).timeout(deadline).header("Content-Type", "application/json")
                         .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(json.writeValueAsBytes(body))).build();
                 task = client.sendAsync(request, info -> new LimitedBody());
                 var response = task.get(deadline.toMillis(), TimeUnit.MILLISECONDS);
-                    if (response.statusCode() < 200 || response.statusCode() >= 300) throw new EmbeddingFailure("REMOTE_REJECTED", false);
+                    boolean success=response.statusCode()>=200 && response.statusCode()<300;
+                    if(!success && !(response.statusCode()==429 && operation!=null && method.equals("POST") && path.equals("/embeddings")))throw new EmbeddingFailure("REMOTE_REJECTED",false);
                     byte[] bytes = response.body();
                     String text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
                     try (var parser = json.createParser(text)) {
                         JsonNode value = json.readTree(parser);
                         if (value == null || !value.isObject() || parser.nextToken() != null) throw new EmbeddingFailure("INVALID_RESPONSE", false);
+                        if(!success){
+                            if(EmbeddingSpec.ID.equals(value.path("spec").textValue()) && EmbeddingSpec.FINGERPRINT.equals(value.path("fingerprint").textValue())
+                                && operation.equals(value.path("operation_id").textValue()) && "NOT_STARTED".equals(value.path("state").textValue())
+                                && java.util.Set.of("BUSY","JOURNAL_FULL").contains(value.path("code").asText()))throw new EmbeddingFailure("MODEL_NOT_STARTED",true);
+                            throw new EmbeddingFailure("REMOTE_REJECTED",false);
+                        }
                         return value;
                     }
         } catch (EmbeddingFailure failure) { throw failure; }

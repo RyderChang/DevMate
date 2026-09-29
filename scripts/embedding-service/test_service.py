@@ -78,11 +78,41 @@ class ServiceTests(unittest.TestCase):
         pid = self.supervisor.process.pid
         try:
             body = self.body()
-            self.assertEqual(429, self.supervisor.embed(body)[0])
+            code, response = self.supervisor.embed(body)
+            self.assertEqual(429, code)
+            self.assertEqual(body["operation_id"], response["operation_id"])
+            self.assertEqual("NOT_STARTED", response["state"])
+            self.assertEqual("BUSY", response["code"])
             self.assertEqual("ABSENT", self.supervisor.operation(body["operation_id"])["state"])
             self.assertEqual(pid, self.supervisor.process.pid)
         finally:
             self.supervisor.slot.release()
+
+    def test_replay_while_busy_never_claims_operation_was_not_started(self):
+        body = self.body()
+        self.assertEqual(200, self.supervisor.embed(body)[0])
+        self.supervisor.slot.acquire()
+        try:
+            code, response = self.supervisor.embed(body)
+            self.assertEqual(409, code)
+            self.assertEqual("OPERATION_REPLAY", response["code"])
+            self.assertNotIn("state", response)
+        finally:
+            self.supervisor.slot.release()
+
+    def test_full_journal_rejection_is_bound_to_new_operation(self):
+        previous = self.body()
+        self.supervisor.db.execute("INSERT INTO operations VALUES(?,?,'UNKNOWN',?)", (previous["operation_id"], "frozen", time.time()))
+        self.supervisor.db.commit()
+        with patch("server.JOURNAL_LIMIT", 1, create=True):
+            body = self.body()
+            code, response = self.supervisor.embed(body)
+            self.assertEqual(429, code)
+            self.assertEqual(body["operation_id"], response["operation_id"])
+            self.assertEqual("NOT_STARTED", response["state"])
+            self.assertEqual("JOURNAL_FULL", response["code"])
+        self.assertEqual("ABSENT", self.supervisor.operation(body["operation_id"])["state"])
+        self.assertEqual("UNKNOWN", self.supervisor.operation(previous["operation_id"])["state"])
 
     def test_http_is_loopback_and_uses_complete_contract(self):
         server = Server(("127.0.0.1", 0), self.supervisor)
