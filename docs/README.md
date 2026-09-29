@@ -59,3 +59,9 @@
 - [ADR 0004：文档解析、分块与索引边界](adr/0004-document-processing-and-index-boundaries.md)：Superseded by ADR 0005；区分存储、处理和向量投影，索引模型及费用需另行确认。
 - [解析、分块与索引实施安排](development/document-processing-implementation-plan.md)：DEV-017 落地顺序、删除交接及索引备选模型、token 和预算建议；最新实施顺序见 DEV-019。
 - [ADR 0005：处理请求映射与向量检索的有界恢复](adr/0005-bound-processing-replays-and-retrieval.md)：Accepted；已接受的资源与检索完整性修订，处理部分已实施。
+
+## RAG 对话的下一任务准备
+
+- [DEV-022：带可验证引用的 RAG 对话后端](tasks/DEV-022-rag-conversation.md)：准备稿；接口、租约、幂等、来源校验、上下文及验收矩阵，未实施。
+- [ADR 0008 提议](adr/0008-bound-rag-conversation-and-citations.md)：待接受的编排与长期引用记录额度；不批准付费或生产启用。
+- 前置 [PR #36](https://github.com/RyderChang/DevMate/pull/36)/[PR #37](https://github.com/RyderChang/DevMate/pull/37) 已实施索引/检索并进行了审核修复，但目前未合并；接受依据及最终 CI 以各自 PR 为准。
