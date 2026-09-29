@@ -33,6 +33,7 @@ public final class LocalJsonClient implements AutoCloseable {
     }
     /** Only the frozen supervisor can prove this particular inference was rejected before dispatch. */
     public JsonNode call(String method, String path, Object body, Duration deadline, String operation) {
+        deadline = com.devmate.ai.application.CallBudget.cap(deadline);
         CompletableFuture<HttpResponse<byte[]>> task = null;
         try {
                 var request = HttpRequest.newBuilder(origin.resolve(path)).timeout(deadline).header("Content-Type", "application/json")

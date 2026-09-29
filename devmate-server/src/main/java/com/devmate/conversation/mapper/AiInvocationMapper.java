@@ -13,8 +13,8 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface AiInvocationMapper extends BaseMapper<AiInvocationEntity> {
     @Insert("INSERT INTO ai_invocations(conversation_id,client_request_id,user_message_id,provider,model,"
-            + "prompt_template_version,status,started_at) VALUES(#{conversationId},#{clientRequestId},"
-            + "#{userMessageId},#{provider},#{model},#{promptTemplateVersion},#{status},#{startedAt})")
+            + "prompt_template_version,status,started_at,mode,request_sha256,lease_expires_at) VALUES(#{conversationId},#{clientRequestId},"
+            + "#{userMessageId},#{provider},#{model},#{promptTemplateVersion},#{status},#{startedAt},#{mode},#{requestSha256},#{leaseExpiresAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertInvocation(AiInvocationEntity invocation);
 
@@ -26,6 +26,11 @@ public interface AiInvocationMapper extends BaseMapper<AiInvocationEntity> {
                                            @Param("projectId") Long projectId,
                                            @Param("conversationId") Long conversationId,
                                            @Param("clientRequestId") String clientRequestId);
+
+    @Select("SELECT lease_expires_at FROM ai_invocations WHERE conversation_id=#{conversationId} "
+            + "AND started_at=#{startedAt} AND status='PENDING' LIMIT 1")
+    LocalDateTime pendingDeadline(@Param("conversationId") Long conversationId,
+                                  @Param("startedAt") LocalDateTime startedAt);
 
     @Update("UPDATE ai_invocations SET status='FAILED',error_code=#{errorCode},completed_at=#{completedAt} "
             + "WHERE conversation_id=#{conversationId} AND status='PENDING'")
@@ -42,7 +47,7 @@ public interface AiInvocationMapper extends BaseMapper<AiInvocationEntity> {
                 @Param("totalTokens") Integer totalTokens, @Param("durationMs") long durationMs,
                 @Param("completedAt") LocalDateTime completedAt);
 
-    @Update("UPDATE ai_invocations SET status='FAILED',error_code=#{errorCode},duration_ms=#{durationMs},"
+    @Update("UPDATE ai_invocations SET status='FAILED',error_code=#{errorCode},duration_ms=COALESCE(duration_ms,#{durationMs}),"
             + "completed_at=#{completedAt} WHERE id=#{id} AND status='PENDING'")
     int fail(@Param("id") Long id, @Param("errorCode") String errorCode,
              @Param("durationMs") long durationMs, @Param("completedAt") LocalDateTime completedAt);

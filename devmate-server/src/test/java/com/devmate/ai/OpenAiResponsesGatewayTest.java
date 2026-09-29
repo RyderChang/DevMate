@@ -97,6 +97,26 @@ class OpenAiResponsesGatewayTest {
     }
 
     @Test
+    void rejectsMalformedUtf8InsteadOfReplacingEvidenceInAnOtherwiseValidResponse() throws Exception {
+        Harness harness = harness(properties());
+        byte[] bytes = ("{\"id\":\"r\",\"status\":\"completed\",\"output\":[{\"type\":\"message\",\"role\":\"assistant\","
+                + "\"content\":[{\"type\":\"output_text\",\"text\":\"X\"}]}]}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        for (int i = 0; i < bytes.length; i++) if (bytes[i] == 'X') bytes[i] = (byte) 0xff;
+        harness.server.expect(requestTo("https://unit.test/responses"))
+                .andRespond(withSuccess(bytes, MediaType.APPLICATION_JSON));
+        assertError(harness.gateway, ErrorCode.AI_RESPONSE_INVALID);
+    }
+
+    @Test
+    void rejectsFractionalNegativeOverflowOrInconsistentUsageInsteadOfGuessingTokens() throws Exception {
+        for (String usage : List.of("{\"input_tokens\":1.5}", "{\"output_tokens\":-1}",
+                "{\"total_tokens\":2147483648}", "{\"input_tokens\":2,\"output_tokens\":3,\"total_tokens\":4}")) {
+            assertInvalid("{\"id\":\"r\",\"status\":\"completed\",\"output\":[{\"type\":\"message\",\"role\":\"assistant\","
+                    + "\"content\":[{\"type\":\"output_text\",\"text\":\"synthetic\"}]}],\"usage\":" + usage + "}");
+        }
+    }
+
+    @Test
     void mapsRateLimitServerFailureTimeoutAndNetworkFailure() throws Exception {
         assertStatus(HttpStatus.TOO_MANY_REQUESTS, ErrorCode.AI_PROVIDER_RATE_LIMITED);
         assertStatus(HttpStatus.UNAUTHORIZED, ErrorCode.AI_PROVIDER_UNAVAILABLE);

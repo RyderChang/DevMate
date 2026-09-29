@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 public class BusinessException extends RuntimeException {
 
     private final int code;
+    private ErrorCode errorCode;
     private final String clientMessage;
     private final HttpStatus httpStatus;
 
@@ -16,14 +17,17 @@ public class BusinessException extends RuntimeException {
 
     public BusinessException(ErrorCode errorCode) {
         this(errorCode.getCode(), errorCode.getMessage(), errorCode.getHttpStatus());
+        this.errorCode = errorCode;
     }
 
     public BusinessException(ErrorCode errorCode, String clientMessage) {
         this(errorCode.getCode(), clientMessage, errorCode.getHttpStatus());
+        this.errorCode = errorCode;
     }
 
     public BusinessException(ErrorCode errorCode, String clientMessage, Throwable cause) {
         this(errorCode.getCode(), clientMessage, errorCode.getHttpStatus(), cause);
+        this.errorCode = errorCode;
     }
 
     public BusinessException(int code, String clientMessage, HttpStatus httpStatus) {
@@ -36,6 +40,8 @@ public class BusinessException extends RuntimeException {
         this.clientMessage = clientMessage;
         this.httpStatus = Objects.requireNonNull(httpStatus, "httpStatus must not be null");
     }
+
+    public ErrorCode getErrorCode() { return errorCode; }
 
     public int getCode() {
         return code;

@@ -83,7 +83,17 @@ public final class DeepSeekChatGateway implements AiGateway {
 
     private byte[] readLimited(InputStream input) {
         try (input) {
-            byte[] bytes = input.readNBytes(properties.getMaxResponseBytes() + 1);
+            var buffer = new java.io.ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            while (true) {
+                com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
+                int count = input.read(chunk);
+                if (count == -1) break;
+                if (count > properties.getMaxResponseBytes() - buffer.size()) throw new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID);
+                buffer.write(chunk, 0, count);
+            }
+            com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
+            byte[] bytes = buffer.toByteArray();
             if (bytes.length > properties.getMaxResponseBytes()) throw invalid();
             return bytes;
         } catch (IOException exception) {

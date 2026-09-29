@@ -44,6 +44,26 @@ public class RetrievalJournal {
             return new RetrievalHit(candidate.pointId(),candidate.score(),s.document(),s.filename(),s.processing(),s.index(),s.processingGeneration(),s.indexGeneration(),s.parserVersion(),s.strategyVersion(),s.sourceSha(),sha,candidate.ordinal(),r.getInt("start_offset"),r.getInt("end_offset"),r.getInt("start_line"),r.getInt("end_line"),text);
         },arguments.toArray());
     }
+    public List<String> available(long owner, long project, String spec, List<RetrievalHit> snapshots) {
+        if (snapshots.size() > 5) throw new IllegalArgumentException("Citation bound exceeded");
+        var result = new ArrayList<String>();
+        for (var h : snapshots) {
+            Integer count = jdbc.queryForObject("SELECT COUNT(*)" + SOURCE_JOIN
+                + "JOIN knowledge_index_points k ON k.index_id=i.id AND k.confirmed=1 "
+                + "JOIN knowledge_chunks c ON c.processing_id=i.processing_id AND c.document_id=i.document_id "
+                + "AND c.owner_user_id=i.owner_user_id AND c.project_id=i.project_id AND c.ordinal=k.ordinal WHERE "
+                + SOURCE_WHERE + " AND k.point_id=? AND i.document_id=? AND i.processing_id=? AND i.id=? "
+                + "AND p.generation=? AND i.generation=? AND p.parser_version=? AND p.strategy_version=? "
+                + "AND i.source_sha256=? AND k.chunk_sha256=? AND c.sha256=? AND k.ordinal=? "
+                + "AND c.start_offset=? AND c.end_offset=? AND c.start_line=? AND c.end_line=? AND d.filename=?",
+                Integer.class, owner, project, spec, h.pointId(), h.documentId(), h.processingId(), h.indexId(),
+                h.processingGeneration(), h.indexGeneration(), h.parserVersion(), h.strategyVersion(),
+                h.sourceSha256(), h.chunkSha256(), h.chunkSha256(), h.ordinal(), h.start(), h.end(),
+                h.startLine(), h.endLine(), h.filename());
+            if (count != null && count == 1) result.add(h.pointId());
+        }
+        return List.copyOf(result);
+    }
     public boolean reserveTokens(long project,int tokens,LocalDate day){
         for(long id:new long[]{0,project}){
             jdbc.update("INSERT INTO knowledge_index_daily_tokens(project_id,utc_day) VALUES(?,?) ON DUPLICATE KEY UPDATE project_id=project_id",id,day);

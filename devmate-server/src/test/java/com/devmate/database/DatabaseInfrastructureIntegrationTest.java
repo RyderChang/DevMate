@@ -59,9 +59,9 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     @Test
     void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("9");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("10");
         assertThat(flyway.info().current().getScript())
-                .isEqualTo("V9__create_document_retrieval.sql");
+                .isEqualTo("V10__add_rag_conversation_contract.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
@@ -77,6 +77,7 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
         assertThat(tables).containsExactlyInAnyOrder(
                 "flyway_schema_history", "users", "role", "permission", "user_role", "role_permission",
                 "projects", "conversations", "conversation_messages", "ai_invocations",
+                "rag_record_capacity", "rag_invocation_details", "rag_citations",
                 "knowledge_document_requests", "knowledge_documents", "knowledge_project_capacity",
                 "knowledge_processing_capacity", "knowledge_processing", "knowledge_processing_requests", "knowledge_chunks",
                 "knowledge_index_capacity", "knowledge_index_daily_tokens", "knowledge_indexes", "knowledge_index_points", "knowledge_index_operations", "knowledge_index_requests", "knowledge_retrieval_operations");

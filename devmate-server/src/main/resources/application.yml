@@ -38,6 +38,10 @@ logging:
     root: INFO
 
 devmate:
+  conversation:
+    rag:
+      enabled: ${RAG_ENABLED:false}
+      scheduling-enabled: ${RAG_SCHEDULING_ENABLED:true}
   knowledge:
     indexing:
       enabled: ${KNOWLEDGE_INDEXING_ENABLED:false}

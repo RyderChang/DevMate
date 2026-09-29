@@ -50,19 +50,25 @@ public class ConversationTransactionService {
     @Transactional
     public GenerationStart begin(Long ownerUserId, Long projectId, Long conversationId,
                                  String clientRequestId, String content) {
-        projectService.requireOwnedActiveProject(ownerUserId, projectId);
+        projectService.lockOwnedActiveProject(ownerUserId, projectId);
         ConversationEntity conversation = lockConversation(ownerUserId, projectId, conversationId);
         AiInvocationEntity existing = invocationMapper.findOwnedByRequest(
                 ownerUserId, projectId, conversationId, clientRequestId);
         if (existing != null) {
+            if ("RAG".equals(existing.getMode()) || existing.getRequestSha256() != null
+                    && !existing.getRequestSha256().equals(RagInput.sha(content))) {
+                throw new BusinessException(ErrorCode.RAG_REQUEST_CONFLICT);
+            }
             return handleExisting(ownerUserId, projectId, conversationId, existing);
         }
 
         LocalDateTime now = now();
         if ("GENERATING".equals(conversation.getGenerationState())) {
-            LocalDateTime expiry = now.minus(properties.getGenerationLease());
-            if (conversation.getGenerationStartedAt() != null
-                    && conversation.getGenerationStartedAt().isAfter(expiry)) {
+            LocalDateTime deadline = invocationMapper.pendingDeadline(conversationId, conversation.getGenerationStartedAt());
+            if (deadline == null && conversation.getGenerationStartedAt() != null) {
+                deadline = conversation.getGenerationStartedAt().plus(properties.getGenerationLease());
+            }
+            if (deadline != null && deadline.isAfter(now)) {
                 throw new BusinessException(ErrorCode.AI_REQUEST_IN_PROGRESS);
             }
             invocationMapper.failPendingForConversation(conversationId,
@@ -95,7 +101,10 @@ public class ConversationTransactionService {
         invocation.setModel(aiGateway.model());
         invocation.setPromptTemplateVersion(ProjectChatPromptBuilder.TEMPLATE_VERSION);
         invocation.setStatus("PENDING");
-        invocation.setStartedAt(now);
+        invocation.setStartedAt(leaseStartedAt);
+        invocation.setMode("CHAT");
+        invocation.setRequestSha256(RagInput.sha(content));
+        invocation.setLeaseExpiresAt(leaseStartedAt.plus(properties.getGenerationLease()));
         if (invocationMapper.insertInvocation(invocation) != 1 || invocation.getId() == null) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }

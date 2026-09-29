@@ -53,6 +53,17 @@ class LocalEmbeddingGatewayTest {
     @Test void rejectsInvalidHandshakeAndOrigins(){mode="fingerprint";assertThatThrownBy(()->new LocalEmbeddingGateway(origin)).isInstanceOf(EmbeddingFailure.class);for(String value:List.of("http://localhost:8091","http://127.0.0.1:8091/path","https://127.0.0.1:8091","http://127.0.0.1:8091?url=remote"))assertThatThrownBy(()->new LocalJsonClient(value)).isInstanceOf(IllegalArgumentException.class);}
     @Test void rejectsInvalidIndexNumericUsageUtf8AndDuplicateFields(){try(var gateway=new LocalEmbeddingGateway(origin)){for(String value:List.of("duplicate","boolean","overflow","underflow","norm","usage","utf8","keys","oversize","redirect")){mode=value;assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("a","b"),List.of(2,2))).as(value).isInstanceOf(EmbeddingFailure.class);}}}
     @Test void totalDeadlineIncludesSlowBodyAndDoesNotRetry(){try(var gateway=new LocalEmbeddingGateway(origin,Duration.ofMillis(100))){mode="slow";long start=System.nanoTime();assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("a","b"),List.of(2,2))).isInstanceOf(EmbeddingFailure.class);assertThat(Duration.ofNanos(System.nanoTime()-start)).isLessThan(Duration.ofSeconds(1));assertThat(calls).hasValue(1);}}
+    @Test void ragRemainingBudgetCapsTheRealHttpBodyDeadlineWithoutRetryOrThreadLocalLeak(){
+        try(var gateway=new LocalEmbeddingGateway(origin)){
+            mode="slow";
+            try(var budget=com.devmate.ai.application.CallBudget.open(Duration.ofMillis(250))){
+                long started=System.nanoTime();
+                assertThatThrownBy(()->gateway.embed(UUID.randomUUID().toString(),List.of("a","b"),List.of(2,2))).isInstanceOf(EmbeddingFailure.class);
+                assertThat(Duration.ofNanos(System.nanoTime()-started)).isLessThan(Duration.ofSeconds(1));
+            }
+            assertThat(calls).hasValue(1);mode="valid";assertThat(gateway.count(List.of("after budget"))).containsExactly(2);
+        }
+    }
     @Test void paddingLimitsAndFloatOverflowAreIndependentOfSum(){EmbeddingSpec.counts(List.of(1500,1500,1500,1500),4);assertThatThrownBy(()->EmbeddingSpec.counts(List.of(3000,1500,1),3)).isInstanceOf(EmbeddingFailure.class);assertThatThrownBy(()->EmbeddingSpec.counts(List.of(6001),1)).isInstanceOf(EmbeddingFailure.class);}
     @Test void indexingAndQueriesShareOneInferenceSlotWithoutAQueue()throws Exception{
         var entered=new CountDownLatch(1);var release=new CountDownLatch(1);var calls=new java.util.concurrent.atomic.AtomicInteger();

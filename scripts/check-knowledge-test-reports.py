@@ -13,6 +13,10 @@ def main():
         "S3ObjectStorageContractTest", "UploadTempFilesTest", "TextChunkerTest", "DocumentProcessingIntegrationTest", "ProcessingServiceTest",
         "DocumentIndexingIntegrationTest", "DocumentRetrievalIntegrationTest", "RetrievalConfigurationTest", "QdrantVectorStoreIntegrationTest")}
     required.add("com.devmate.ai.LocalEmbeddingGatewayTest")
+    required.add("com.devmate.ai.RagProviderDeadlineTest")
+    required.add("com.devmate.database.RagMigrationIntegrationTest")
+    required.add("com.devmate.knowledge.RagConversationIntegrationTest")
+    required.update({"com.devmate.conversation." + name for name in ("RagPromptAndOutputTest", "RagChatCallsTest")})
     if not required.issubset(suites):
         raise RuntimeError("Required knowledge storage/processing/indexing/retrieval suites are missing")
     totals = {key: sum(int(suite.attrib[key]) for suite in suites.values())

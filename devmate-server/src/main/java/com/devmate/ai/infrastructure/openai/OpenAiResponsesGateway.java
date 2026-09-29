@@ -6,7 +6,6 @@ import com.devmate.ai.application.AiGateway;
 import com.devmate.ai.application.AiGatewayException;
 import com.devmate.ai.config.AiProperties;
 import com.devmate.common.api.ErrorCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -89,19 +88,35 @@ public final class OpenAiResponsesGateway implements AiGateway {
 
     private byte[] readLimited(InputStream input) {
         try (input) {
-            byte[] body = input.readNBytes(properties.getMaxResponseBytes() + 1);
+            var buffer = new java.io.ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            while (true) {
+                com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
+                int count = input.read(chunk);
+                if (count == -1) break;
+                if (count > properties.getMaxResponseBytes() - buffer.size()) throw new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID);
+                buffer.write(chunk, 0, count);
+            }
+            com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
+            byte[] body = buffer.toByteArray();
             if (body.length > properties.getMaxResponseBytes()) {
                 throw new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID);
             }
             return body;
         } catch (IOException exception) {
-            throw new AiGatewayException(ErrorCode.AI_PROVIDER_UNAVAILABLE, exception);
+            throw new AiGatewayException(hasCause(exception, SocketTimeoutException.class)
+                    || hasCause(exception, HttpTimeoutException.class)
+                    ? ErrorCode.AI_PROVIDER_TIMEOUT : ErrorCode.AI_PROVIDER_UNAVAILABLE, exception);
         }
     }
 
     private AiChatResult parse(byte[] body, long durationMs) {
         try {
-            JsonNode root = objectMapper.readTree(new String(body, StandardCharsets.UTF_8));
+            String text = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(body)).toString();
+            JsonNode root = objectMapper.readTree(text);
             if (!root.isObject() || !"completed".equals(text(root, "status"))) {
                 throw invalid();
             }
@@ -152,9 +167,11 @@ public final class OpenAiResponsesGateway implements AiGateway {
             Integer inputTokens = nullableNonNegativeInteger(usage, "input_tokens");
             Integer outputTokens = nullableNonNegativeInteger(usage, "output_tokens");
             Integer totalTokens = nullableNonNegativeInteger(usage, "total_tokens");
+            if (inputTokens != null && outputTokens != null && totalTokens != null
+                    && (long) inputTokens + outputTokens != totalTokens) throw invalid();
             return new AiChatResult(responseId, visibleText.toString(), inputTokens,
                     outputTokens, totalTokens, durationMs);
-        } catch (JsonProcessingException exception) {
+        } catch (IOException exception) {
             throw new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID, exception);
         }
     }
@@ -164,7 +181,7 @@ public final class OpenAiResponsesGateway implements AiGateway {
             return null;
         }
         JsonNode value = object.get(field);
-        if (!object.isObject() || !value.canConvertToInt() || value.intValue() < 0) {
+        if (!object.isObject() || !value.isIntegralNumber() || !value.canConvertToInt() || value.intValue() < 0) {
             throw invalid();
         }
         return value.intValue();
