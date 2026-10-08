@@ -7,7 +7,11 @@ import com.devmate.knowledge.vo.RetrievalResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -72,6 +76,52 @@ public class RagJournal {
                 new RagSummary(r.getString("retrieval_id"), r.getString("spec"), r.getInt("query_tokens"),
                         r.getInt("rounds"), r.getInt("inspected_points"), r.getString("prompt_template_version"),
                         r.getTimestamp("checked_at").toInstant(), "NORMALIZED_UNICODE_CODE_POINT"), invocation);
+    }
+    public record HistoryEvidence(RagSummary rag, List<SavedCitation> citations) {}
+    private record HistoryRow(long messageId, RagSummary rag, SavedCitation citation) {}
+
+    /** One bounded page read; only successful RAG answers can expose saved provenance. */
+    public Map<Long, HistoryEvidence> historyEvidence(long owner, long project, long conversation,
+                                                      List<Long> assistantMessageIds) {
+        if (assistantMessageIds.isEmpty()) return Map.of();
+        if (assistantMessageIds.size() > 100) throw new IllegalArgumentException("Message page bound exceeded");
+        var args = new ArrayList<Object>(List.of(owner, project, conversation));
+        args.addAll(assistantMessageIds);
+        String sql = "SELECT i.assistant_message_id,i.prompt_template_version,r.retrieval_id,r.spec,"
+                + "r.query_tokens,r.rounds,r.inspected_points,r.checked_at,k.citation_id,k.source_snapshot "
+                + "FROM ai_invocations i JOIN conversations c ON c.id=i.conversation_id "
+                + "JOIN projects p ON p.id=c.project_id AND p.owner_user_id=c.owner_user_id "
+                + "JOIN rag_invocation_details r ON r.invocation_id=i.id "
+                + "JOIN rag_citations k ON k.invocation_id=i.id "
+                + "WHERE c.owner_user_id=? AND c.project_id=? AND c.id=? AND p.deleted=0 "
+                + "AND i.mode='RAG' AND i.status='SUCCEEDED' AND i.assistant_message_id IN ("
+                + String.join(",", Collections.nCopies(assistantMessageIds.size(), "?")) + ") "
+                + "ORDER BY i.assistant_message_id,k.citation_id";
+        List<HistoryRow> rows = jdbc.query(sql, (r, n) -> {
+            try {
+                return new HistoryRow(r.getLong("assistant_message_id"),
+                        new RagSummary(r.getString("retrieval_id"), r.getString("spec"), r.getInt("query_tokens"),
+                                r.getInt("rounds"), r.getInt("inspected_points"),
+                                r.getString("prompt_template_version"), r.getTimestamp("checked_at").toInstant(),
+                                "NORMALIZED_UNICODE_CODE_POINT"),
+                        new SavedCitation(r.getString("citation_id"),
+                                json.readValue(r.getString("source_snapshot"), CitationSource.class)));
+            } catch (JsonProcessingException error) {
+                throw new IllegalStateException("Citation snapshot cannot be read");
+            }
+        }, args.toArray());
+        if (rows.size() > 500) throw new IllegalStateException("Citation page bound exceeded");
+        Map<Long, List<SavedCitation>> citations = new HashMap<>();
+        Map<Long, RagSummary> summaries = new HashMap<>();
+        for (HistoryRow row : rows) {
+            summaries.put(row.messageId(), row.rag());
+            var messageCitations = citations.computeIfAbsent(row.messageId(), ignored -> new ArrayList<>());
+            messageCitations.add(row.citation());
+            if (messageCitations.size() > 5) throw new IllegalStateException("Citation bound exceeded");
+        }
+        Map<Long, HistoryEvidence> result = new HashMap<>();
+        citations.forEach((id, saved) -> result.put(id, new HistoryEvidence(summaries.get(id), List.copyOf(saved))));
+        return Map.copyOf(result);
     }
     public List<Long> expired(LocalDateTime now) {
         return jdbc.queryForList("SELECT i.id FROM ai_invocations i JOIN rag_invocation_details r ON r.invocation_id=i.id "

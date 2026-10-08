@@ -42,6 +42,48 @@ export interface ConversationMessage {
   content: string
   sequenceNo: number
   createdAt: string
+  evidence?: RagEvidence | null
+}
+
+export interface RagSummary {
+  retrievalId: string
+  spec: string
+  queryTokens: number
+  rounds: number
+  inspectedPoints: number
+  templateVersion: string
+  checkedAt: string
+  offsetUnit: 'NORMALIZED_UNICODE_CODE_POINT'
+}
+
+export interface CitationSource {
+  pointId: string
+  documentId: number
+  filename: string
+  processingId: number
+  indexId: number
+  processingGeneration: number
+  indexGeneration: number
+  parserVersion: string
+  strategyVersion: string
+  sourceSha256: string
+  chunkSha256: string
+  ordinal: number
+  start: number
+  end: number
+  startLine: number
+  endLine: number
+}
+
+export interface Citation {
+  citationId: string
+  source: CitationSource
+  available: boolean
+}
+
+export interface RagEvidence {
+  rag: RagSummary
+  citations: Citation[]
 }
 
 export interface InvocationSummary {
@@ -61,6 +103,8 @@ export interface SendMessageResponse {
   assistantMessage: ConversationMessage
   invocation: InvocationSummary
 }
+
+export interface RagSendMessageResponse extends SendMessageResponse, RagEvidence {}
 
 export interface User {
   id: number

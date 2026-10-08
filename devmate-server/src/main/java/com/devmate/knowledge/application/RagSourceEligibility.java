@@ -35,6 +35,14 @@ public class RagSourceEligibility {
         return journal.available(owner, project, EmbeddingSpec.ID, snapshots);
     }
 
+    /** Bounded history-page check; preserves the existing five-source send/replay contract. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public List<RetrievalHit> availableBatch(long owner, long project, List<RetrievalHit> snapshots) {
+        if (snapshots.size() > 500) throw new IllegalArgumentException("Citation page bound exceeded");
+        projects.lockOwnedActiveProject(owner, project);
+        return journal.availableBatch(owner, project, EmbeddingSpec.ID, snapshots);
+    }
+
     private List<VectorCandidate> candidates(List<RetrievalHit> hits) {
         return hits.stream().map(h -> new VectorCandidate(h.pointId(), h.score(),
                 h.documentId()+"/"+h.processingId()+"/"+h.indexId()+"/"+EmbeddingSpec.ID,

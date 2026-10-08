@@ -1,11 +1,17 @@
 import ElementPlus from 'element-plus'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import * as conversationApi from '@/api/conversations'
 import * as projectApi from '@/api/projects'
-import type { Conversation, ConversationMessage, Project, SendMessageResponse } from '@/api/types'
+import type {
+  Conversation,
+  ConversationMessage,
+  Project,
+  RagSendMessageResponse,
+  SendMessageResponse,
+} from '@/api/types'
 import ConversationChatView from '@/views/ConversationChatView.vue'
 
 vi.mock('@/api/conversations')
@@ -55,6 +61,46 @@ function sendResponse(content = 'question'): SendMessageResponse {
   }
 }
 
+function ragResponse(available = true): RagSendMessageResponse {
+  return {
+    ...sendResponse(),
+    rag: {
+      retrievalId: '11111111-1111-4111-8111-111111111111',
+      spec: 'test-spec',
+      queryTokens: 3,
+      rounds: 1,
+      inspectedPoints: 1,
+      templateVersion: 'project-rag-v1',
+      checkedAt: '2026-09-29T00:00:00Z',
+      offsetUnit: 'NORMALIZED_UNICODE_CODE_POINT',
+    },
+    citations: [
+      {
+        citationId: 'C1',
+        available,
+        source: {
+          pointId: 'point-1',
+          documentId: 1,
+          filename: '<img src=x onerror=alert(1)>.md',
+          processingId: 2,
+          indexId: 3,
+          processingGeneration: 1,
+          indexGeneration: 1,
+          parserVersion: 'p1',
+          strategyVersion: 's1',
+          sourceSha256: 'a'.repeat(64),
+          chunkSha256: 'b'.repeat(64),
+          ordinal: 0,
+          start: 0,
+          end: 10,
+          startLine: 1,
+          endLine: 2,
+        },
+      },
+    ],
+  }
+}
+
 async function mountChat(path = '/projects/42/conversations/9') {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -93,9 +139,131 @@ beforeEach(() => {
     items: [],
   })
   vi.mocked(conversationApi.sendConversationMessage).mockResolvedValue(sendResponse())
+  vi.mocked(conversationApi.sendRagConversationMessage).mockResolvedValue(ragResponse())
 })
 
+afterEach(() => vi.unstubAllEnvs())
+
 describe('ConversationChatView', () => {
+  it('restores retired citations as untrusted text while the RAG composer is off', async () => {
+    const answer = ragResponse(false)
+    vi.mocked(conversationApi.listConversationMessages).mockResolvedValue({
+      page: 1,
+      pageSize: 50,
+      total: 2,
+      items: [
+        answer.userMessage,
+        {
+          ...answer.assistantMessage,
+          evidence: {
+            rag: answer.rag,
+            citations: answer.citations,
+          },
+        },
+      ],
+    })
+    const { wrapper } = await mountChat()
+    expect(wrapper.find('.mode-choice').exists()).toBe(false)
+    expect(wrapper.text()).toContain('来源已删除或已更新')
+    expect(wrapper.text()).toContain('<img src=x onerror=alert(1)>.md')
+    expect(wrapper.find('.rag-evidence img').exists()).toBe(false)
+    expect(conversationApi.sendRagConversationMessage).not.toHaveBeenCalled()
+  })
+
+  it('freezes RAG mode and UUID across uncertain results, then shows trusted citations', async () => {
+    vi.stubEnv('VITE_RAG_ENABLED', 'true')
+    const uuid = '11111111-1111-4111-8111-111111111111'
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(uuid)
+    vi.mocked(conversationApi.sendRagConversationMessage)
+      .mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { status: 503, data: { message: 'RAG state cannot be confirmed' } },
+      })
+      .mockResolvedValueOnce(ragResponse())
+    const { wrapper } = await mountChat()
+    await wrapper
+      .findAll('.el-radio-button')
+      .find((button) => button.text() === '文档问答')
+      ?.trigger('click')
+    await wrapper.find('textarea').setValue('  document question  ')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '发送消息')
+      ?.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('请求状态不确定')
+    expect(wrapper.find('textarea').attributes('disabled')).toBeDefined()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '重试确认结果')
+      ?.trigger('click')
+    await flushPromises()
+    expect(crypto.randomUUID).toHaveBeenCalledTimes(1)
+    expect(
+      vi.mocked(conversationApi.sendRagConversationMessage).mock.calls.map((call) => call[2]),
+    ).toEqual([
+      { clientRequestId: uuid, content: 'document question' },
+      { clientRequestId: uuid, content: 'document question' },
+    ])
+    expect(conversationApi.sendConversationMessage).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('文档引用')
+    expect(wrapper.text()).toContain('当前可用')
+    expect(wrapper.find('.rag-evidence img').exists()).toBe(false)
+  })
+
+  it('ends a terminal RAG 409 without offering same-request confirmation', async () => {
+    vi.stubEnv('VITE_RAG_ENABLED', 'true')
+    vi.mocked(conversationApi.sendRagConversationMessage).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 409, data: { message: 'No bounded document context is available' } },
+    })
+    const { wrapper } = await mountChat()
+    await wrapper
+      .findAll('.el-radio-button')
+      .find((button) => button.text() === '文档问答')
+      ?.trigger('click')
+    await wrapper.find('textarea').setValue('question')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '发送消息')
+      ?.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('没有可用于回答的文档片段')
+    expect(wrapper.text()).not.toContain('重试确认结果')
+    expect(wrapper.find('textarea').attributes('disabled')).toBeUndefined()
+    expect(conversationApi.sendConversationMessage).not.toHaveBeenCalled()
+  })
+
+  it('ignores an old RAG answer after leaving and returning to the same route', async () => {
+    vi.stubEnv('VITE_RAG_ENABLED', 'true')
+    let resolveOld!: (value: RagSendMessageResponse) => void
+    vi.mocked(conversationApi.sendRagConversationMessage).mockImplementation(
+      () => new Promise((resolve) => (resolveOld = resolve)),
+    )
+    vi.mocked(conversationApi.getConversation).mockImplementation((_projectId, id) =>
+      Promise.resolve(
+        id === 9 ? conversation : { ...conversation, id: 10, title: 'Another conversation' },
+      ),
+    )
+    const { router, wrapper } = await mountChat()
+    await wrapper
+      .findAll('.el-radio-button')
+      .find((button) => button.text() === '文档问答')
+      ?.trigger('click')
+    await wrapper.find('textarea').setValue('old question')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '发送消息')
+      ?.trigger('click')
+    await router.push('/projects/42/conversations/10')
+    await router.push('/projects/42/conversations/9')
+    await flushPromises()
+    resolveOld(ragResponse())
+    await flushPromises()
+    expect(wrapper.findAll('.message-item')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('文档引用')
+    expect(wrapper.find('textarea').attributes('disabled')).toBeUndefined()
+  })
   it('does not call APIs for invalid or unsafe route ids', async () => {
     const { wrapper } = await mountChat('/projects/42/conversations/9007199254740992')
 

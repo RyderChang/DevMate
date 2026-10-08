@@ -15,14 +15,20 @@ import com.devmate.conversation.entity.ConversationEntity;
 import com.devmate.conversation.entity.ConversationMessageEntity;
 import com.devmate.conversation.mapper.ConversationMapper;
 import com.devmate.conversation.mapper.ConversationMessageMapper;
+import com.devmate.conversation.mapper.RagJournal;
 import com.devmate.conversation.vo.ConversationResponse;
-import com.devmate.conversation.vo.MessageResponse;
+import com.devmate.conversation.vo.CitationResponse;
+import com.devmate.conversation.vo.MessageHistoryResponse;
+import com.devmate.conversation.vo.RagEvidence;
 import com.devmate.conversation.vo.SendMessageResponse;
+import com.devmate.knowledge.application.RagSourceEligibility;
 import com.devmate.project.service.ProjectService;
 import com.devmate.project.vo.ProjectResponse;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +50,14 @@ public class ConversationService {
     private final ProjectChatPromptBuilder promptBuilder;
     private final AiGateway aiGateway;
     private final AiProperties properties;
+    private final RagJournal ragJournal;
+    private final RagSourceEligibility ragSources;
 
     public ConversationService(ProjectService projectService, ConversationMapper conversationMapper,
                                ConversationMessageMapper messageMapper,
                                ConversationTransactionService transactionService,
                                ProjectChatPromptBuilder promptBuilder, AiGateway aiGateway,
-                               AiProperties properties) {
+                               AiProperties properties, RagJournal ragJournal, RagSourceEligibility ragSources) {
         this.projectService = projectService;
         this.conversationMapper = conversationMapper;
         this.messageMapper = messageMapper;
@@ -57,6 +65,8 @@ public class ConversationService {
         this.promptBuilder = promptBuilder;
         this.aiGateway = aiGateway;
         this.properties = properties;
+        this.ragJournal = ragJournal;
+        this.ragSources = ragSources;
     }
 
     @Transactional
@@ -90,17 +100,31 @@ public class ConversationService {
         return toResponse(requireConversation(ownerUserId, projectId, conversationId));
     }
 
-    @Transactional(readOnly = true)
-    public PageResult<MessageResponse> listMessages(Long ownerUserId, Long projectId, Long conversationId,
+    @Transactional
+    public PageResult<MessageHistoryResponse> listMessages(Long ownerUserId, Long projectId, Long conversationId,
                                                     int page, int pageSize) {
-        projectService.requireOwnedActiveProject(ownerUserId, projectId);
+        projectService.lockOwnedActiveProject(ownerUserId, projectId);
         validatePagination(page, pageSize);
         requireConversation(ownerUserId, projectId, conversationId);
         long offset = Math.multiplyExact((long) page - 1L, pageSize);
         long total = messageMapper.countOwned(ownerUserId, projectId, conversationId);
-        List<MessageResponse> items = messageMapper.findOwnedPage(
-                ownerUserId, projectId, conversationId, offset, pageSize).stream()
-                .map(this::toMessageResponse).toList();
+        List<ConversationMessageEntity> pageItems = messageMapper.findOwnedPage(
+                ownerUserId, projectId, conversationId, offset, pageSize);
+        Map<Long, RagJournal.HistoryEvidence> evidence = ragJournal.historyEvidence(ownerUserId, projectId,
+                conversationId, pageItems.stream().filter(m -> "ASSISTANT".equals(m.getRole()))
+                        .map(ConversationMessageEntity::getId).toList());
+        var snapshots = evidence.values().stream().flatMap(e -> e.citations().stream())
+                .map(c -> c.source().location()).distinct().toList();
+        Set<com.devmate.knowledge.vo.RetrievalHit> available = snapshots.isEmpty() ? Set.of()
+                : Set.copyOf(ragSources.availableBatch(ownerUserId, projectId, snapshots));
+        List<MessageHistoryResponse> items = pageItems.stream().map(m -> {
+            RagJournal.HistoryEvidence saved = evidence.get(m.getId());
+            RagEvidence rag = saved == null ? null : new RagEvidence(saved.rag(),
+                    saved.citations().stream().map(c -> new CitationResponse(c.id(), c.source(),
+                            available.contains(c.source().location()))).toList());
+            return new MessageHistoryResponse(m.getId(), m.getRole(), m.getContent(), m.getSequenceNo(),
+                    m.getCreateTime().toInstant(ZoneOffset.UTC), rag);
+        }).toList();
         return new PageResult<>(page, pageSize, total, items);
     }
 
@@ -211,11 +235,6 @@ public class ConversationService {
         return new ConversationResponse(conversation.getId(), conversation.getProjectId(), conversation.getTitle(),
                 conversation.getGenerationState(), conversation.getCreateTime().toInstant(ZoneOffset.UTC),
                 conversation.getUpdateTime().toInstant(ZoneOffset.UTC));
-    }
-
-    private MessageResponse toMessageResponse(ConversationMessageEntity message) {
-        return new MessageResponse(message.getId(), message.getRole(), message.getContent(),
-                message.getSequenceNo(), message.getCreateTime().toInstant(ZoneOffset.UTC));
     }
 
     private long elapsedMillis(long started) {

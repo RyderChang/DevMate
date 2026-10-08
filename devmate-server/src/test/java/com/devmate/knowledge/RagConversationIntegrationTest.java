@@ -144,6 +144,37 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
                 .andExpect(jsonPath("$.data.rag.templateVersion").value("project-rag-v1"));
         mvc.perform(get("/v3/api-docs").header("Authorization",token)).andExpect(status().isOk()).andExpect(jsonPath("$.paths['/projects/{projectId}/conversations/{conversationId}/rag-messages'].post").exists());
     }
+    @Test void historyRestoresOnlySuccessfulRagEvidenceAndRechecksCurrentAvailability() throws Exception {
+        long document=ready();var answer=send(uuid());
+        var first=conversations.listMessages(owner,project,conversation,1,2);
+        assertThat(first.total()).isEqualTo(2);
+        assertThat(first.items().getFirst().evidence()).isNull();
+        assertThat(first.items().getLast().evidence()).satisfies(e->{
+            assertThat(e.rag()).isEqualTo(answer.rag());
+            assertThat(e.citations()).isEqualTo(answer.citations());
+        });
+        mvc.perform(get("/projects/{projectId}/conversations/{conversationId}/messages",project,conversation)
+                .header("Authorization",token).param("pageSize","1").param("page","2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].evidence.citations[0].source.documentId").value(document))
+                .andExpect(jsonPath("$.data.items[0].evidence.citations[0].available").value(true));
+        rag.setEnabled(false);retrieval.setEnabled(false);
+        uploads.delete(owner,project,document);
+        var retired=conversations.listMessages(owner,project,conversation,2,1).items().getFirst();
+        assertThat(retired.evidence().citations()).singleElement().satisfies(c->{
+            assertThat(c.available()).isFalse();assertThat(c.source().documentId()).isEqualTo(document);
+        });
+        conversations.send(owner,project,conversation,request(uuid()));
+        assertThat(conversations.listMessages(owner,project,conversation,2,2).items())
+                .allSatisfy(message -> assertThat(message.evidence()).isNull());
+        long outsider=user("history-outsider");
+        mvc.perform(get("/projects/{projectId}/conversations/{conversationId}/messages",project,conversation)
+                .header("Authorization",token(outsider,"history-outsider"))).andExpect(status().isNotFound());
+        projects.delete(owner,project);
+        mvc.perform(get("/projects/{projectId}/conversations/{conversationId}/messages",project,conversation)
+                .header("Authorization",token)).andExpect(status().isNotFound());
+        verify(gateway,times(2)).chat(any());verify(model,times(1)).embed(anyString(),anyList(),anyList());
+    }
     @Test void apiGuardsIdentityOwnershipDisabledModeAndClientSuppliedFields() throws Exception {
         String body=body(uuid());
         mvc.perform(post(path()).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isUnauthorized());

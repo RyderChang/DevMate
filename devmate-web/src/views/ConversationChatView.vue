@@ -6,17 +6,21 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   getConversation,
   listConversationMessages,
+  sendRagConversationMessage,
   sendConversationMessage,
 } from '@/api/conversations'
 import { getProject } from '@/api/projects'
 import type { Conversation, ConversationMessage, Project, SendMessageResponse } from '@/api/types'
+import RagCitations from '@/components/conversation/RagCitations.vue'
 import {
+  classifyRagSendFailure,
   codePointLength,
   CONVERSATION_UNAVAILABLE_MESSAGE,
   getConversationErrorMessage,
   getSendErrorMessage,
   isConversationUnavailableError,
   isUncertainSendError,
+  isValidRagContent,
   MAX_MESSAGE_LENGTH,
   parsePositiveSafeId,
 } from '@/utils/conversations'
@@ -24,6 +28,7 @@ import { formatProjectDate } from '@/utils/projects'
 
 const MESSAGE_PAGE_SIZE = 50
 const SEND_ATTEMPT_LIMIT = 3
+const ragEnabled = import.meta.env.VITE_RAG_ENABLED === 'true'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,22 +45,28 @@ const historyRetry = ref<'reload' | 'earlier' | null>(null)
 const earliestPage = ref(1)
 const totalMessages = ref(0)
 const draft = ref('')
+const mode = ref<'chat' | 'rag'>('chat')
 const sending = ref(false)
 const sendError = ref('')
 const pendingRequestId = ref<string | null>(null)
 const pendingContent = ref<string | null>(null)
+const pendingMode = ref<'chat' | 'rag' | null>(null)
 const pendingAttempts = ref(0)
 const recoveryMode = ref<'uncertain' | 'conflict' | null>(null)
 let requestVersion = 0
 let active = true
 let currentRouteKey = ''
+let routeEpoch = 0
 
-const draftLength = computed(() => codePointLength(draft.value))
+const draftLength = computed(() =>
+  mode.value === 'rag' ? draft.value.length : codePointLength(draft.value),
+)
 const normalizedDraft = computed(() => draft.value.trim())
-const draftInvalid = computed(
-  () =>
-    normalizedDraft.value.length === 0 ||
-    codePointLength(normalizedDraft.value) > MAX_MESSAGE_LENGTH,
+const draftInvalid = computed(() =>
+  mode.value === 'rag'
+    ? !isValidRagContent(normalizedDraft.value)
+    : normalizedDraft.value.length === 0 ||
+      codePointLength(normalizedDraft.value) > MAX_MESSAGE_LENGTH,
 )
 const hasEarlierMessages = computed(() => earliestPage.value > 1)
 const serverGenerating = computed(() => conversation.value?.generationState === 'GENERATING')
@@ -153,9 +164,12 @@ async function load(): Promise<void> {
   const routeChanged = routeKey !== currentRouteKey
   if (routeChanged) {
     currentRouteKey = routeKey
+    routeEpoch += 1
     draft.value = ''
+    mode.value = 'chat'
     pendingRequestId.value = null
     pendingContent.value = null
+    pendingMode.value = null
     pendingAttempts.value = 0
     recoveryMode.value = null
     sendError.value = ''
@@ -272,45 +286,88 @@ function validSendResponse(response: SendMessageResponse, conversationId: number
   )
 }
 
-function isCurrentConversation(projectId: number, conversationId: number): boolean {
+function isCurrentConversation(projectId: number, conversationId: number, epoch: number): boolean {
   return (
     active &&
+    routeEpoch === epoch &&
     parsePositiveSafeId(route.params.projectId) === projectId &&
     parsePositiveSafeId(route.params.conversationId) === conversationId
   )
 }
 
-async function performSend(clientRequestId: string, content: string): Promise<void> {
+async function performSend(
+  clientRequestId: string,
+  content: string,
+  requestMode: 'chat' | 'rag',
+): Promise<void> {
   const projectId = parsePositiveSafeId(route.params.projectId)
   const conversationId = parsePositiveSafeId(route.params.conversationId)
   if (projectId === null || conversationId === null || sending.value) {
     return
   }
+  const epoch = routeEpoch
   sending.value = true
   sendError.value = ''
   try {
-    const response = await sendConversationMessage(projectId, conversationId, {
-      clientRequestId,
-      content,
-    })
-    if (!isCurrentConversation(projectId, conversationId)) {
+    const request = { clientRequestId, content }
+    const answer =
+      requestMode === 'rag'
+        ? {
+            mode: 'rag' as const,
+            response: await sendRagConversationMessage(projectId, conversationId, request),
+          }
+        : {
+            mode: 'chat' as const,
+            response: await sendConversationMessage(projectId, conversationId, request),
+          }
+    const response = answer.response
+    if (!isCurrentConversation(projectId, conversationId, epoch)) {
       return
     }
     if (!validSendResponse(response, conversationId)) {
       throw new Error('Invalid send response')
     }
-    messages.value = mergeMessages([response.userMessage, response.assistantMessage])
+    const assistant =
+      answer.mode === 'rag'
+        ? {
+            ...answer.response.assistantMessage,
+            evidence: { rag: answer.response.rag, citations: answer.response.citations },
+          }
+        : response.assistantMessage
+    messages.value = mergeMessages([response.userMessage, assistant])
     totalMessages.value = Math.max(totalMessages.value, messages.value.length)
     draft.value = ''
     pendingRequestId.value = null
     pendingContent.value = null
+    pendingMode.value = null
     pendingAttempts.value = 0
     recoveryMode.value = null
     if (conversation.value) {
       conversation.value = { ...conversation.value, generationState: 'IDLE' }
     }
   } catch (error) {
-    if (!isCurrentConversation(projectId, conversationId)) {
+    if (!isCurrentConversation(projectId, conversationId, epoch)) {
+      return
+    }
+    if (requestMode === 'rag') {
+      const failure = classifyRagSendFailure(error)
+      sendError.value = failure.message
+      unavailable.value = failure.unavailable
+      if (failure.uncertain) {
+        recoveryMode.value = failure.inProgress ? 'conflict' : 'uncertain'
+        if (failure.inProgress && conversation.value) {
+          conversation.value = { ...conversation.value, generationState: 'GENERATING' }
+        }
+      } else {
+        pendingRequestId.value = null
+        pendingContent.value = null
+        pendingMode.value = null
+        pendingAttempts.value = 0
+        recoveryMode.value = null
+        if (conversation.value) {
+          conversation.value = { ...conversation.value, generationState: 'IDLE' }
+        }
+      }
       return
     }
     sendError.value = getSendErrorMessage(error)
@@ -327,6 +384,7 @@ async function performSend(clientRequestId: string, content: string): Promise<vo
     } else {
       pendingRequestId.value = null
       pendingContent.value = null
+      pendingMode.value = null
       pendingAttempts.value = 0
       recoveryMode.value = null
       if (conversation.value) {
@@ -334,7 +392,7 @@ async function performSend(clientRequestId: string, content: string): Promise<vo
       }
     }
   } finally {
-    if (isCurrentConversation(projectId, conversationId)) {
+    if (isCurrentConversation(projectId, conversationId, epoch)) {
       sending.value = false
     }
   }
@@ -349,13 +407,14 @@ function submit(): void {
   const clientRequestId = crypto.randomUUID()
   pendingRequestId.value = clientRequestId
   pendingContent.value = content
+  pendingMode.value = mode.value
   pendingAttempts.value = 1
   recoveryMode.value = null
-  void performSend(clientRequestId, content)
+  void performSend(clientRequestId, content, mode.value)
 }
 
 function retryPending(): void {
-  if (!pendingRequestId.value || !pendingContent.value || sending.value) {
+  if (!pendingRequestId.value || !pendingContent.value || !pendingMode.value || sending.value) {
     return
   }
   if (pendingAttempts.value >= SEND_ATTEMPT_LIMIT) {
@@ -363,7 +422,7 @@ function retryPending(): void {
     return
   }
   pendingAttempts.value += 1
-  void performSend(pendingRequestId.value, pendingContent.value)
+  void performSend(pendingRequestId.value, pendingContent.value, pendingMode.value)
 }
 </script>
 
@@ -454,11 +513,19 @@ function retryPending(): void {
               <time>{{ formatProjectDate(message.createdAt) }}</time>
             </div>
             <p>{{ message.content }}</p>
+            <RagCitations v-if="message.evidence" :evidence="message.evidence" />
           </li>
         </ol>
       </el-card>
 
       <el-card class="composer-card" shadow="never">
+        <div v-if="ragEnabled" class="mode-choice" role="group" aria-label="对话模式">
+          <el-radio-group v-model="mode" :disabled="composerLocked">
+            <el-radio-button value="chat">普通聊天</el-radio-button>
+            <el-radio-button value="rag">文档问答</el-radio-button>
+          </el-radio-group>
+          <span v-if="mode === 'rag'">使用当前项目的活动文档；回答会显示可核验的引用。</span>
+        </div>
         <el-alert
           v-if="sendError"
           :title="sendError"
@@ -484,7 +551,7 @@ function retryPending(): void {
         />
         <div class="composer-actions">
           <span :class="{ 'character-count-error': draftLength > MAX_MESSAGE_LENGTH }">
-            {{ draftLength }}/{{ MAX_MESSAGE_LENGTH }} 字符
+            {{ draftLength }}/{{ MAX_MESSAGE_LENGTH }} {{ mode === 'rag' ? 'UTF-16 码元' : '字符' }}
           </span>
           <el-button
             type="primary"
@@ -580,6 +647,16 @@ function retryPending(): void {
 
 .composer-card .el-alert {
   margin-bottom: 14px;
+}
+
+.mode-choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  color: #606266;
+  font-size: 13px;
 }
 
 .composer-actions {

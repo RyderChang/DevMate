@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  classifyRagSendFailure,
   codePointLength,
   getConversationErrorMessage,
   getSendErrorMessage,
   isUncertainSendError,
+  isValidRagContent,
   normalizeConversationPagination,
   parsePositiveSafeId,
 } from '@/utils/conversations'
@@ -35,6 +37,35 @@ describe('conversation utilities', () => {
 
   it('counts Unicode code points instead of UTF-16 code units', () => {
     expect(codePointLength('a😀b')).toBe(3)
+  })
+
+  it('uses UTF-16 and rejects broken surrogate pairs for RAG', () => {
+    expect(isValidRagContent('😀'.repeat(4_000))).toBe(true)
+    expect(isValidRagContent('😀'.repeat(4_001))).toBe(false)
+    expect(isValidRagContent('\ud800')).toBe(false)
+    expect(isValidRagContent('')).toBe(false)
+  })
+
+  it('distinguishes terminal RAG failures from uncertain or in-progress requests', () => {
+    const error = (status: number, message: string) => ({
+      isAxiosError: true,
+      response: { status, data: { message } },
+    })
+    expect(
+      classifyRagSendFailure(error(409, 'An AI response is already being generated')).inProgress,
+    ).toBe(true)
+    expect(
+      classifyRagSendFailure(error(409, 'No bounded document context is available')),
+    ).toMatchObject({
+      uncertain: false,
+      inProgress: false,
+      message: '没有可用于回答的文档片段，请检查项目文档与索引',
+    })
+    expect(classifyRagSendFailure(error(503, 'RAG state cannot be confirmed')).uncertain).toBe(true)
+    expect(classifyRagSendFailure({ isAxiosError: true, code: 'ECONNABORTED' }).uncertain).toBe(
+      true,
+    )
+    expect(classifyRagSendFailure(error(503, 'RAG conversation is disabled')).uncertain).toBe(false)
   })
 
   it('uses status-based safe messages without exposing provider responses', () => {
