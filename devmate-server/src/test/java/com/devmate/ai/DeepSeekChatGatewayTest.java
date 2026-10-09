@@ -153,6 +153,38 @@ class DeepSeekChatGatewayTest {
     }
 
     @Test
+    void classifiesOnlyFixedResponseIssuesWithoutRetainingProviderBody() throws Exception {
+        var http = harness(properties());
+        http.server.expect(requestTo("https://api.deepseek.com/chat/completions"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).body("private upstream diagnostic"));
+        assertIssue(http, AiGatewayException.ResponseIssue.UPSTREAM_STATUS);
+
+        ObjectNode stopped = (ObjectNode) mapper.readTree(RESPONSE);
+        ((ObjectNode) stopped.path("choices").get(0)).put("finish_reason", "length");
+        var finish = harness(properties());
+        finish.server.expect(requestTo("https://api.deepseek.com/chat/completions"))
+                .andRespond(withSuccess(stopped.toString(), MediaType.APPLICATION_JSON));
+        assertIssue(finish, AiGatewayException.ResponseIssue.FINISH_REASON);
+
+        var malformed = harness(properties());
+        malformed.server.expect(requestTo("https://api.deepseek.com/chat/completions"))
+                .andRespond(withSuccess("private malformed JSON", MediaType.APPLICATION_JSON));
+        assertIssue(malformed, AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
+    }
+
+    private void assertIssue(Harness harness, AiGatewayException.ResponseIssue expected) {
+        assertThatThrownBy(() -> harness.gateway.chat(new AiChatRequest("rules", List.of(
+                new AiMessage(AiMessage.Role.USER, "question")), 10)))
+                .isInstanceOfSatisfying(AiGatewayException.class, error -> {
+                    assertThat(error.getErrorCode()).isEqualTo(ErrorCode.AI_RESPONSE_INVALID);
+                    assertThat(error.getResponseIssue()).isEqualTo(expected);
+                    assertThat(error.getMessage()).isEqualTo(ErrorCode.AI_RESPONSE_INVALID.getMessage());
+                    assertThat(error.getCause()).isNull();
+                });
+        harness.server.verify();
+    }
+
+    @Test
     void distinguishesTimeoutAndNetworkFailureWithoutAttachingSensitiveCauses() {
         var harness = harness(properties());
         harness.server.expect(requestTo("https://api.deepseek.com/chat/completions"))

@@ -58,6 +58,12 @@ V10 之前的普通聊天记录默认 CHAT，保留原 UUID 重放语义。
 模型仅提供严格 JSON `answer` 和 `citationIds`；拒绝重复键、尾随 JSON、围栏、额外键、工具输出、未知/重复编号、
 无引用回答及未列入 citationIds 的内联 `[C1]` 编号。answer 最多 8000 code points / 32 KiB UTF-8。
 
+V11 起，内部 `rag_invocation_details` 对可分类的 `AI_RESPONSE_INVALID`（HTTP 502）失败原子保存
+`failure_stage` / `failure_category`。阶段为 `PROVIDER_HTTP`、`PROVIDER_RESPONSE` 或 `RAG_OUTPUT`；类别为固定安全枚举，
+区分上游非预期状态、响应大小/编码/信封/结束原因/正文/用量，以及 RAG JSON 结构/回答内容/引用编号/内联标记。
+这些字段不进入公开 API 或历史消息；旧记录、成功及非 502 失败为 NULL。`UNCLASSIFIED` 表示其他网关实现仅报告了统一 502，
+不能据此推断提供商细节。阶段记录不含上游错误体、模型原文、提示词或密钥；排障需在受限数据库权限下按 invocation ID 查询。
+
 ## 错误
 
 code 沿用统一响应的 HTTP 数值语义；下表名称用于后端状态与文档，message 为固定英文文案。
