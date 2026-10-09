@@ -1,7 +1,9 @@
 # RAG 对话 API
 
 [ADR 0008](../adr/0008-bound-rag-conversation-and-citations.md) 已于 2026-09-29 接受。
-本接口仅后端、同步、默认关闭，不声明工具；普通聊天仍使用 `project-chat-v1`。
+RAG 请求是同步、默认关闭的后端接口，不声明工具；普通聊天仍使用 `project-chat-v1`。
+
+DEV-023 在现有项目对话前端增加默认关闭的文档问答入口，并扩展历史消息只读响应；[任务说明](../tasks/DEV-023-frontend-rag-citations.md)。
 
 ## 请求与权限
 
@@ -43,6 +45,13 @@ V10 之前的普通聊天记录默认 CHAT，保留原 UUID 重放语义。
 失败重放返回原稳定错误；仍在途为 AI_REQUEST_IN_PROGRESS；已超总截止的 PENDING 可原子收口为 AI_REQUEST_EXPIRED。
 源文档删除或换代后，成功重放仍返回历史回答与最小定位，available=false；不读取退役来源正文。
 删除原文档不能撤回已经保存的回答摘要。父项目删除后该 API 仍按活动项目归属返回 404。
+
+`GET /projects/{projectId}/conversations/{conversationId}/messages` 保留原分页、升序和五个消息字段，增加 `evidence` 字段。
+成功 RAG 助手消息的 `evidence` 为 `{ "rag": RagSummary, "citations": CitationResponse[] }`；普通聊天、用户消息和旧数据返回 `null`。
+`rag.checkedAt` 是原发布时刻，不随历史读取刷新；`citations[].available` 根据当前活动来源重新核验，删除或换代后为 `false`，历史定位仍保留。
+历史页最多 100 条、引用最多 500 条；读取不调用检索、Embedding 或聊天模型，也不返回来源正文。
+该字段在 RAG 写入口关闭时仍可读取；项目/对话归属、父项目删除和权限规则不变。
+普通聊天及 RAG POST 成功响应结构不变。
 
 空命中和 incomplete 均明确失败，不回退普通聊天。发送前、发布时重新验证全部实际提供的来源；
 最终资格检查、引用与助手消息写入共享项目锁及短事务。来源变化、过期或坏输出不会发布助手消息。

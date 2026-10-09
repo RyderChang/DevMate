@@ -37,7 +37,7 @@
 
 ## 文档检索
 
-- [DEV-021](tasks/DEV-021-document-retrieval.md)：依赖 #36 的独立检索实现，暂不合并前置 PR。
+- [DEV-021](tasks/DEV-021-document-retrieval.md)：有界文档检索，已随 #37 合并至 `develop`。
 - [检索 API](api/document-retrieval.md)：归属、完整活动来源、去重补足、用量与不完整结果。
 - [检索运行说明](development/document-retrieval.md)与[验收记录](testing/document-retrieval-acceptance.md)：真实 MySQL/Qdrant、query prefix 和受控模型样本。
 
@@ -70,6 +70,7 @@
 
 ## 带引用的 RAG 对话
 
-- [DEV-022](tasks/DEV-022-rag-conversation.md)：所有者接受全部提议并允许从 #37 创建独立依赖分支，#36/#37 暂不合并。
+- [DEV-022](tasks/DEV-022-rag-conversation.md)：后端 RAG 已随 #39 合并至 `develop`；原任务书保留实施时的依赖记录。
 - [ADR 0008](adr/0008-bound-rag-conversation-and-citations.md)：Accepted，接口、租约、来源快照与长期额度合同。
-- [RAG API](api/rag-conversation.md)、[运行与恢复](development/rag-conversation.md)、[验收记录](testing/rag-conversation-acceptance.md)：仅后端、默认关闭，无前端/部署/真实付费调用。
+- [RAG API](api/rag-conversation.md)、[运行与恢复](development/rag-conversation.md)、[DEV-022 验收记录](testing/rag-conversation-acceptance.md)：默认关闭的后端合同及其合并前验收历史。
+- [DEV-023](tasks/DEV-023-frontend-rag-citations.md)与[验收记录](testing/frontend-rag-citations-acceptance.md)：默认关闭的前端文档问答、历史引用展示及实际验证结果。

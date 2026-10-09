@@ -1,5 +1,10 @@
 # RAG 对话开发与恢复
 
+当前 #36/#37/#39 已依次合并至 `develop`；以下依赖分支描述保留 DEV-022 实施时的历史状态。
+DEV-023 的前端引用入口默认由 `VITE_RAG_ENABLED=false` 关闭；只有精确设为 `true` 才可选择文档问答。
+历史引用读取不依赖 RAG 写开关，且始终通过 JWT、项目和对话归属校验；前端显示开关不替代后端 `RAG_ENABLED` 与知识模块各自的启用要求。
+前端请求规则与验收范围见 [DEV-023](../tasks/DEV-023-frontend-rag-citations.md)。
+
 [DEV-022](../tasks/DEV-022-rag-conversation.md) 在 #37 `0432cafeda9e4be8d30f698a91fb76ffb90d7bab` 上建立独立依赖分支。
 所有者接受 ADR 0008 全部提议，#36/#37 保持未合并；本任务不合并、部署、实现前端或调用真实付费模型。
 合同见 [API](../api/rag-conversation.md)，实际结果见[验收](../testing/rag-conversation-acceptance.md)。

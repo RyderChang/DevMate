@@ -4,11 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CONVERSATION_SEND_TIMEOUT_MS,
+  RAG_SEND_TIMEOUT_MS,
   createConversation,
   getConversation,
   listConversationMessages,
   listConversations,
   sendConversationMessage,
+  sendRagConversationMessage,
 } from '@/api/conversations'
 import http from '@/api/http'
 import type {
@@ -16,6 +18,7 @@ import type {
   Conversation,
   ConversationMessage,
   PageResult,
+  RagSendMessageResponse,
   SendMessageResponse,
 } from '@/api/types'
 
@@ -38,6 +41,56 @@ const message: ConversationMessage = {
   createdAt: '2026-09-21T02:00:00Z',
 }
 
+const ragResponse: RagSendMessageResponse = {
+  conversationId: 9,
+  userMessage: message,
+  assistantMessage: { ...message, id: 12, role: 'ASSISTANT', sequenceNo: 2 },
+  invocation: {
+    status: 'SUCCEEDED',
+    provider: 'stub',
+    model: 'synthetic',
+    inputTokens: 2,
+    outputTokens: 3,
+    totalTokens: 5,
+    durationMs: 7,
+    completedAt: '2026-09-29T00:00:00Z',
+  },
+  rag: {
+    retrievalId: '11111111-1111-4111-8111-111111111111',
+    spec: 'test-spec',
+    queryTokens: 3,
+    rounds: 1,
+    inspectedPoints: 1,
+    templateVersion: 'project-rag-v1',
+    checkedAt: '2026-09-29T00:00:00Z',
+    offsetUnit: 'NORMALIZED_UNICODE_CODE_POINT',
+  },
+  citations: [
+    {
+      citationId: 'C1',
+      available: true,
+      source: {
+        pointId: 'point-1',
+        documentId: 1,
+        filename: '<script>unsafe</script>.md',
+        processingId: 2,
+        indexId: 3,
+        processingGeneration: 1,
+        indexGeneration: 1,
+        parserVersion: 'p1',
+        strategyVersion: 's1',
+        sourceSha256: 'a'.repeat(64),
+        chunkSha256: 'b'.repeat(64),
+        ordinal: 0,
+        start: 0,
+        end: 10,
+        startLine: 1,
+        endLine: 2,
+      },
+    },
+  ],
+}
+
 function response<T>(config: InternalAxiosRequestConfig, data: ApiResult<T>): AxiosResponse {
   return { data, status: 200, statusText: 'OK', headers: new AxiosHeaders(), config }
 }
@@ -47,6 +100,92 @@ afterEach(() => {
 })
 
 describe('conversation api', () => {
+  it('uses the RAG endpoint and timeout and rejects malformed provenance', async () => {
+    const adapter = vi.fn<AxiosAdapter>(async (config) =>
+      response(config, { code: 200, message: 'success', data: ragResponse }),
+    )
+    http.defaults.adapter = adapter
+    await expect(
+      sendRagConversationMessage(42, 9, {
+        clientRequestId: '11111111-1111-4111-8111-111111111111',
+        content: 'question',
+      }),
+    ).resolves.toEqual(ragResponse)
+    expect(adapter.mock.calls[0]?.[0].url).toBe('/projects/42/conversations/9/rag-messages')
+    expect(adapter.mock.calls[0]?.[0].timeout).toBe(RAG_SEND_TIMEOUT_MS)
+    expect(JSON.parse(String(adapter.mock.calls[0]?.[0].data))).toEqual({
+      clientRequestId: '11111111-1111-4111-8111-111111111111',
+      content: 'question',
+    })
+    http.defaults.adapter = vi.fn<AxiosAdapter>(async (config) =>
+      response(config, {
+        code: 200,
+        message: 'success',
+        data: { ...ragResponse, citations: [{ ...ragResponse.citations[0], available: 'true' }] },
+      }),
+    )
+    await expect(
+      sendRagConversationMessage(42, 9, {
+        clientRequestId: '11111111-1111-4111-8111-111111111111',
+        content: 'question',
+      }),
+    ).rejects.toBeInstanceOf(TypeError)
+  })
+  it('validates evidence from paginated history without requiring it on legacy messages', async () => {
+    const assistant = {
+      ...ragResponse.assistantMessage,
+      evidence: {
+        rag: ragResponse.rag,
+        citations: ragResponse.citations,
+      },
+    }
+    const adapter = vi.fn<AxiosAdapter>(async (config) =>
+      response(config, {
+        code: 200,
+        message: 'success',
+        data: {
+          page: 1,
+          pageSize: 50,
+          total: 2,
+          items: [message, assistant],
+        },
+      }),
+    )
+    http.defaults.adapter = adapter
+    const result = await listConversationMessages(42, 9, { page: 1, pageSize: 50 })
+    expect(result.items[1]?.evidence?.citations[0]?.source.filename).toContain('unsafe')
+    http.defaults.adapter = vi.fn<AxiosAdapter>(async (config) =>
+      response(config, {
+        code: 200,
+        message: 'success',
+        data: {
+          page: 1,
+          pageSize: 50,
+          total: 1,
+          items: [
+            {
+              ...assistant,
+              evidence: {
+                ...assistant.evidence,
+                citations: [
+                  {
+                    ...ragResponse.citations[0],
+                    source: {
+                      ...ragResponse.citations[0]!.source,
+                      documentId: Number.MAX_SAFE_INTEGER + 1,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      }),
+    )
+    await expect(listConversationMessages(42, 9, { page: 1, pageSize: 50 })).rejects.toBeInstanceOf(
+      RangeError,
+    )
+  })
   it('uses the expected methods, paths, pagination and safe request bodies', async () => {
     const page: PageResult<Conversation> = {
       page: 1,

@@ -7,7 +7,7 @@ import com.devmate.conversation.dto.CreateConversationRequest;
 import com.devmate.conversation.dto.SendMessageRequest;
 import com.devmate.conversation.service.ConversationService;
 import com.devmate.conversation.vo.ConversationResponse;
-import com.devmate.conversation.vo.MessageResponse;
+import com.devmate.conversation.vo.MessageHistoryResponse;
 import com.devmate.conversation.vo.SendMessageResponse;
 import com.devmate.security.CurrentUser;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -62,7 +62,7 @@ public class ConversationController {
     }
 
     @GetMapping("/{conversationId}/messages")
-    public Result<PageResult<MessageResponse>> messages(
+    public Result<PageResult<MessageHistoryResponse>> messages(
             @AuthenticationPrincipal CurrentUser currentUser,
             @PathVariable @Positive Long projectId,
             @PathVariable @Positive Long conversationId,

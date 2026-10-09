@@ -64,6 +64,30 @@ public class RetrievalJournal {
         }
         return List.copyOf(result);
     }
+    /** Compare a history page against active source metadata without reading chunk bodies. */
+    public List<RetrievalHit> availableBatch(long owner, long project, String spec, List<RetrievalHit> snapshots) {
+        if (snapshots.isEmpty()) return List.of();
+        if (snapshots.size() > 500) throw new IllegalArgumentException("Citation page bound exceeded");
+        var expected = new HashSet<>(snapshots);
+        var pointIds = snapshots.stream().map(RetrievalHit::pointId).distinct().toList();
+        var args = new ArrayList<Object>(List.of(owner, project, spec));
+        args.addAll(pointIds);
+        String sql = "SELECT " + SOURCE_COLUMNS + ",k.point_id,k.ordinal,k.chunk_sha256,"
+                + "c.start_offset,c.end_offset,c.start_line,c.end_line" + SOURCE_JOIN
+                + "JOIN knowledge_index_points k ON k.index_id=i.id AND k.confirmed=1 "
+                + "JOIN knowledge_chunks c ON c.processing_id=i.processing_id AND c.document_id=i.document_id "
+                + "AND c.owner_user_id=i.owner_user_id AND c.project_id=i.project_id AND c.ordinal=k.ordinal "
+                + "WHERE " + SOURCE_WHERE + " AND c.sha256=k.chunk_sha256 AND k.point_id IN ("
+                + String.join(",", Collections.nCopies(pointIds.size(), "?")) + ")";
+        return jdbc.query(sql, (r, n) -> {
+            var source = source(r);
+            return new RetrievalHit(r.getString("point_id"), 0, source.document(), source.filename(),
+                    source.processing(), source.index(), source.processingGeneration(), source.indexGeneration(),
+                    source.parserVersion(), source.strategyVersion(), source.sourceSha(),
+                    r.getString("chunk_sha256"), r.getInt("ordinal"), r.getInt("start_offset"),
+                    r.getInt("end_offset"), r.getInt("start_line"), r.getInt("end_line"), null);
+        }, args.toArray()).stream().filter(expected::contains).distinct().toList();
+    }
     public boolean reserveTokens(long project,int tokens,LocalDate day){
         for(long id:new long[]{0,project}){
             jdbc.update("INSERT INTO knowledge_index_daily_tokens(project_id,utc_day) VALUES(?,?) ON DUPLICATE KEY UPDATE project_id=project_id",id,day);
