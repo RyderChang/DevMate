@@ -11,6 +11,7 @@ Stub 验证已经取得**阶段可区分**的确定性证据：DeepSeek 模拟�
 历史 Q4、Q6、Q9 只有相同的公开 502，旧 schema 没有阶段列，隔离数据库已清理；**三次历史请求的具体失败阶段仍未知**。新复测只能说明新 UUID 对应的阶段，不能倒推旧请求。
 
 截至本记录，DEV-029 的真实付费复测**尚未运行**：自动审批先要求确认向 DeepSeek 发送七份冻结文档的片段，所有者已明确授权；本机执行还需所有者在自己的 PowerShell 隐藏输入密钥。临时脚本 `tmp/dev-029/run_live_rag.py` 已限制为 Q4/Q6/Q9 各一次并从 `origin/develop` 的七份 SHA 校验副本上传，零次新 DeepSeek 请求已发生。该状态仅是等待输入，不应写作三题的新阶段结论。
+按 [DeepSeek 官方人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)的 Flash 高峰档，以每次 98,304 输入 tokens 和 1,024 输出 tokens 作保守预算，三次估计约 **0.6144 元**，低于授权的 2 元。实际失败请求可能缺少可见 usage，最终扣费仍以服务商账单为准。
 
 ## 二、Q4 检索排序评估
 
