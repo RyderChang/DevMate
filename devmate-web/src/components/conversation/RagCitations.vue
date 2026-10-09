@@ -20,7 +20,7 @@ defineProps<{ evidence: RagEvidence }>()
           行</span
         >
         <el-tag :type="citation.available ? 'success' : 'warning'" size="small">
-          {{ citation.available ? '当前可用' : '来源已删除或已更新' }}
+          {{ citation.available ? '当前可用' : '来源当前不可用' }}
         </el-tag>
         <details>
           <summary>核验定位</summary>
@@ -46,7 +46,9 @@ defineProps<{ evidence: RagEvidence }>()
         </details>
       </li>
     </ol>
-    <small>引用检查时间：{{ evidence.rag.checkedAt }} · {{ evidence.rag.templateVersion }}</small>
+    <small
+      >发布时来源检查时间：{{ evidence.rag.checkedAt }} · {{ evidence.rag.templateVersion }}</small
+    >
   </section>
 </template>
 
