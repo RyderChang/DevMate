@@ -1,6 +1,6 @@
 # DevMate 真实资料检索召回与引用证据评估
 
-日期：2026-10-09。资料冻结于 `develop` 的 `b0b58142af63963bc36ced05df064e4253475794`。这是对[五次真实生成回答](real-rag-generated-citation-evaluation.md)的独立检索复跑，运行 ID `28381f14`；不能把本次候选伪称为上次请求保存的候选。
+日期：2026-10-09。资料冻结于 `develop` 的 `b0b58142af63963bc36ced05df064e4253475794`。[DEV-026 任务合同](../tasks/DEV-026-real-rag-evaluation.md)记录范围与验收口径。这是对[五次真实生成回答](real-rag-generated-citation-evaluation.md)的独立检索复跑，运行 ID `28381f14`；不能把本次候选伪称为上次请求保存的候选。
 
 ## 范围与方法
 
@@ -63,4 +63,5 @@
 - 对四份原文件执行 SHA-256 校核：全部与原运行冻结清单一致。
 - `python -B tmp/dev-026/run_live_rag.py --retrieval-only`：四份文档均完成上传、处理和索引；五次本地检索均为 HTTP 200、`TOP_K`、`incomplete=false`。命令使用本机 Python；脚本及包含片段正文的 `tmp/dev-026/retrieval-results.json` 受 `.gitignore` 排除，不进入 Git。
 - 对 25 个返回片段重算 UTF-8 文本 SHA-256 并核对来源 SHA-256：0 个不一致；九个目标按来源与行号核对名次；上次 19 个已引用位置与复跑同名次 chunk SHA-256：19/19 一致。
+- `python -B tmp/dev-026/verify_retrieval_record.py`：独立核对四份原文件、五题、报告中的 25 个排名/分数、19 个引用位置和 6/9 诊断位置，全部通过。`python -B tmp/dev-026/verify_record.py`：五段回答逐字、19 个引用 ID/SHA 及逐断言表结构通过。这两个本地复核脚本和原始数据同处 Git 忽略目录，不纳入提交。
 - `docker ps -a --filter 'label=devmate.eval' --format '{{.Names}}'`：无本次运行遗留容器。
