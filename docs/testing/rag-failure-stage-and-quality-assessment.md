@@ -1,6 +1,6 @@
 # DEV-029：RAG 502 阶段证据及分项质量评估
 
-日期：2026-10-10。任务与运行前标准见 [DEV-029](../tasks/DEV-029-rag-failure-stage-and-quality-assessment.md)。对照数据来自未合并的 [DEV-027 PR #45](https://github.com/RyderChang/DevMate/pull/45) 与 [DEV-028 PR #46](https://github.com/RyderChang/DevMate/pull/46)。原始 DEV-027 `tmp/dev-027/results.json` SHA-256 为 `850e1229196331839b05f05f68e8d35b16c514fda2600044fbc747d864b33d95`；DEV-028 top‑20 数据 `tmp/dev-028/retrieval-results.json` SHA-256 为 `024285cc229b985c4a58264616fe510361e5170550329c45927b8971077be205`。两份文件均在 Git 忽略目录，不提交回答或片段正文。
+日期：2026-10-10。任务与运行前标准见 [DEV-029](../tasks/DEV-029-rag-failure-stage-and-quality-assessment.md)。对照数据来自未合并的 [DEV-027 PR #45](https://github.com/RyderChang/DevMate/pull/45) 与 [DEV-028 PR #46](https://github.com/RyderChang/DevMate/pull/46)。原始 DEV-027 `tmp/dev-027/results.json` SHA-256 为 `850e1229196331839b05f05f68e8d35b16c514fda2600044fbc747d864b33d95`；DEV-028 top‑20 数据 `tmp/dev-028/retrieval-results.json` SHA-256 为 `024285cc229b985c4a58264616fe510361e5170550329c45927b8971077be205`；本次 `tmp/dev-029/results.json` SHA-256 为 `9beddcd5d0c0c4d759be1124dfd894990c08649d3505d4239cd40d5cd211c1b3`。三份文件均在 Git 忽略目录，不提交回答或片段正文。
 
 ## 一、502 阶段证据
 
@@ -10,8 +10,17 @@ Stub 验证已经取得**阶段可区分**的确定性证据：DeepSeek 模拟�
 
 历史 Q4、Q6、Q9 只有相同的公开 502，旧 schema 没有阶段列，隔离数据库已清理；**三次历史请求的具体失败阶段仍未知**。新复测只能说明新 UUID 对应的阶段，不能倒推旧请求。
 
-截至本记录，DEV-029 的真实付费复测**尚未运行**：自动审批先要求确认向 DeepSeek 发送七份冻结文档的片段，所有者已明确授权；本机执行还需所有者在自己的 PowerShell 隐藏输入密钥。临时脚本 `tmp/dev-029/run_live_rag.py` 已限制为 Q4/Q6/Q9 各一次并从 `origin/develop` 的七份 SHA 校验副本上传，零次新 DeepSeek 请求已发生。该状态仅是等待输入，不应写作三题的新阶段结论。
-按 [DeepSeek 官方人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)的 Flash 高峰档，以每次 98,304 输入 tokens 和 1,024 输出 tokens 作保守预算，三次估计约 **0.6144 元**，低于授权的 2 元。实际失败请求可能缺少可见 usage，最终扣费仍以服务商账单为准。
+所有者明确授权向 DeepSeek 发送七份冻结文档的检索片段，并在本机隐藏输入密钥运行 `tmp/dev-029/run_live_rag.py`。隔离运行 ID `fda55efd`；七份上传源 SHA 均与 DEV-027 冻结值相同。Q4、Q6、Q9 各进行一次显式本地检索和一次真实 RAG POST，**恰好三次 DeepSeek 请求，无重试**。三题显式检索均 HTTP 200、一轮、检查 21 点、五项、`TOP_K`、`incomplete=false`；15 个命中片段的正文 SHA 均匹配，且对应 top‑5 的 chunk SHA/score 与 DEV-027 原轮一致。两次成功回答共九个引用，均能与各自配对检索的 point ID 和 chunk SHA 对上。
+
+| 新请求 | RAG HTTP | 持久状态与阶段                                     | 持久用量（输入/输出/总计 tokens） | 本轮可确认结论                                                             |
+| ------ | -------- | -------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------- |
+| Q4     | 200      | `SUCCEEDED`、`RECEIVED`；诊断为空                  | 3522 / 798 / 4320                 | 成功回答了两问；E8 有直接引用，但 E7 仍未进入 top‑5。                      |
+| Q6     | 200      | `SUCCEEDED`、`RECEIVED`；诊断为空                  | 3452 / 509 / 3961                 | E10/E11 均有直接引用；另含跨检索流程的多余引用。                           |
+| Q9     | 502      | `FAILED`、`RECEIVED`；`RAG_OUTPUT` / `JSON_SCHEMA` | 3109 / 381 / 3490                 | 提供商响应已被网关接收并保存用量；随后 RAG JSON 结构校验失败，未发布回答。 |
+
+`JSON_SCHEMA` 是受限安全类别，覆盖解析失败、重复键、尾随内容或顶层字段形状不符等路径；**无法仅凭该类别确定哪一种 JSON 细节出错**，且没有保存模型原文。Q9 的 E16/E17 都在本轮显式检索中，502 不能归因于证据缺失。三次历史 502 仍未知，不能以本轮 Q9 的类别追认历史 Q9。
+
+本轮持久用量合计输入 **10,083**、输出 **1,688**、总计 **11,771 tokens**。按 [DeepSeek 官方人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)的 Flash 高峰档、全部输入按缓存未命中计，费用估计不超过 **0.03367 元**，低于授权的 2 元；缓存折扣与最终账单仍需所有者在服务商账户核对。脚本的临时清理条件误沿用 DEV-027 标签，五个 `dev029-fda55efd` 容器未自动移除；已逐个核对标签、手动删除并确认无残留，忽略目录脚本的清理条件已修正。该脚本和原始结果不纳入 Git。
 
 ## 二、Q4 检索排序评估
 
@@ -27,6 +36,8 @@ DEV-028 对相同七份 SHA、同一 Q4 原问题独立重建索引并扩大显�
 | 调整基线文档的分块              | 可能缩短 E7 的宽主题片段；本次未重建变体索引。                        | 需版本化策略并重索引，比较完整题集；不能从单题推断整体提升。        |
 
 因此排序方向的下一步是**冻结候选方案和对照集后离线试验**。top‑20 的 E7 命中只作诊断，不回写 DEV-027 的 16/17 或宣称 RAG 已能引用 E7。
+
+本次 Q4 再检索的前五项与 DEV-027 相同，E7 仍缺。虽然本轮模型依据索引合同推断出“`CHUNKED` 不等于已建索引”的正确结论，所引片段没有直接包含冻结 E7 的“仅表示整代片段发布”原文；按运行前的**直接证据**标准，不能把 Q4/E7 改判为命中或充分引用。
 
 ## 三、逐断言引用约束评估
 
@@ -49,6 +60,17 @@ DEV-028 对相同七份 SHA、同一 Q4 原问题独立重建索引并扩大显�
 | Q10 | Qdrant 保存向量；文档索引与本地 Embedding 默认关闭                | 支持                                 | C2 对应需求基线第 19 行，C4 对应 [README](../../README.md)当前状态。                                                |
 | Q10 | 整个 Qdrant 服务默认关闭                                          | 措辞扩大                             | C4 只限定“Qdrant 文档索引和本地 Embedding”，未说明服务整体关闭。                                                    |
 
+新复测成功回答再按相同标准检查：
+
+| 题  | 原子断言或引用行为                                   | 判定                           | 证据与约束缺口                                                                                                              |
+| --- | ---------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Q4  | 上传/处理不自动索引，须显式调用索引 API              | 支持                           | C1/C2 直接包含[索引合同](../api/document-indexing.md)第 19 行，满足 E8。                                                    |
+| Q4  | `CHUNKED` 仅表示片段发布，不等于索引完成             | 结论正确，冻结 E7 直接证据缺失 | C1/C2 的状态机可支撑推理；C3 片段从[需求基线](../requirements/devmate-baseline.md)第 26 行开始，没有第 24–25 行的 E7 原文。 |
+| Q4  | 未调用索引 API 时 `indexed` 仍为 false               | 缺少历史状态前提               | C1 只说明**无索引时** `indexed=false`；若存在此前的合格活动代，不能仅凭本次没有调用来推断状态。                             |
+| Q4  | 答案将 C4 检索过滤与 C5 默认关闭作为背景、一致性证据 | 引用间接或无关                 | 两者未说明 `CHUNKED` 的准确语义；全部五个合法引用均被列出，降低引用精度。                                                   |
+| Q6  | 索引 UNKNOWN 不自动重发，预留 token 不退款           | 支持                           | C1 直接包含索引合同第 25–26 行，满足 E10/E11；C2 的索引评审也支持部分异常边界。                                             |
+| Q6  | 答案另列 C4 的检索 UNKNOWN 不退款规则作一致性背景    | 跨流程额外引用                 | 答案已注明功能路径不同；索引问题已有 C1 直接证据，无需用另一流程的规则补证。                                                |
+
 逐项结果显示：**合法引用 ID 只证明来源可定位，不能证明每个断言被该来源支持，也不能排除多余引用**。对下阶段的约束建议为：版本化提示词要求只答所问、每个事实性句子就近标注最小证据集；离线评分要求原子断言支持率 100%、无矛盾断言、无无关引用，并单列资料外弃答。若改变输出 Schema，可让结构校验保证每个声明都有引用 ID；“引用是否真的支持声明”仍需人工或独立语义评估，不能由 ID 白名单和正则表达式保证。任何提示词/Schema 调整应另立任务，先用同一冻结题集比较，不在本任务改产品回答策略。
 
 ## 验证与限制
@@ -56,5 +78,7 @@ DEV-028 对相同七份 SHA、同一 Q4 原问题独立重建索引并扩大显�
 - `DeepSeekChatGatewayTest`、`RagPromptAndOutputTest`：JDK 21 共 14 项通过，失败/错误/跳过均 0；无真实模型调用。
 - `python -B scripts/verify-knowledge-backend.py --tests RagMigrationIntegrationTest,RagConversationIntegrationTest`：固定 Linux/JDK 21、MySQL Testcontainers，26 项通过，失败/错误/跳过均 0；覆盖 V11 从空库和 V9 升级、阶段持久化及重放。
 - 增加上游 HTTP 阶段用例后，`python -B scripts/verify-knowledge-backend.py --tests RagConversationIntegrationTest` 再跑 25 项，失败/错误/跳过均 0。
+- 所有者运行 `python -B tmp/dev-029/run_live_rag.py`：七份文档索引成功，三次显式检索 HTTP 200，三次 RAG POST 为 200/200/502；逐条保存持久阶段与 usage。只读核对七份源 SHA、15 个命中 chunk SHA、九个成功引用的来源匹配及三题与 DEV-027 top‑5 候选一致。无付费重试。
+- `docker ps -a --filter label=devmate.eval=dev029-fda55efd`：手动清理后无残留。
 - Windows JDK 22 直接执行相同集成套件时，RAG 对话 23 项通过，迁移测试的 Spring context 因本机回环连接失败而未执行；随后用固定 Linux/JDK 21 通过验证，不以 Windows 失败声称 migration 缺陷。
 - 旧三次 502 的具体阶段、提供商扣费仍不可恢复。七份冻结文档、十题与一次 top‑20 查询是小样本；排序和语义结论不能外推生产项目。
