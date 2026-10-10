@@ -297,7 +297,7 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
                 .containsEntry("failure_stage","RAG_OUTPUT").containsEntry("failure_category","CITATION_IDS");
         verify(gateway,times(1)).chat(any());
     }
-    @Test void malformedJsonPersistsSpecificSafeCategoryAndRetainsReceiptOnReplay() {
+    @Test void malformedJsonPersistsSpecificSafeCategoryAndRetainsReceiptOnReplay() throws Exception {
         ready();String id=uuid();when(gateway.chat(any())).thenReturn(result("{\"answer\":\"first\",\"answer\":\"second\",\"citationIds\":[\"C1\"]}"));
         failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));
         assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category,chat_state FROM rag_invocation_details"))
@@ -305,6 +305,9 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
                 .containsEntry("chat_state","RECEIVED");
         assertThat(jdbc.queryForObject("SELECT total_tokens FROM ai_invocations",Integer.class)).isEqualTo(30);
         assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations",String.class)).isEqualTo("FAILED");
+        String publicBody=mvc.perform(post(path()).header("Authorization",token).contentType(MediaType.APPLICATION_JSON).content(body(id)))
+                .andExpect(status().isBadGateway()).andReturn().getResponse().getContentAsString();
+        assertThat(publicBody).doesNotContain("JSON_DUPLICATE_KEY","failure_stage","first","second");
         verify(gateway,times(1)).chat(any());
     }
     @Test void gatewayInvalidResponsePersistsOnlyFixedDiagnosticAndReplaysWithoutResend() {

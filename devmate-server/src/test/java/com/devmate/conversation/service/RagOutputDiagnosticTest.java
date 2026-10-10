@@ -21,6 +21,7 @@ class RagOutputDiagnosticTest {
         assertIssue(VALID + " private trailing text", "JSON_TRAILING");
         assertIssue("[]", "JSON_SHAPE");
         assertIssue("{\"answer\":true,\"citationIds\":[\"C1\"]}", "JSON_SHAPE");
+        assertIssue("{\"answer\":\"x\",\"citationIds\":[\"C1\"],\"tool\":{}}", "JSON_SHAPE");
         assertIssue("{}", "JSON_SHAPE");
         assertThat(validator.validate(VALID, ALLOWED).text()).isEqualTo("supported [C1]");
     }
