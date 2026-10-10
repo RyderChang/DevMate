@@ -292,7 +292,48 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
         ready();String id=uuid();when(gateway.chat(any())).thenReturn(result("{\"answer\":\"forged [C9]\",\"citationIds\":[\"C9\"]}"));
         failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));
         assertThat(jdbc.queryForObject("SELECT total_tokens FROM ai_invocations",Integer.class)).isEqualTo(30);
-        assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations",String.class)).isEqualTo("FAILED");verify(gateway,times(1)).chat(any());
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations",String.class)).isEqualTo("FAILED");
+        assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category FROM rag_invocation_details"))
+                .containsEntry("failure_stage","RAG_OUTPUT").containsEntry("failure_category","CITATION_IDS");
+        verify(gateway,times(1)).chat(any());
+    }
+    @Test void gatewayInvalidResponsePersistsOnlyFixedDiagnosticAndReplaysWithoutResend() {
+        ready();String id=uuid();
+        when(gateway.chat(any())).thenThrow(new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID,
+                AiGatewayException.ResponseIssue.FINISH_REASON));
+        failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));
+        assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category FROM rag_invocation_details"))
+                .containsEntry("failure_stage","PROVIDER_RESPONSE").containsEntry("failure_category","FINISH_REASON");
+        assertThat(jdbc.queryForObject("SELECT total_tokens FROM ai_invocations",Integer.class)).isNull();
+        verify(gateway,times(1)).chat(any());
+    }
+    @Test void upstreamBadStatusPersistsProviderHttpStageWithoutUpstreamBody() {
+        ready();String id=uuid();
+        when(gateway.chat(any())).thenThrow(new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID,
+                AiGatewayException.ResponseIssue.UPSTREAM_STATUS));
+        failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));
+        assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category FROM rag_invocation_details"))
+                .containsEntry("failure_stage","PROVIDER_HTTP").containsEntry("failure_category","UPSTREAM_STATUS");
+        assertThat(jdbc.queryForObject("SELECT total_tokens FROM ai_invocations",Integer.class)).isNull();
+        verify(gateway,times(1)).chat(any());
+    }
+    @Test void successfulAndNon502InvocationsHaveNoFailureDiagnostic() {
+        ready();send(uuid());
+        assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category FROM rag_invocation_details"))
+                .containsEntry("failure_stage",null).containsEntry("failure_category",null);
+        when(gateway.chat(any())).thenThrow(new AiGatewayException(ErrorCode.AI_PROVIDER_TIMEOUT));
+        failed(ErrorCode.AI_PROVIDER_TIMEOUT,()->send(uuid()));
+        assertThat(jdbc.queryForList("SELECT failure_stage FROM rag_invocation_details",String.class))
+                .containsOnlyNulls();
+    }
+    @Test void mysqlRejectsPartialOrContradictoryFailureDiagnostic() {
+        ready();send(uuid());
+        assertThatThrownBy(()->jdbc.update("UPDATE rag_invocation_details SET failure_stage='RAG_OUTPUT'"))
+                .isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThatThrownBy(()->jdbc.update("UPDATE rag_invocation_details SET failure_category='JSON_SCHEMA'"))
+                .isInstanceOf(org.springframework.dao.DataAccessException.class);
+        assertThatThrownBy(()->jdbc.update("UPDATE rag_invocation_details SET failure_stage='RAG_OUTPUT',failure_category='USAGE'"))
+                .isInstanceOf(org.springframework.dao.DataAccessException.class);
     }
     @Test void allLongTermLimitsAreAtomicAndFullCapacityReplayRemainsAvailable() {
         ready();String id=uuid();send(id);

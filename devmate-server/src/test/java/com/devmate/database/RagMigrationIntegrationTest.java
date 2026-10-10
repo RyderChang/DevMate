@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.*;
 class RagMigrationIntegrationTest extends MySqlIntegrationTestBase {
     @Autowired JdbcTemplate jdbc;
     @Test void cleanMysqlHasRagConstraintsAndProvenanceHasNoDeletableSourceForeignKeys() {
-        assertThat(jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1",Integer.class)).isEqualTo(10);
+        assertThat(jdbc.queryForObject("SELECT MAX(CAST(version AS UNSIGNED)) FROM flyway_schema_history WHERE success=1",Integer.class)).isEqualTo(11);
         assertThat(jdbc.queryForList("SELECT referenced_table_name FROM information_schema.key_column_usage "
                 + "WHERE table_schema=DATABASE() AND table_name='rag_citations' AND referenced_table_name IS NOT NULL",String.class))
                 .containsExactly("ai_invocations");
@@ -20,7 +20,7 @@ class RagMigrationIntegrationTest extends MySqlIntegrationTestBase {
         assertThatThrownBy(()->jdbc.update("INSERT INTO rag_record_capacity(scope,scope_id,records,metadata_bytes) VALUES('PROJECT',1,1,0)"))
                 .isInstanceOf(org.springframework.dao.DataAccessException.class);
     }
-    @Test void v10UpgradesRealV9ChatRowsWithoutChangingUuidModeContentOrLegacyLeaseMeaning() throws Exception {
+    @Test void v10AndV11UpgradeRealV9ChatRowsWithoutChangingLegacyMeaning() throws Exception {
         String database="devmate_rag_upgrade_"+UUID.randomUUID().toString().replace("-","");
         assertThat(database).matches("devmate_rag_upgrade_[0-9a-f]{32}");
         String url=MYSQL.getJdbcUrl().replace("/"+MYSQL.getDatabaseName(),"/"+database);
@@ -37,7 +37,7 @@ class RagMigrationIntegrationTest extends MySqlIntegrationTestBase {
                             + "VALUES(1,1,'3f8e3918-5236-43f0-9178-a3ab9d1a3312',1,'stub','synthetic','project-chat-v1','PENDING','2026-09-29 00:00:00')");
                 }
                 var flyway=Flyway.configure().dataSource(url,"root",MYSQL.getPassword()).load();
-                assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
+                assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
                 try(var connection=DriverManager.getConnection(url,"root",MYSQL.getPassword());var sql=connection.createStatement();
                     var rows=sql.executeQuery("SELECT i.mode,i.request_sha256,i.lease_expires_at,m.content FROM ai_invocations i JOIN conversation_messages m ON m.id=i.user_message_id")) {
                     assertThat(rows.next()).isTrue();assertThat(rows.getString(1)).isEqualTo("CHAT");

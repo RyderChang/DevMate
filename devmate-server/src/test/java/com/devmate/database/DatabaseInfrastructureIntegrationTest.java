@@ -59,9 +59,9 @@ class DatabaseInfrastructureIntegrationTest extends MySqlIntegrationTestBase {
     @Test
     void appliesAndValidatesMigrationsExactlyOnce() throws Exception {
         assertThat(flyway.info().current()).isNotNull();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("10");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("11");
         assertThat(flyway.info().current().getScript())
-                .isEqualTo("V10__add_rag_conversation_contract.sql");
+                .isEqualTo("V11__add_rag_failure_diagnostic.sql");
         assertThat(flyway.info().current().getState()).isEqualTo(MigrationState.SUCCESS);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
         assertThat(flyway.migrate().migrationsExecuted).isZero();
