@@ -5,7 +5,7 @@ import com.devmate.common.exception.BusinessException;
 
 /** Only a fixed validation category crosses into the durable RAG diagnostic. */
 final class RagOutputException extends BusinessException {
-    enum Issue { JSON_ABSENT, JSON_SIZE, JSON_DUPLICATE_KEY, JSON_SYNTAX, JSON_TRAILING,
+    enum Issue { JSON_SIZE, JSON_DUPLICATE_KEY, JSON_SYNTAX, JSON_TRAILING,
         JSON_SHAPE, ANSWER_CONTENT, CITATION_IDS, CITATION_MARKERS }
     private final Issue issue;
     RagOutputException(Issue issue) {

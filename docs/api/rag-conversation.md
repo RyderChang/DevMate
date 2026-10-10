@@ -63,8 +63,9 @@ V11 起，内部 `rag_invocation_details` 对可分类的 `AI_RESPONSE_INVALID`�
 区分上游非预期状态、响应大小/编码/信封/结束原因/正文/用量，以及 RAG JSON 结构/回答内容/引用编号/内联标记。
 这些字段不进入公开 API 或历史消息；旧记录、成功及非 502 失败为 NULL。`UNCLASSIFIED` 表示其他网关实现仅报告了统一 502，
 不能据此推断提供商细节。阶段记录不含上游错误体、模型原文、提示词或密钥；排障需在受限数据库权限下按 invocation ID 查询。
-V12 起，未来 `RAG_OUTPUT` JSON 结构失败进一步区分 `JSON_ABSENT`、`JSON_SIZE`、`JSON_DUPLICATE_KEY`、
+V12 起，未来 `RAG_OUTPUT` JSON 结构失败进一步区分 `JSON_SIZE`、`JSON_DUPLICATE_KEY`、
 `JSON_SYNTAX`、`JSON_TRAILING` 和 `JSON_SHAPE`；原有 `ANSWER_CONTENT`、`CITATION_IDS`、`CITATION_MARKERS` 不变。
+提供商空正文在网关层归为 `PROVIDER_RESPONSE` / `MESSAGE_CONTENT`，不会进入 RAG JSON 校验。
 V11 已保存的 `JSON_SCHEMA` 保留原值，不能倒推出具体 JSON 缺陷。新增分类不改变公开 502、严格输出合同或重放语义，
 也不保存模型正文、解析器异常 message 或不可信字段值。
 

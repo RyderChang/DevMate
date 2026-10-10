@@ -12,7 +12,7 @@ class RagOutputDiagnosticTest {
     private static final String VALID = "{\"answer\":\"supported [C1]\",\"citationIds\":[\"C1\"]}";
 
     @Test void separatesJsonFailuresWithoutExposingOutputOrParserMessages() {
-        assertIssue(null, "JSON_ABSENT");
+        assertIssue(null, "JSON_SYNTAX");
         assertIssue("x".repeat(262145), "JSON_SIZE");
         assertIssue("{\"answer\":\"first\",\"answer\":\"second\",\"citationIds\":[\"C1\"]}", "JSON_DUPLICATE_KEY");
         assertIssue("```json\n" + VALID + "\n```", "JSON_SYNTAX");

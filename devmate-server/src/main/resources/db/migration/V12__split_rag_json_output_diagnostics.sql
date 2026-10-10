@@ -8,7 +8,7 @@ ALTER TABLE rag_invocation_details
             'RESPONSE_SIZE', 'RESPONSE_ENCODING', 'RESPONSE_ENVELOPE',
             'FINISH_REASON', 'MESSAGE_CONTENT', 'USAGE', 'UNCLASSIFIED'))
         OR (failure_stage = 'RAG_OUTPUT' AND failure_category IN (
-            'JSON_SCHEMA', 'JSON_ABSENT', 'JSON_SIZE', 'JSON_DUPLICATE_KEY',
+            'JSON_SCHEMA', 'JSON_SIZE', 'JSON_DUPLICATE_KEY',
             'JSON_SYNTAX', 'JSON_TRAILING', 'JSON_SHAPE',
             'ANSWER_CONTENT', 'CITATION_IDS', 'CITATION_MARKERS'))))
     );

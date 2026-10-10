@@ -18,7 +18,7 @@ public class RagOutputValidator {
     private static final Pattern INLINE = Pattern.compile("\\[C([^\\]\\r\\n]*)\\]");
     public record Answer(String text, List<String> citationIds) {}
     public Answer validate(String raw, Set<String> allowed) {
-        if (raw == null) throw invalid(RagOutputException.Issue.JSON_ABSENT);
+        if (raw == null) throw invalid(RagOutputException.Issue.JSON_SYNTAX);
         if (raw.length() > 262144) throw invalid(RagOutputException.Issue.JSON_SIZE);
         try (var parser = json.createParser(raw)) {
             JsonNode root;
