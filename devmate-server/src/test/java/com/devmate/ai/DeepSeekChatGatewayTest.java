@@ -170,6 +170,13 @@ class DeepSeekChatGatewayTest {
         malformed.server.expect(requestTo("https://api.deepseek.com/chat/completions"))
                 .andRespond(withSuccess("private malformed JSON", MediaType.APPLICATION_JSON));
         assertIssue(malformed, AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
+
+        ObjectNode missingContent = (ObjectNode) mapper.readTree(RESPONSE);
+        ((ObjectNode) missingContent.path("choices").get(0).path("message")).putNull("content");
+        var content = harness(properties());
+        content.server.expect(requestTo("https://api.deepseek.com/chat/completions"))
+                .andRespond(withSuccess(missingContent.toString(), MediaType.APPLICATION_JSON));
+        assertIssue(content, AiGatewayException.ResponseIssue.MESSAGE_CONTENT);
     }
 
     private void assertIssue(Harness harness, AiGatewayException.ResponseIssue expected) {

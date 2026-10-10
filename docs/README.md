@@ -74,3 +74,5 @@
 - [ADR 0008](adr/0008-bound-rag-conversation-and-citations.md)：Accepted，接口、租约、来源快照与长期额度合同。
 - [RAG API](api/rag-conversation.md)、[运行与恢复](development/rag-conversation.md)、[DEV-022 验收记录](testing/rag-conversation-acceptance.md)：默认关闭的后端合同及其合并前验收历史。
 - [DEV-023](tasks/DEV-023-frontend-rag-citations.md)与[验收记录](testing/frontend-rag-citations-acceptance.md)：默认关闭的前端文档问答、历史引用展示及实际验证结果。
+- [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
+- [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。
