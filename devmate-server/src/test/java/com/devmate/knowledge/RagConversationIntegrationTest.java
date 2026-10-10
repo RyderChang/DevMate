@@ -297,6 +297,16 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
                 .containsEntry("failure_stage","RAG_OUTPUT").containsEntry("failure_category","CITATION_IDS");
         verify(gateway,times(1)).chat(any());
     }
+    @Test void malformedJsonPersistsSpecificSafeCategoryAndRetainsReceiptOnReplay() {
+        ready();String id=uuid();when(gateway.chat(any())).thenReturn(result("{\"answer\":\"first\",\"answer\":\"second\",\"citationIds\":[\"C1\"]}"));
+        failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));failed(ErrorCode.AI_RESPONSE_INVALID,()->send(id));
+        assertThat(jdbc.queryForMap("SELECT failure_stage,failure_category,chat_state FROM rag_invocation_details"))
+                .containsEntry("failure_stage","RAG_OUTPUT").containsEntry("failure_category","JSON_DUPLICATE_KEY")
+                .containsEntry("chat_state","RECEIVED");
+        assertThat(jdbc.queryForObject("SELECT total_tokens FROM ai_invocations",Integer.class)).isEqualTo(30);
+        assertThat(jdbc.queryForObject("SELECT status FROM ai_invocations",String.class)).isEqualTo("FAILED");
+        verify(gateway,times(1)).chat(any());
+    }
     @Test void gatewayInvalidResponsePersistsOnlyFixedDiagnosticAndReplaysWithoutResend() {
         ready();String id=uuid();
         when(gateway.chat(any())).thenThrow(new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID,
