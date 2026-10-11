@@ -116,6 +116,26 @@ class DocumentRetrievalIntegrationTest extends MySqlIntegrationTestBase {
         retrieval.setEnabled(false);mvc.perform(post(path()).header("Authorization",token).contentType(MediaType.APPLICATION_JSON).content("{\"query\":\"x\"}")).andExpect(status().isServiceUnavailable());
         assertThat(receiptCount()).isZero();verifyNoInteractions(model);
     }
+    @Test void ragSelectionUsesOnlyAuthorizedCurrentChunksAndDoesNotChangePublicCosineRanking(){
+        var pool=new ArrayList<VectorCandidate>();
+        for(int n=0;n<5;n++)pool.add(candidate(indexed("ordinary evidence "+n),0.9-n*0.05));
+        long anchor=indexed("CHUNKED only publishes chunks; vector indexing is explicit.");pool.add(candidate(anchor,0.4));
+        clearInvocations(model);
+        when(vectors.query(anyLong(),anyLong(),anyString(),anyList(),any(),anySet(),anyInt())).thenReturn(pool);
+        assertThat(service.search(owner,project,new RetrievalRequest("CHUNKED",5)).hits()).noneMatch(h->h.documentId()==anchor);
+        var result=service.searchForRag(owner,project,"CHUNKED");
+        assertThat(result.hits()).hasSize(5).anyMatch(h->h.documentId()==anchor);assertThat(result.incomplete()).isFalse();
+        verify(model,times(2)).embed(anyString(),anyList(),anyList());
+        var round=new AtomicInteger();
+        when(vectors.query(anyLong(),anyLong(),anyString(),anyList(),any(),anySet(),anyInt())).thenAnswer(i->{
+            if(round.incrementAndGet()==1){uploads.delete(owner,project,anchor);return pool;}
+            assertThat((Set<String>)i.getArgument(5)).contains(pool.getLast().pointId());return List.of();
+        });
+        var deleted=service.searchForRag(owner,project,"CHUNKED");
+        assertThat(deleted.hits()).hasSize(5).noneMatch(h->h.documentId()==anchor);
+        assertThat(deleted.rounds()).isEqualTo(2);assertThat(deleted.incomplete()).isFalse();
+        assertThat(deleted.inspectedPoints()).isEqualTo(6);verify(model,times(3)).embed(anyString(),anyList(),anyList());
+    }
     @Test void noActiveSourcesAvoidsAllModelCallsAndRejectsInvalidUnicode(){
         var result=service.search(owner,project,new RetrievalRequest("synthetic",null));assertThat(result.reason()).isEqualTo("NO_ACTIVE_SOURCES");assertThat(result.hits()).isEmpty();assertThat(result.retrievalId()).isNull();
         assertThatThrownBy(()->service.search(owner,project,new RetrievalRequest("\uD800",5))).isInstanceOf(BusinessException.class);verifyNoInteractions(model);assertThat(receiptCount()).isZero();
