@@ -35,7 +35,7 @@ Q4 重放原前 20；其余九题只有已保存的原前五，不冒称取得�
 
 - `mvnw.cmd -o -B -ntp -f devmate-server/pom.xml '-Dtest=RagEvidenceSelectionTest#q4KeepsFiveCandidatesAndIncludesBothFrozenDirectEvidenceSlots+remainingNineQuestionsKeepTheirCandidatesAndFrozenCoverage' test`：关闭补位、走原 Cosine 路径时，两项按预期失败，分别为 E7 缺失及 16/17，证明回归能够检出原问题。
 - Java 21 `mvnw.cmd -o -B -ntp -f devmate-server/pom.xml '-Dtest=RagEvidenceSelectionTest,RagPromptAndOutputTest,RagOutputDiagnosticTest' test`：修复后 **15 项通过**，失败/错误/跳过均 0。覆盖字面词边界、大小写、重复内容、20 候选/8 标识符/2 替换上限、唯一覆盖保留和稳定排序，以及源集合实际进入提示词。首次 Windows 沙箱内测试未完成，已停止，批准后重跑；未把中断运行记为通过。
-- Java 21 `python -B scripts/verify-knowledge-backend.py --tests RagEvidenceSelectionTest,DocumentRetrievalIntegrationTest,RagConversationIntegrationTest,RagPromptAndOutputTest,RagOutputDiagnosticTest`：锁定 Linux 运行时、真实 MySQL/MinIO 与模型/向量 Stub，**57 项通过**，失败/错误/跳过均 0（8 项候选、15 项检索、27 项 RAG、7 项提示词/输出）。包含任意低分候选不改变其余题前五、普通 API 仍为 Cosine、删除锚点后的资格重读与排除、实际 RAG 网关收到五个选中来源；原权限、预算、换代、不完整、幂等及失败回归通过。检索独立调用仍一次 Embedding，无新真实模型；本次测试运行容器已由脚本清理。
+- Java 21 `python -B scripts/verify-knowledge-backend.py --tests RagEvidenceSelectionTest,DocumentRetrievalIntegrationTest,RagConversationIntegrationTest,RagPromptAndOutputTest,RagOutputDiagnosticTest`：锁定 Linux 运行时、真实 MySQL，以及存储/模型/向量 Stub，**57 项通过**，失败/错误/跳过均 0（8 项候选、15 项检索、27 项 RAG、7 项提示词/输出）。脚本核验锁定 MinIO 镜像存在，但本次筛选的测试使用 ProcessingStorage Stub，不是 MinIO 协议验证。包含任意低分候选不改变其余题前五、普通 API 仍为 Cosine、删除锚点后的资格重读与排除、实际 RAG 网关收到五个选中来源；原权限、预算、换代、不完整、幂等及失败回归通过。检索独立调用仍一次 Embedding，无新真实模型；本次测试运行容器已由脚本清理。
 - `node scripts/check-docs.mjs --format-changed origin/develop`：83 份 Markdown、376 个相对链接及变更格式通过；夹具 JSON 的 Prettier 检查及 `git diff --check` 通过。
 
 ## 修改、风险与回滚
