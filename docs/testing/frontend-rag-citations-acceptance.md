@@ -57,3 +57,9 @@ node scripts/rag-browser-fixture.mjs 19091
 | 安全与窄屏     | 字符串 `<img src=x onerror=alert(1)>.md` 仅以文本展示，DOM 中没有对应 `img`；320 像素视口的 `scrollWidth=clientWidth=305`（竖向滚动条占 15 像素），引用行可换行阅读。                                    |
 
 验收截图：[默认关闭桌面](images/rag-default-off-desktop.png)、[开启后成功引用桌面](images/rag-enabled-success-desktop.png)、[未知结果确认前](images/rag-unknown-before-retry.png)、[320 像素窄屏](images/rag-enabled-mobile-320.png)。截图中的文件名和回答均由本地合成服务提供。此项验收证实前端浏览器行为，不代表真实项目答案已核实；真实资料的事实准确性仍需项目所有者评价。
+
+## PR #42 清理复核
+
+2026-10-11，按所有者授权收口 PR 队列。将当日 `develop` 的 `2cfa244` 合入验收分支，按仓库现行 Prettier 修正合成服务脚本格式，行为不变。只读查看上述四张历史截图；本轮没有重新执行浏览器验收，不把历史截图当作新运行。
+
+`node --check scripts/rag-browser-fixture.mjs`、该文件的 Prettier 检查、`node scripts/check-docs.mjs --format-changed origin/develop`（75 份 Markdown、295 个相对链接）和 `git diff --check` 通过。忽略目录中的 `node tmp/pr-cleanup/check-browser-fixture.mjs` 仅启动回环合成服务，复核成功引用、终态不新增消息、未知结果以同 UUID 重放及普通聊天，计数仍为 RAG 4 次/重放 1 次/普通聊天 1 次/消息 8 条。首次 Windows 沙箱拒绝回环连接，获命令批准后复跑通过；服务在脚本结束时停止。真实模型调用为 0，生产开关未改变。新提交的完整 CI 以 PR 最新运行记录为准。
