@@ -43,6 +43,20 @@ class CollectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             collect("answer", self.citations, self.targets, {"E16": "PRIVATE_ANSWER"})
 
+    def test_unvalidated_citation_ids_and_markers_cannot_persist_body_text(self):
+        for citation_id in ("CPRIVATE_ANSWER", "C6", "C01", None):
+            with self.subTest(citation_id=citation_id):
+                with self.assertRaisesRegex(ValueError, "^Invalid citation ID$"):
+                    collect("answer", [{"citationId": citation_id, "source": {}}], self.targets)
+        for answer in ("[CPRIVATE_ANSWER]", "[C6]", "[C01]"):
+            with self.subTest(answer=answer):
+                with self.assertRaisesRegex(ValueError, "^Invalid inline citation ID$"):
+                    collect(answer, self.citations, self.targets)
+
+    def test_not_applicable_is_not_a_core_semantic_verdict(self):
+        with self.assertRaisesRegex(ValueError, "^Invalid semantic verdict$"):
+            collect("answer", self.citations, self.targets, {"E16": "NOT_APPLICABLE"})
+
 
 if __name__ == "__main__":
     unittest.main()

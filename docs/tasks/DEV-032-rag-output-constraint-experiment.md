@@ -24,6 +24,8 @@ Q4 排序和全题逐断言引用继续独立：本实验使用 Q4 的原冻结�
 
 `collectionVersion=rag-experiment-collection-v2`。成功结果先保存来源映射与未知语义，再打开本机瞬时评审窗口；窗口显示答案及核心证据行，不向终端、文件、日志或 Git 输出正文。关闭窗口中断运行，已采集来源和 usage 保留；不能补发请求。只有人工提交后才记录 `semanticReviewer=OWNER_MANUAL`。
 
+采集入口也独立校验本轮冻结的 `C1`–`C5` ID 白名单，包括返回引用及内联标记；非法 ID 只抛出固定错误，不回显原值，防止标记携带回答文本进入脱敏记录。核心槽只接受表中四种语义判定，不能用 `NOT_APPLICABLE` 计为已判定；该值仅用于非 Q10 的独立弃答字段。来源覆盖与逐断言绑定规则不变。
+
 ## 冻结实验
 
 输入夹具为 [frozen-inputs.json](../../scripts/rag-output-experiment/frozen-inputs.json)，包含 DEV-027 原十题、七份来源 SHA、按排名的 50 条候选定位及 E1–E17；没有片段或历史答案正文。夹具 SHA-256 为 `5144607270b3fa6b64e988f4921fa9bafbfa7499a97f0d1a89031d5ed0892b26`。本机缓存来自 `tmp/dev-027/results.json`，仅取其显式检索结果，核对原始七文件 SHA、候选全部定位/score 和正文 SHA；不读取其历史模型回答用于本实验。

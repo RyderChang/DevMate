@@ -2,7 +2,8 @@
 import re
 
 SCHEMA_VERSION = "rag-experiment-collection-v2"
-VERDICTS = {"SUPPORTED", "CONTRADICTED", "INSUFFICIENT", "UNKNOWN", "NOT_APPLICABLE"}
+VERDICTS = {"SUPPORTED", "CONTRADICTED", "INSUFFICIENT", "UNKNOWN"}
+CITATION_IDS = {"C1", "C2", "C3", "C4", "C5"}
 SOURCE_FIELDS = ("pointId", "documentId", "filename", "processingId", "indexId",
                  "processingGeneration", "indexGeneration", "parserVersion", "strategyVersion",
                  "sourceSha256", "chunkSha256", "ordinal", "start", "end", "startLine", "endLine")
@@ -25,6 +26,12 @@ def collect(answer, citations, targets, verdicts=None):
     if any(value not in VERDICTS for value in verdicts.values()):
         raise ValueError("Invalid semantic verdict")
     markers = sorted(set("C" + value for value in re.findall(r"\[C([^\]\r\n]*)\]", answer or "")))
+    # Enforce the frozen five-candidate contract before copying IDs into a record.
+    # Never include the rejected ID or marker text in an exception.
+    if any(marker not in CITATION_IDS for marker in markers):
+        raise ValueError("Invalid inline citation ID")
+    if citations is not None and any(c.get("citationId") not in CITATION_IDS for c in citations):
+        raise ValueError("Invalid citation ID")
     safe_citations = None if citations is None else [
         {"citationId": c["citationId"], "source": {k: c.get("source", {}).get(k)
                                                    for k in SOURCE_FIELDS}}
