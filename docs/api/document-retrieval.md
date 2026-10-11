@@ -17,6 +17,7 @@ incomplete、reason 以及 hits。reason 为 TOP_K、EXHAUSTED、NO_ACTIVE_SOURC
 hits 按 score 降序、pointId 升序；包含 pointId、score、documentId、filename、processingId、indexId、
 处理/索引代号、解析/分块版本、原 SHA、chunk SHA、ordinal、规范化 code point 区间、行号、text。
 score 是同规格 Cosine 相似度，不是答案置信度。text 是不可信纯文本，后续使用者须另做提示词隔离。
+此 API 保持纯 Cosine topK；RAG 专用来源选择见 [RAG API](rag-conversation.md)，其五候选可能因字面标识符补位而不同于本 API，不能把显式检索结果冒充实际提供给聊天模型的来源。
 
 每轮刷新最多 100 个活动来源组合，向量端先过滤，再在 MySQL 重校验正文与来源；最多 100 候选/轮、
 200 不同点/请求、3 轮。删除/换代后的内容不能作为活动命中返回；预算限制使结果可能不完整。

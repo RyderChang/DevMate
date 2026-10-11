@@ -1,0 +1,682 @@
+{
+  "sourceCommit": "b0b58142af63963bc36ced05df064e4253475794",
+  "cacheSha256": [
+    "b93f9576fbb6896d5667b58fa16b203182e0e99c218557a0de278dc6e8a4f1e7",
+    "024285cc229b985c4a58264616fe510361e5170550329c45927b8971077be205"
+  ],
+  "scope": "Public source excerpts only; Q4 top20, other questions known top5. No model answers or prompt.",
+  "sources": {
+    "58d039302b225150e88d83cb4504326524cb7a02173fe9631bcba1f41f19a5c7": "README.md",
+    "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896": "docs/api/document-retrieval.md",
+    "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746": "docs/api/rag-conversation.md",
+    "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d": "docs/api/document-indexing.md",
+    "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c": "docs/testing/frontend-rag-citations-acceptance.md",
+    "1f318e3932e5d9342eaf778e7617712d43c24398c5a328b69e3396ca4846ad2d": "docs/requirements/devmate-baseline.md",
+    "e4c6b914eca6c10ec925c5b85873fcb7850a272b92c8d2de36d67f8cb08a7368": "docs/testing/document-indexing-review.md"
+  },
+  "chunks": {
+    "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63": {
+      "filename": "document-retrieval.md",
+      "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+      "chunkSha256": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+      "ordinal": 0,
+      "start": 0,
+      "end": 902,
+      "startLine": 1,
+      "endLine": 24,
+      "text": "# 文档检索 API\n\nDEV-021 实现前冻结，继承 ADR 0005/0007；仅文档检索，不生成聊天回答。\n\n`POST /projects/{projectId}/knowledge/search`，JWT + user authority + 项目归属。\n\n```json\n{ \"query\": \"Spring 事务回滚规则\", \"topK\": 5 }\n```\n\nquery 非空、最多 8000 个 UTF-16 code units、必须完整 Unicode；topK 省略为 5，范围 1–20。\n计数包含固定 query prefix、模型内部 NFC 和 EOS，最多 6000 tokens；不截断或调用付费模型。\n客户端不能设置模型、归属、来源过滤、服务 URL、score 阈值或检索预算。\n\n200 的统一 Result.data 包含 spec、retrievalId（没有活动来源则 null）、queryTokens、topK、rounds、inspectedPoints、\nincomplete、reason 以及 hits。reason 为 TOP_K、EXHAUSTED、NO_ACTIVE_SOURCES、BUDGET_EXHAUSTED 或 SOURCES_CHANGED。\nhits 按 score 降序、pointId 升序；包含 pointId、score、documentId、filename、processingId、indexId、\n处理/索引代号、解析/分块版本、原 SHA、chunk SHA、ordinal、规范化 code point 区间、行号、text。\nscore 是同规格 Cosine 相似度，不是答案置信度。text 是不可信纯文本，后续使用者须另做提示词隔离。\n\n每轮刷新最多 100 个活动来源组合，向量端先过滤，再在 MySQL 重校验正文与来源；最多 100 候选/轮、\n200 不同点/请求、3 轮。删除/换代后的内容不能作为活动命中返回；预算限制使结果可能不完整。\n没有活动来源时直接返回空列表，不调用模型。\n\n"
+    },
+    "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e": {
+      "filename": "rag-conversation.md",
+      "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+      "chunkSha256": "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e",
+      "ordinal": 4,
+      "start": 3182,
+      "end": 4061,
+      "startLine": 72,
+      "endLine": 92,
+      "text": "eeded             |\n| RAG_DATABASE_UNAVAILABLE | 503  | RAG state cannot be confirmed            |\n\n既有 401、403、PROJECT_NOT_FOUND/CONVERSATION_NOT_FOUND 404、INVALID_PARAMETER 400、\nAI 服务和文档检索错误继续适用，完整正文、提示词、原始输出、密钥与数据库异常不会出现在响应中。\n\n## 固定资源边界\n\n一次检索固定 topK=5，继承每轮 100 候选、累计 200 不同点、3 轮，查询共享既有 token/capacity/journal。\n最多 5 个完整片段；检索数据序列化后最多 8000 code points，快照序列化最多 5 KiB。\n全部输入连同 JSON 转义及 1 KiB 提供商封装余量最多 24000 code points / 96 KiB UTF-8。\n先按低排名移除超限整片，再裁最旧历史以满足总输入限制；必要时再移除低排名整片。\n当前问题与规则保留，无法容纳则拒绝。输出 tokens 为 `min(AI_MAX_OUTPUT_TOKENS, 1024)`。\n\n总执行截止 11 分钟、数据库租约 12 分钟，均在首次事务中持久化；普通聊天新请求保留原租约。\n各聊天入口根据当前在途请求的持久截止 fencing；聊天模型最多 120 秒，网络预算取剩余总时间与各边界上限的较小值。\n同一对话单在途；Chat 最多 4 个无队列工作线程，超时工作线程确实退出前仍占槽；Embedding 保留既有单推理槽。\n不自动重试检索或聊天。超时/UNKNOWN 不表示提供商未执行，不能据此退款或发送同 UUID。\n\nRAG 调用长期记录限额：每对话 1000、每项目 10000、全局 100000，每次预留 1 条及 5120 逻辑元数据字节。\n失败、UNKNOWN、项目软删除均占额，满额不新建失败垃圾记录；没有 TTL、释放或会话删除 API。\n"
+    },
+    "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb": {
+      "filename": "document-retrieval.md",
+      "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+      "chunkSha256": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+      "ordinal": 1,
+      "start": 802,
+      "end": 1358,
+      "startLine": 21,
+      "endLine": 33,
+      "text": "MySQL 重校验正文与来源；最多 100 候选/轮、\n200 不同点/请求、3 轮。删除/换代后的内容不能作为活动命中返回；预算限制使结果可能不完整。\n没有活动来源时直接返回空列表，不调用模型。\n\n404 PROJECT_NOT_FOUND（包括跨归属），400 INVALID_PARAMETER，503 DOCUMENT_RETRIEVAL_DISABLED、\nDOCUMENT_RETRIEVAL_UNAVAILABLE，409 DOCUMENT_RETRIEVAL_LIMIT；数据库故障为 503 KNOWLEDGE_DATABASE_UNAVAILABLE。\n失败不回退到聊天、其他模型、无过滤查询或字符估算。\n\n没有客户端 requestId，也没有自动 HTTP 重试；再次提交是新的显式查询并重新占额。\n每次模型发送前短事务预留现有项目/全局日额度与一条独立操作债务；UNKNOWN 不退款或重发。\n索引与查询共享一个无排队的应用推理槽；本地竞争在确定未发送时结束为 FAILED，远端不确定不能据此清账。\n终态 journal 首次发送后固定 24 小时清理；UNKNOWN 无 TTL、仅持久结束证据可转终态。\n检索默认关闭，运行时与源资格还要求存储/处理/索引开关；付费 CNY 0。\n"
+    },
+    "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e": {
+      "filename": "rag-conversation.md",
+      "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+      "chunkSha256": "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e",
+      "ordinal": 0,
+      "start": 0,
+      "end": 844,
+      "startLine": 1,
+      "endLine": 27,
+      "text": "# RAG 对话 API\n\n[ADR 0008](../adr/0008-bound-rag-conversation-and-citations.md) 已于 2026-09-29 接受。\nRAG 请求是同步、默认关闭的后端接口，不声明工具；普通聊天仍使用 `project-chat-v1`。\n\nDEV-023 在现有项目对话前端增加默认关闭的文档问答入口，并扩展历史消息只读响应；[任务说明](../tasks/DEV-023-frontend-rag-citations.md)。\n\n## 请求与权限\n\n`POST /projects/{projectId}/conversations/{conversationId}/rag-messages`\n\nJWT + `user` authority，身份取自 CurrentUser；活动项目与对话必须属于该用户。\n\n```json\n{\n  \"clientRequestId\": \"3f8e3918-5236-43f0-9178-a3ab9d1a3312\",\n  \"content\": \"Spring 默认事务回滚规则是什么？\"\n}\n```\n\nUUID 规范化为小写；content strip 后非空、完整 Unicode、最多 8000 UTF-16 code units。\n固定 query prefix、NFC/EOS 后精确计数最多 6000 tokens，不截断查询。未知请求字段拒绝为 400；\n客户端不能提供 owner、model、来源、过滤器、预算、URL 或模板。\n\n成功使用既有 `Result`，data 含 conversationId、userMessage、assistantMessage、invocation、rag、citations。\n消息与 invocation 摘要字段沿用普通聊天；assistantMessage.content 为已验证的 answer，不是原始模型 JSON。\n\n"
+    },
+    "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24": {
+      "filename": "rag-conversation.md",
+      "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+      "chunkSha256": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+      "ordinal": 1,
+      "start": 744,
+      "end": 1578,
+      "startLine": 25,
+      "endLine": 43,
+      "text": "cation、rag、citations。\n消息与 invocation 摘要字段沿用普通聊天；assistantMessage.content 为已验证的 answer，不是原始模型 JSON。\n\nrag 包含 retrievalId、固定 spec、queryTokens、rounds、inspectedPoints、templateVersion=`project-rag-v1`、\ncheckedAt（UTC ISO 8601，发布时资格检查）及 offsetUnit=`NORMALIZED_UNICODE_CODE_POINT`。\n该时间记录原回答的发布资格；重放时不会伪装为新的生成或更新该时间。\n\ncitations 最多 5 项，按 citationId 排序，每项包含 citationId、source 与 available。\nsource 完全由服务端授权快照构造：pointId、documentId、filename、processingId、indexId、processingGeneration、\nindexGeneration、parserVersion、strategyVersion、sourceSha256、chunkSha256、ordinal、start、end、startLine、endLine。\nstart/end 是规范化文本的零基 Unicode code point 半开区间；行号沿用文档处理定位。\n不返回引用正文、模型编造的定位或置信度。\n\n## 幂等、失败与历史\n\n普通聊天与 RAG 共用 `(conversation_id, client_request_id)` 唯一键。\n新记录同时冻结 mode 和规范化 content SHA-256；同 UUID 跨模式或内容不同为 RAG_REQUEST_CONFLICT。\nV10 之前的普通聊天记录默认 CHAT，保留原 UUID 重放语义。\n\n"
+    },
+    "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6": {
+      "filename": "document-indexing.md",
+      "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+      "chunkSha256": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+      "ordinal": 1,
+      "start": 863,
+      "end": 1931,
+      "startLine": 17,
+      "endLine": 38,
+      "text": "果无法确认则 `UNKNOWN`。\n撤销活动引用后存在清理债务则 `CLEANUP_REQUIRED`；债务清理完成不恢复资格。\n最近尝试失败不撤销仍满足来源资格的旧活动代。上传/处理不自动索引。\n\n503 `DOCUMENT_INDEX_DISABLED`、409 `DOCUMENT_NOT_CHUNKED`、`DOCUMENT_INDEX_IN_PROGRESS`、\n`DOCUMENT_INDEX_REQUEST_LIMIT`、`DOCUMENT_INDEX_CAPACITY_EXCEEDED`、`DOCUMENT_INDEX_TOKEN_LIMIT`。\n数据库故障沿用 503 `KNOWLEDGE_DATABASE_UNAVAILABLE`。异步错误不返回 HTTP 原文或片段正文。\n\ntoken 额度逐模型尝试按预留时 UTC 日期冻结，成功/失败/UNKNOWN 都不退款。\n最多三次工作尝试；首版采用更保守的一次尝试，已终止失败也明确结束整代，所有 UNKNOWN 不自动重发。\n向量预留计所有代和已删除父资源的独立债务：1024×4+512 字节/点，其中 512 为逻辑元数据余量，非物理磁盘保证。\n债务预留按最坏单点批数加一条模型 UNKNOWN 定位；每条最多四点，最多 20 KiB 定位/逻辑向量数据。\n所有额度固定按已接受的任务书上限执行；变更额度须单独决策，不接受客户端覆盖。\n\n模型服务 loopback HTTP：`GET /spec`，`POST /tokenize`，`POST /embeddings`，`GET /operations/{UUID}`。\n输入 `{spec, operation_id, input:[text...]}`；计数返回 `counts`（含 EOS），推理返回按 index 定位的 1024 float32 向量和精确 usage。\n所有响应绑定冻结 `fingerprint`；启动核对全部 fixture。模型操作 journal 先于推理写入；崩溃遗留 RUNNING 为 UNKNOWN，\n超时必须终止并 join 独立 worker 后才记录 TERMINATED；仅客户端超时不算终止。\n向量 UNKNOWN tombstone 没有 TTL。没有生产者停止与操作结束证据，扫描清理后仍保留定位和容量并转人工核对。\n本阶段不提供人工清账按钮。已确认完成的写入可自动重复删除、完整过滤核对后释放容量。\n\n真实部署、检索和付费不属于本 API。\n"
+    },
+    "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498": {
+      "filename": "document-indexing-review.md",
+      "sourceSha256": "e4c6b914eca6c10ec925c5b85873fcb7850a272b92c8d2de36d67f8cb08a7368",
+      "chunkSha256": "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498",
+      "ordinal": 0,
+      "start": 0,
+      "end": 865,
+      "startLine": 1,
+      "endLine": 26,
+      "text": "# DEV-020 审核与修复记录\n\n2026-09-29，所有者要求自行审核并准备下一任务。本记录针对 [PR #36](https://github.com/RyderChang/DevMate/pull/36)\n的 `2a662dde55f62214f6fb5c1f7f36472f1aee6def`；未合并、未部署、未调用付费服务。\n\n## 确认的问题与修复\n\n- P1：明确的模型启动前拒绝被当作未知发送，ABSENT 不能解除 UNKNOWN，造成无推理的长期债务。\n  现在只接受固定服务的 429 BUSY/JOURNAL_FULL，且验证 operation_id、spec、fingerprint、NOT_STARTED。\n  服务在同一锁内检查重放、取得模型槽并持久插入新操作；忙时重放既有 UUID 返回 409，不伪造未启动证明。\n  明确拒绝记为 FAILED/ENDED，不退款、不自动重试；普通 429、错配、畸形、超时及 ABSENT 仍不解除未知债务。\n- P2：关闭索引开关会替换成空适配器，已有向量和模型债务无法恢复。\n  现在写入资格与恢复连接分开；关闭时适配器不在启动联网，扫描已有债务时仍做真实模型状态和向量核验。\n  Qdrant 恢复不创建缺失 collection/索引，不兼容或不可用时保留债务；V8、额度及 UNKNOWN 约束不变。\n\n## 验证与环境\n\n先增加回归，再修改实现。固定 Linux Java 测试首轮 31 项执行，4 项失败、错误/跳过 0，\n分别复现启动前拒绝分类、禁用后的模型状态读取、MySQL UNKNOWN 以及禁用后的真实向量清理。\nPython 首轮 8 项有 2 失败/1 错误，复现缺少拒绝定位与忙时重放。\n\n修复后命令：\n\n```powershell\n$env:JAVA_HOME = 'C:/Program Files/Java/jdk-21'\n$env:PATH = \"$env:JAVA_HOME/bin;$env:PATH\"\n"
+    },
+    "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320": {
+      "filename": "rag-conversation.md",
+      "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+      "chunkSha256": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+      "ordinal": 3,
+      "start": 2330,
+      "end": 3282,
+      "startLine": 57,
+      "endLine": 74,
+      "text": "锁及短事务。来源变化、过期或坏输出不会发布助手消息。\n模型仅提供严格 JSON `answer` 和 `citationIds`；拒绝重复键、尾随 JSON、围栏、额外键、工具输出、未知/重复编号、\n无引用回答及未列入 citationIds 的内联 `[C1]` 编号。answer 最多 8000 code points / 32 KiB UTF-8。\n\n## 错误\n\ncode 沿用统一响应的 HTTP 数值语义；下表名称用于后端状态与文档，message 为固定英文文案。\n\n| 名称                     | HTTP | message                                  |\n| ------------------------ | ---- | ---------------------------------------- |\n| RAG_DISABLED             | 503  | RAG conversation is disabled             |\n| RAG_CONTEXT_UNAVAILABLE  | 409  | No bounded document context is available |\n| RAG_RETRIEVAL_INCOMPLETE | 409  | Document retrieval is incomplete         |\n| RAG_SOURCE_CHANGED       | 409  | Document sources are no longer eligible  |\n| RAG_REQUEST_CONFLICT     | 409  | Request mode or content conflicts        |\n| RAG_RECORD_LIMIT         | 409  | RAG record capacity exceeded             |\n| RAG_DATABASE_UNAVAILABLE | 503  | RAG state cannot be confirmed            |\n\n"
+    },
+    "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d": {
+      "filename": "document-indexing.md",
+      "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+      "chunkSha256": "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d",
+      "ordinal": 0,
+      "start": 0,
+      "end": 963,
+      "startLine": 1,
+      "endLine": 20,
+      "text": "# 文档索引 API 与状态合同\n\n本合同在 DEV-020 实现前冻结，继承 [ADR 0007](../adr/0007-freeze-local-embedding-and-vector-contracts.md)。\n均要求 JWT、`user` authority 和项目/文档归属；不存在、跨归属、删除后统一 404。\n\n- `POST /projects/{projectId}/documents/{documentId}/indexing`，JSON `{\"clientRequestId\":\"UUID\"}`。\n  新工作或在途重放返回 202；完整活动同规格复用返回 200；终态原 UUID 返回 200 的冻结结果，不重新执行。\n- `GET /projects/{projectId}/documents/{documentId}/indexing`，200 返回最近工作 `latest`、仍有效的 `active` 和 `indexed`。\n  无索引时两字段为 null，`indexed=false`。元数据只含索引/处理 ID、代号、规格、原 SHA、块清单摘要、数量、token 用量、状态与安全错误码。\n\nUUID 按 owner/project 唯一并绑定文档、原 SHA、处理代与规格；跨文档重放 409 `DOCUMENT_INDEX_CONFLICT`。\n归属先于重放。活动代创建映射保留至退役清理；其他映射自首次接受固定 24 小时，重放不续期。\n终态映射保留冻结结果；到期清理前仍计入 100/文档、10,000/owner/project 限额。\n提交已到期 UUID 时，在归属校验后的同一短事务仅清理该过期绑定再按新请求处理；有效绑定的重放不会续期。\n\n`PENDING → RUNNING → SUCCEEDED` 只有完整清单、全部向量批确认、来源重新核对及短事务活动引用发布后成立。\n已终止错误为 `FAILED`；删除或处理换代为 `CANCELLED`；发送结果无法确认则 `UNKNOWN`。\n撤销活动引用后存在清理债务则 `CLEANUP_REQUIRED`；债务清理完成不恢复资格。\n最近尝试失败不撤销仍满足来源资格的旧活动代。上传/处理不自动索引。\n\n"
+    },
+    "5dbed4adcad2d537395e26bb557866b9714df35546b86512491e2efc995bfd25": {
+      "filename": "devmate-baseline.md",
+      "sourceSha256": "1f318e3932e5d9342eaf778e7617712d43c24398c5a328b69e3396ca4846ad2d",
+      "chunkSha256": "5dbed4adcad2d537395e26bb557866b9714df35546b86512491e2efc995bfd25",
+      "ordinal": 1,
+      "start": 849,
+      "end": 1422,
+      "startLine": 26,
+      "endLine": 50,
+      "text": "向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。实际验证见\n[DEV-017 验收记录](../testing/document-processing-acceptance.md)。\n\n后续 DEV-020 已实现默认关闭的显式索引与独立恢复；DEV-021 提供完整活动来源过滤、重校验及有界补足的文档检索。\n本分支依赖尚未合并的 #36；实际结果见[检索验收](../testing/document-retrieval-acceptance.md)。RAG 对话、文档前端与部署仍留在后续任务。\n\n## 核心非功能要求\n\n- 对项目和知识数据强制执行资源归属校验；\n- 服务端安全保存密钥，不向前端、日志或响应泄露；\n- 将仓库内容视为不可信输入，防止提示词注入覆盖系统约束；\n- 异步任务可重试且保持幂等，并具有明确的状态和上限；\n- 对 AI 结构化输出执行 Schema 与业务校验；\n- 记录模型、模板版本、来源、Token 用量和执行状态；\n- 外部服务可替换为 Stub 或 Mock，确保核心逻辑可测试。\n\n## 七阶段路线图\n\n1. 工程基座、认证与项目空间；\n2. AI 对话；\n3. RAG 知识库；\n4. GitHub 只读分析；\n5. AI 代码审查；\n6. 测试生成；\n7. 管理、可观测性与部署。\n"
+    },
+    "20ba8ab1065d42ac46672d8df535740216763960b43e42d67e31769b52f552ec": {
+      "filename": "README.md",
+      "sourceSha256": "58d039302b225150e88d83cb4504326524cb7a02173fe9631bcba1f41f19a5c7",
+      "chunkSha256": "20ba8ab1065d42ac46672d8df535740216763960b43e42d67e31769b52f552ec",
+      "ordinal": 1,
+      "start": 808,
+      "end": 1773,
+      "startLine": 14,
+      "endLine": 40,
+      "text": "限制。\n> #36/#37/#39 已合并至 `develop`。DEV-023 增加默认关闭的前端文档问答和历史引用展示；生产启用、真实项目质量评估与真实付费调用另行决定。\n\n## 核心能力规划\n\n- 基于项目上下文的 AI 对话；\n- 面向文档与代码的 RAG 知识库；\n- GitHub 仓库只读同步与项目分析；\n- 带证据和严重级别的 AI 代码审查；\n- 面向 Java/JUnit 的测试场景与测试代码生成。\n\n## 技术栈规划\n\n- 后端：Java 21、Spring Boot 3、Spring Security、MyBatis-Plus；\n- 前端：Vue 3、Vite、Element Plus、Axios、Pinia；\n- 数据与基础设施：MySQL 8、Redis、Qdrant、MinIO；\n- 工程能力：Flyway、OpenAPI、JUnit 5、Testcontainers、Docker Compose、GitHub Actions。\n\n已接入部分的具体版本以构建文件为准；Redis 业务尚未接入；Qdrant 文档索引和本地 Embedding 默认关闭，MinIO 接入原文件存储边界。AI Gateway\n提供 OpenAI Responses 与 DeepSeek 官方 Chat Completions 适配器，且默认关闭，不配置密钥也可构建和测试。\n国内试用可显式选择 `AI_PROVIDER=deepseek`；配置与真实冒烟步骤见[本地开发指南](docs/development/local-development.md)。\n\n## Monorepo 目录\n\n| 目录              | 规划用途                        | 当前状态                             |\n| ----------------- | ------------------------------- | ------------------------------------ |\n| `devmate-server/` | Spring Boot 后端                | 已具备认证、项目空间、对话与文档 API |\n"
+    },
+    "45ed41305b2f716acd04c58c651d337d6f49488393e7f963720a8823931825a0": {
+      "filename": "rag-conversation.md",
+      "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+      "chunkSha256": "45ed41305b2f716acd04c58c651d337d6f49488393e7f963720a8823931825a0",
+      "ordinal": 2,
+      "start": 1478,
+      "end": 2430,
+      "startLine": 41,
+      "endLine": 58,
+      "text": "de 和规范化 content SHA-256；同 UUID 跨模式或内容不同为 RAG_REQUEST_CONFLICT。\nV10 之前的普通聊天记录默认 CHAT，保留原 UUID 重放语义。\n\n合法 RAG 重放先于记录额度检查，返回原已保存消息、usage 与引用；不检索、不占新的 Embedding 额度、不调用聊天模型。\n失败重放返回原稳定错误；仍在途为 AI_REQUEST_IN_PROGRESS；已超总截止的 PENDING 可原子收口为 AI_REQUEST_EXPIRED。\n源文档删除或换代后，成功重放仍返回历史回答与最小定位，available=false；不读取退役来源正文。\n删除原文档不能撤回已经保存的回答摘要。父项目删除后该 API 仍按活动项目归属返回 404。\n\n`GET /projects/{projectId}/conversations/{conversationId}/messages` 保留原分页、升序和五个消息字段，增加 `evidence` 字段。\n成功 RAG 助手消息的 `evidence` 为 `{ \"rag\": RagSummary, \"citations\": CitationResponse[] }`；普通聊天、用户消息和旧数据返回 `null`。\n`rag.checkedAt` 是原发布时刻，不随历史读取刷新；`citations[].available` 根据当前活动来源重新核验，删除或换代后为 `false`，历史定位仍保留。\n历史页最多 100 条、引用最多 500 条；读取不调用检索、Embedding 或聊天模型，也不返回来源正文。\n该字段在 RAG 写入口关闭时仍可读取；项目/对话归属、父项目删除和权限规则不变。\n普通聊天及 RAG POST 成功响应结构不变。\n\n空命中和 incomplete 均明确失败，不回退普通聊天。发送前、发布时重新验证全部实际提供的来源；\n最终资格检查、引用与助手消息写入共享项目锁及短事务。来源变化、过期或坏输出不会发布助手消息。\n模型仅提供严格 JSON `answer` 和 `citationIds`；拒绝重复键、尾随 JSON、围栏、额外键、工具输出、未知/重复编号、\n"
+    },
+    "db956a59a1294ee5986ebcd4d3d621aa124ceb246082e859603786536b261a3d": {
+      "filename": "frontend-rag-citations-acceptance.md",
+      "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+      "chunkSha256": "db956a59a1294ee5986ebcd4d3d621aa124ceb246082e859603786536b261a3d",
+      "ordinal": 2,
+      "start": 1682,
+      "end": 2531,
+      "startLine": 17,
+      "endLine": 25,
+      "text": " | 14 个文件、97 项通过。                                                                                 |\n| `./node_modules/.bin/vite.cmd build`                                                                                                | 生产构建成功；共享 JS chunk 约 1,043 kB，保留现有大包告警。                                            |\n| `node scripts/check-docs.mjs --format-changed f3d6e5b7b63e8b51d9fe5cdd711a2bded0b6b11f`                                             | 69 个 Markdown、274 个相对链接及改动格式通过（最终文档修改后需重跑）。                                 |\n| `git diff --check`                                                                                                                  | 通过。                                                                                                 |\n\n测试网络中的 Chat 均为 Stub，Embedding 为合成数据；没有真实付费模型调用或真实项目资料传输。\n\n## 新基线复验与引用事实核对\n\n"
+    },
+    "ca598022293325dc8ac06ffe473298c0b33bf93b29bfefde954741c19b342dfc": {
+      "filename": "frontend-rag-citations-acceptance.md",
+      "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+      "chunkSha256": "ca598022293325dc8ac06ffe473298c0b33bf93b29bfefde954741c19b342dfc",
+      "ordinal": 3,
+      "start": 2431,
+      "end": 3300,
+      "startLine": 20,
+      "endLine": 31,
+      "text": "                      |\n\n测试网络中的 Chat 均为 Stub，Embedding 为合成数据；没有真实付费模型调用或真实项目资料传输。\n\n## 新基线复验与引用事实核对\n\n合入 #41 后，本机使用仓库指定 npm 10.9.3 复验：`npm run lint`、`npm run format:check`、`npm run test`（14 文件、97 项）、`npm run build`（含 type-check）通过；`npm audit --registry=https://registry.npmjs.org` 报告 0 vulnerabilities。`node scripts/check-docs.mjs --format-changed 94f4d22e2a586013009477a088e8d1c94d496df8` 检查 71 个 Markdown 和 275 条相对链接并通过格式检查，`git diff --check` 通过。引用组件的历史来源状态和发布时间文案已修正。完整远端 Foundation CI 以本次推送后的 PR 检查为准。\n\n合成引用样例逐条与测试输入比较：默认事务回滚样例中的运行时异常与受检异常规则符合 [Spring 官方文档](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html)；未提供 JVM 内存配置的样例明确回答资料未说明；互相冲突的两份规则明确回答无法判定；含恶意指令的样例仅引用相关规则。测试使用 Stub Chat 和合成资料，只验证来源定位、保存与展示流程，不能证明真实项目答案的事实正确性。界面明确提示引用定位不代表回答事实已经人工确认，`checkedAt` 标为发布时来源检查时间，`available` 表示读取时的当前来源资格。\n\n## 合并前风险与未执行的验收\n\n"
+    },
+    "403948fd7b4b7d0258d68ca2a7001d17aefe8414b7760c011a44ba92c6f6aaab": {
+      "filename": "README.md",
+      "sourceSha256": "58d039302b225150e88d83cb4504326524cb7a02173fe9631bcba1f41f19a5c7",
+      "chunkSha256": "403948fd7b4b7d0258d68ca2a7001d17aefe8414b7760c011a44ba92c6f6aaab",
+      "ordinal": 2,
+      "start": 1673,
+      "end": 2765,
+      "startLine": 39,
+      "endLine": 74,
+      "text": "-------------------- |\n| `devmate-server/` | Spring Boot 后端                | 已具备认证、项目空间、对话与文档 API |\n| `devmate-web/`    | Vue 3 前端                      | 已具备认证、项目空间和项目对话流程   |\n| `deploy/`         | 部署配置与环境模板              | 尚未实现                             |\n| `docs/`           | 需求、架构、ADR、API 与开发文档 | 基线建设中                           |\n| `scripts/`        | 可复用的本地开发与检查脚本      | 文档链接检查与脱敏测试摘要           |\n\n## 路线图\n\n- [x] 需求与架构基线\n- [x] 后端工程基座、认证与项目空间\n- [x] 前端认证\n- [x] 前端项目空间\n- [x] AI 对话\n- [ ] RAG 知识库（原文件、解析分块、显式索引、文档检索和默认关闭的 RAG 对话已实现；管理页面与真实项目质量评估待实施）\n- [ ] GitHub 只读分析\n- [ ] AI 代码审查\n- [ ] 测试生成\n- [ ] 管理、可观测性与部署\n\n## 文档与协作\n\n- 从[文档导航](docs/README.md)了解需求、架构与 ADR；\n- 按[本地开发指南](docs/development/local-development.md)启动隔离环境；\n- [第一阶段验收记录](docs/testing/foundation-acceptance.md)区分验证结果与尚待完成项；\n- [第二阶段验收记录](docs/testing/ai-conversation-acceptance.md)记录对话联调、失败恢复和浏览器证据；\n- [Foundation CI](.github/workflows/foundation.yml)执行前后端检查，阶段确认依据见对应验收记录；\n- 提交改动前阅读[贡献指南](CONTRIBUTING.md)和 [AGENTS.md](AGENTS.md)。\n\n## 安全\n\n不要提交密码、Token、API Key、真实连接串、私有仓库源码或其他敏感内容。示例配置只能使用清晰的占位符。\n\n## License\n\n暂未指定 / To be decided。\n"
+    },
+    "bf02953ee1f311fd7ec650d21b31f7ae99af5d907698cde12b5dfaaa53d12291": {
+      "filename": "frontend-rag-citations-acceptance.md",
+      "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+      "chunkSha256": "bf02953ee1f311fd7ec650d21b31f7ae99af5d907698cde12b5dfaaa53d12291",
+      "ordinal": 1,
+      "start": 786,
+      "end": 1782,
+      "startLine": 13,
+      "endLine": 17,
+      "text": "------------------------------------------------------------------------------------------------- |\n| `python -B scripts/verify-knowledge-backend.py --tests RagConversationIntegrationTest`                                              | 真实 MySQL 定向 21 项通过，失败/错误/跳过均 0。                                                        |\n| `python -B scripts/verify-knowledge-backend.py`                                                                                     | 固定 Linux Java 21 与真实 MySQL/MinIO/Qdrant 完整后端 262 项通过，失败/错误/跳过均 0；无跳过门禁通过。 |\n| `./node_modules/.bin/vue-tsc.cmd --build --force`、`./node_modules/.bin/eslint.cmd .`、`./node_modules/.bin/prettier.cmd --check .` | 类型、lint、前端格式检查通过。                                                                         |\n| `./node_modules/.bin/vitest.cmd run`                                                                                                | 14 个文件、97 项通过。                                                                                 |\n"
+    },
+    "f054d937c46e899562c44bb1fbd05cbd71d7b243b80ef6071643273bc67ae0d5": {
+      "filename": "README.md",
+      "sourceSha256": "58d039302b225150e88d83cb4504326524cb7a02173fe9631bcba1f41f19a5c7",
+      "chunkSha256": "f054d937c46e899562c44bb1fbd05cbd71d7b243b80ef6071643273bc67ae0d5",
+      "ordinal": 0,
+      "start": 0,
+      "end": 908,
+      "startLine": 1,
+      "endLine": 18,
+      "text": "# DevMate\n\nDevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手平台。\n\n> **当前状态：第三阶段——默认关闭的带引用 RAG 对话。** 仓库已具备 Foundation 能力、前端项目空间，以及默认关闭、\n> 可审计且按项目隔离的对话后端、OpenAI 与 DeepSeek 对话适配器和同步前端聊天交互。\n> 第二阶段已补齐隔离联调工具与验收记录，并于 2026-09-27 经所有者确认收口。\n> DEV-016 原文件接入、DEV-017 解析分块与 DEV-018 DeepSeek 对话接入均已合并。\n> [DEV-019](docs/tasks/DEV-019-embedding-index-preparation.md) 已交付国内 Embedding 与真实向量合同准备，\n> ADR 0007 与全部资源额度已由所有者接受。[DEV-020](docs/tasks/DEV-020-document-vector-indexing.md) 实现显式文档索引、\n> 独立清理债务及受控本地模型服务；[索引验收记录](docs/testing/document-indexing-acceptance.md)区分实际测试与后续限制。\n> [DEV-021](docs/tasks/DEV-021-document-retrieval.md) 提供完整来源过滤、资格重校验与有界补足的文档检索；默认关闭。\n> [DEV-022](docs/tasks/DEV-022-rag-conversation.md) 接入默认关闭的 RAG 对话、可验证来源、幂等与长期记录额度；\n> [RAG API](docs/api/rag-conversation.md)与[验收记录](docs/testing/rag-conversation-acceptance.md)说明验证和限制。\n> #36/#37/#39 已合并至 `develop`。DEV-023 增加默认关闭的前端文档问答和历史引用展示；生产启用、真实项目质量评估与真实付费调用另行决定。\n\n## 核心能力规划\n\n"
+    },
+    "19aa692ddb8665cb47dd2266088d82a1a28d0d6f857460224642b32ec436ac68": {
+      "filename": "frontend-rag-citations-acceptance.md",
+      "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+      "chunkSha256": "19aa692ddb8665cb47dd2266088d82a1a28d0d6f857460224642b32ec436ac68",
+      "ordinal": 0,
+      "start": 0,
+      "end": 886,
+      "startLine": 1,
+      "endLine": 13,
+      "text": "# DEV-023 前端文档问答验收记录\n\n日期：2026-10-08，更新于 2026-10-09。分支 `feature/dev-023-frontend-rag-citations`，原基线 `f3d6e5b7b63e8b51d9fe5cdd711a2bded0b6b11f`；已合入 #41 后的 `develop` (`94f4d22e2a586013009477a088e8d1c94d496df8`)。\n\n## 实现与验证范围\n\n历史消息 GET 增加只读 `evidence`，只映射成功 RAG 助手消息保存的摘要与引用；当前可用性按完整来源定位和项目归属批量核验。原 POST 响应未改，不新增迁移或依赖。\n前端入口 `VITE_RAG_ENABLED=false` 默认关闭；普通聊天保留，显式文档问答使用独立 API、690 秒超时、手动同 UUID 确认及纯文本引用组件。\n\n实际命令与结果：\n\n| 命令或检查                                                                                                                          | 结果                                                                                                   |\n| ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |\n"
+    },
+    "1fd4eab20ec999280a14bfdeb7c2061e44d728d1db09fe5a8bffcba2e9df1224": {
+      "filename": "devmate-baseline.md",
+      "sourceSha256": "1f318e3932e5d9342eaf778e7617712d43c24398c5a328b69e3396ca4846ad2d",
+      "chunkSha256": "1fd4eab20ec999280a14bfdeb7c2061e44d728d1db09fe5a8bffcba2e9df1224",
+      "ordinal": 0,
+      "start": 0,
+      "end": 949,
+      "startLine": 1,
+      "endLine": 28,
+      "text": "# DevMate 需求与架构基线\n\n## 产品定位\n\nDevMate 不是通用聊天机器人，而是围绕软件项目上下文、服务真实研发流程的 AI 助手平台。当前处于工程基础建设阶段，本文件描述的是已确认需求与目标架构，不代表功能已经实现。\n\n## MVP 能力范围\n\nMVP 规划提供项目上下文 AI 对话、文档与代码 RAG、GitHub 仓库只读分析、结构化 AI 代码审查，以及 Java/JUnit 测试场景与测试代码生成。首版深度支持 Java/Spring；其他语言仅提供基础文本检索。\n\nGitHub 集成首版只读。系统不会自动修改、执行或合并用户代码；测试生成只负责生成和导出，不在服务端执行未知仓库代码。\n\n## 用户与访问模型\n\n用户角色分为游客、普通用户和管理员。MVP 中，项目默认仅创建者可访问；所有资源操作必须同时校验用户身份与资源归属。\n\n## 目标架构与数据职责\n\n项目采用前后端分离的 monorepo，后端首先采用模块化单体。MySQL 保存业务数据，Redis 承担缓存、限流和任务协调，Qdrant 保存向量，MinIO 保存文件。外部模型通过统一 AI Gateway 接入，业务模块不直接绑定提供商。\n\n第一阶段建设工程基座、认证和项目空间。DEV-013 在第二阶段新增默认关闭的 AI Gateway、\nOpenAI Responses 首个适配器和项目对话后端；DEV-014 已实现前端同步对话，DEV-015 建立隔离联调与\n验收基线。第二阶段于 2026-09-27 经所有者确认收口，依据见[验收记录](../testing/ai-conversation-acceptance.md)。\nDEV-016 已实现默认关闭的 UTF-8 txt/md 原文件接入、私有对象存储、授权元数据与持久化补偿；\n`STORED` 仅表示原文件存储成功。DEV-017 已落实显式文本解析与版本化片段，`CHUNKED` 仅表示整代片段发布；\n该任务交付时向量、RAG、文档前端、流式输出和其他 AI 工作流仍未实现。实际验证见\n[DEV-017 验收记录](../testing/document-processing-acceptance.md)。\n\n"
+    },
+    "aca475a7397bfd344b6a51df4279b294732d2fad02fa82eb1c0c4757ccd90d04": {
+      "filename": "frontend-rag-citations-acceptance.md",
+      "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+      "chunkSha256": "aca475a7397bfd344b6a51df4279b294732d2fad02fa82eb1c0c4757ccd90d04",
+      "ordinal": 4,
+      "start": 3200,
+      "end": 3995,
+      "startLine": 28,
+      "endLine": 38,
+      "text": "案的事实正确性。界面明确提示引用定位不代表回答事实已经人工确认，`checkedAt` 标为发布时来源检查时间，`available` 表示读取时的当前来源资格。\n\n## 合并前风险与未执行的验收\n\n原基线依赖审计 **未通过**。本机 `npm` 默认解析到旧版 6.14.10，无法读取当时的 lockfile；改用已安装的 npm 11.11.0 后，默认镜像的 audit API 返回 `NOT_IMPLEMENTED`。当时以 `--registry=https://registry.npmjs.org` 只读审计报告 **10 项漏洞（8 high、2 moderate）**。#41 已独立修复并合并，没有关闭或降低 CI 的 `npm audit` 门禁；新基线的复验结果见上文。\n\n隔离浏览器验收未完成。已启动仅返回合成数据的本机 Stub 与 Vite，但当前应用内浏览器无法访问 `127.0.0.1`，且没有可用的 Chrome 浏览器连接；因此没有桌面/窄屏截图，也不宣称浏览器交互通过。两个本机服务已停止。前端组件测试覆盖默认关闭、成功/退役引用纯文本、未知结果手动确认、终态 409、路由往返陈旧响应和 UTF-16 边界。\n\n真实项目质量、生产启用、付费模型及部署不属于本次验收。历史引用事实支撑需由项目所有者基于实际项目资料另行评估。数据库全面不可写时既有 RAG 用量缺口仍需按提供商记录人工核对。\n\n实现提交 `a204b0f487b1f8b0ceabeb3e871e454866b8ca2a`，[PR #40](https://github.com/RyderChang/DevMate/pull/40) 目标为 `develop`；远端 CI 结果以该 PR 的最新 HEAD 为准。浏览器限制和真实资料的事实质量限制须在合并决定中明确记录。\n"
+    }
+  },
+  "questions": [
+    {
+      "number": 1,
+      "query": "文档检索 API 省略 topK 时取多少、允许什么范围？客户端能指定 score 阈值吗？",
+      "pool": [
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.74838805
+        },
+        {
+          "chunk": "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e",
+          "score": 0.6021212
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.53808826
+        },
+        {
+          "chunk": "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e",
+          "score": 0.53369164
+        },
+        {
+          "chunk": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+          "score": 0.5253705
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E1",
+          "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+          "startLine": 11,
+          "endLine": 11
+        },
+        {
+          "slot": "E2",
+          "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+          "startLine": 13,
+          "endLine": 13
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "query": "检索命中的 score 能当作答案可信度吗？检索结果为何仍可能 incomplete？",
+      "pool": [
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.6969712
+        },
+        {
+          "chunk": "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e",
+          "score": 0.5860597
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.57476044
+        },
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.5589268
+        },
+        {
+          "chunk": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+          "score": 0.5460992
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E3",
+          "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+          "startLine": 19,
+          "endLine": 19
+        },
+        {
+          "slot": "E4",
+          "sourceSha256": "20ec297a2dd182a14f79f43045386975a3d4f74d4b253b3bc79426a3d9981896",
+          "startLine": 21,
+          "endLine": 22
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "query": "模型启动前的 429 BUSY/JOURNAL_FULL 和 ABSENT 都能证明未发送、解除 UNKNOWN 吗？会退款或自动重试吗？",
+      "pool": [
+        {
+          "chunk": "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498",
+          "score": 0.6600592
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.6262012
+        },
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.59766173
+        },
+        {
+          "chunk": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+          "score": 0.576632
+        },
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.4927894
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E5",
+          "sourceSha256": "e4c6b914eca6c10ec925c5b85873fcb7850a272b92c8d2de36d67f8cb08a7368",
+          "startLine": 8,
+          "endLine": 10
+        },
+        {
+          "slot": "E6",
+          "sourceSha256": "e4c6b914eca6c10ec925c5b85873fcb7850a272b92c8d2de36d67f8cb08a7368",
+          "startLine": 11,
+          "endLine": 11
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "query": "文档达到 CHUNKED 后是否已经建好向量索引，上传或处理会自动触发索引吗？",
+      "pool": [
+        {
+          "chunk": "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d",
+          "score": 0.6694437
+        },
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.59528476
+        },
+        {
+          "chunk": "5dbed4adcad2d537395e26bb557866b9714df35546b86512491e2efc995bfd25",
+          "score": 0.55597615
+        },
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.5531814
+        },
+        {
+          "chunk": "20ba8ab1065d42ac46672d8df535740216763960b43e42d67e31769b52f552ec",
+          "score": 0.51207006
+        },
+        {
+          "chunk": "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498",
+          "score": 0.49914116
+        },
+        {
+          "chunk": "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e",
+          "score": 0.49748176
+        },
+        {
+          "chunk": "45ed41305b2f716acd04c58c651d337d6f49488393e7f963720a8823931825a0",
+          "score": 0.48238653
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.47989783
+        },
+        {
+          "chunk": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+          "score": 0.4753803
+        },
+        {
+          "chunk": "db956a59a1294ee5986ebcd4d3d621aa124ceb246082e859603786536b261a3d",
+          "score": 0.4561522
+        },
+        {
+          "chunk": "ca598022293325dc8ac06ffe473298c0b33bf93b29bfefde954741c19b342dfc",
+          "score": 0.44860923
+        },
+        {
+          "chunk": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+          "score": 0.4431485
+        },
+        {
+          "chunk": "403948fd7b4b7d0258d68ca2a7001d17aefe8414b7760c011a44ba92c6f6aaab",
+          "score": 0.4409204
+        },
+        {
+          "chunk": "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e",
+          "score": 0.42744032
+        },
+        {
+          "chunk": "bf02953ee1f311fd7ec650d21b31f7ae99af5d907698cde12b5dfaaa53d12291",
+          "score": 0.42224005
+        },
+        {
+          "chunk": "f054d937c46e899562c44bb1fbd05cbd71d7b243b80ef6071643273bc67ae0d5",
+          "score": 0.42003277
+        },
+        {
+          "chunk": "19aa692ddb8665cb47dd2266088d82a1a28d0d6f857460224642b32ec436ac68",
+          "score": 0.4180893
+        },
+        {
+          "chunk": "1fd4eab20ec999280a14bfdeb7c2061e44d728d1db09fe5a8bffcba2e9df1224",
+          "score": 0.40341195
+        },
+        {
+          "chunk": "aca475a7397bfd344b6a51df4279b294732d2fad02fa82eb1c0c4757ccd90d04",
+          "score": 0.3884238
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E7",
+          "sourceSha256": "1f318e3932e5d9342eaf778e7617712d43c24398c5a328b69e3396ca4846ad2d",
+          "startLine": 24,
+          "endLine": 25
+        },
+        {
+          "slot": "E8",
+          "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+          "startLine": 19,
+          "endLine": 19
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "query": "最近一次文档索引失败，会撤销仍符合来源资格的旧活动索引代吗？",
+      "pool": [
+        {
+          "chunk": "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d",
+          "score": 0.7090092
+        },
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.6038466
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.598441
+        },
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.5858497
+        },
+        {
+          "chunk": "5dbed4adcad2d537395e26bb557866b9714df35546b86512491e2efc995bfd25",
+          "score": 0.52905124
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E9",
+          "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+          "startLine": 19,
+          "endLine": 19
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "query": "文档索引 UNKNOWN 时会自动再次发送模型请求吗？已预留的 token 会退款吗？",
+      "pool": [
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.722427
+        },
+        {
+          "chunk": "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498",
+          "score": 0.639976
+        },
+        {
+          "chunk": "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d",
+          "score": 0.6343814
+        },
+        {
+          "chunk": "6083bd02d2ace803fbb296ea93cfdcde57861906e8880d6ad2b1d46edf6d7cdb",
+          "score": 0.61803514
+        },
+        {
+          "chunk": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+          "score": 0.5845367
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E10",
+          "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+          "startLine": 25,
+          "endLine": 25
+        },
+        {
+          "slot": "E11",
+          "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+          "startLine": 26,
+          "endLine": 26
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "query": "关闭索引写入开关后，已有模型和向量清理债务还能恢复吗？未知向量能按 TTL 清除吗？",
+      "pool": [
+        {
+          "chunk": "072456f2cfc4527acb61ae79a7311f7e20086529ff87089a1a6f2af410df8bf6",
+          "score": 0.6606759
+        },
+        {
+          "chunk": "9a92d8df78e096158789a385e04e22298d10525c9493679e9b7b7caea86aa498",
+          "score": 0.6531586
+        },
+        {
+          "chunk": "3e1df4f02f809875db78a59f585d22fda5acd245f59cac9c584676011c5f8b3d",
+          "score": 0.5794995
+        },
+        {
+          "chunk": "5dbed4adcad2d537395e26bb557866b9714df35546b86512491e2efc995bfd25",
+          "score": 0.53639793
+        },
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.5112065
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E12",
+          "sourceSha256": "e4c6b914eca6c10ec925c5b85873fcb7850a272b92c8d2de36d67f8cb08a7368",
+          "startLine": 12,
+          "endLine": 14
+        },
+        {
+          "slot": "E13",
+          "sourceSha256": "16a03bcffba68e4cfb3c8bfebca65b9fa083eb1e549dad18f0a8d52a1cabf27d",
+          "startLine": 35,
+          "endLine": 35
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "query": "RAG 检索空命中或 incomplete 时会回退成普通聊天吗？来源变化后还能发布助手回答吗？",
+      "pool": [
+        {
+          "chunk": "45ed41305b2f716acd04c58c651d337d6f49488393e7f963720a8823931825a0",
+          "score": 0.7726189
+        },
+        {
+          "chunk": "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e",
+          "score": 0.76734006
+        },
+        {
+          "chunk": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+          "score": 0.7650542
+        },
+        {
+          "chunk": "bc31bf725a7d46e1ff5e793d91ecea67e24ec182b174bc6d4e456e75424a279e",
+          "score": 0.72790253
+        },
+        {
+          "chunk": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+          "score": 0.7045849
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E14",
+          "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+          "startLine": 56,
+          "endLine": 56
+        },
+        {
+          "slot": "E15",
+          "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+          "startLine": 56,
+          "endLine": 57
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "query": "读取历史消息的 evidence 会重新检索或调用聊天模型、返回来源正文吗？它的 available 如何确定？",
+      "pool": [
+        {
+          "chunk": "ba2dba44f5762239acde8fca44807205f5bdfa5597fcd4848fe2233987ee2f24",
+          "score": 0.68874407
+        },
+        {
+          "chunk": "45ed41305b2f716acd04c58c651d337d6f49488393e7f963720a8823931825a0",
+          "score": 0.6810506
+        },
+        {
+          "chunk": "208002e09da1fff2678e546021498bf3f53937b0f61624aa138d5feff3f2106e",
+          "score": 0.6139555
+        },
+        {
+          "chunk": "19aa692ddb8665cb47dd2266088d82a1a28d0d6f857460224642b32ec436ac68",
+          "score": 0.60618484
+        },
+        {
+          "chunk": "bdca68b46bc251cbd12a1df9cbfad53f336359c767cd7db9356206fe76725320",
+          "score": 0.60363317
+        }
+      ],
+      "targets": [
+        {
+          "slot": "E16",
+          "sourceSha256": "8a9384f12f9d49b55874cc3e981ac52b2d7b1c6112540712d7bc87dca1e54746",
+          "startLine": 49,
+          "endLine": 52
+        },
+        {
+          "slot": "E17",
+          "sourceSha256": "7c0711b3ad5dbce6d0efe08d538c8c69d415ff18c907b0f27c90a3f65e9db84c",
+          "startLine": 7,
+          "endLine": 7
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "query": "DevMate 当前生产 Qdrant collection 中具体有多少个向量点？若资料没有数值，请明确说明无法确定。",
+      "pool": [
+        {
+          "chunk": "f054d937c46e899562c44bb1fbd05cbd71d7b243b80ef6071643273bc67ae0d5",
+          "score": 0.6993642
+        },
+        {
+          "chunk": "1fd4eab20ec999280a14bfdeb7c2061e44d728d1db09fe5a8bffcba2e9df1224",
+          "score": 0.6542243
+        },
+        {
+          "chunk": "403948fd7b4b7d0258d68ca2a7001d17aefe8414b7760c011a44ba92c6f6aaab",
+          "score": 0.61996025
+        },
+        {
+          "chunk": "20ba8ab1065d42ac46672d8df535740216763960b43e42d67e31769b52f552ec",
+          "score": 0.6099636
+        },
+        {
+          "chunk": "d61ae78291392b7705137c1d4567bb1e25bbb40f38687804a4539e71d6f55f63",
+          "score": 0.5887313
+        }
+      ],
+      "targets": []
+    }
+  ]
+}
