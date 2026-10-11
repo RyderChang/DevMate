@@ -88,6 +88,11 @@ jobs:
       - name: Verify local AI acceptance fixture
         working-directory: .
         run: node --test scripts/ai-stub.test.mjs
+      - name: Verify transient claim review without model calls
+        working-directory: .
+        run: |
+          xvfb-run -a python3 -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
+          python3 -B scripts/rag-claim-review/run.py
       - name: Check documentation and workflow syntax
         working-directory: .
         env:
