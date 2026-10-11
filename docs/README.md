@@ -80,3 +80,4 @@
 - [真实资料检索召回与引用证据评估](testing/real-rag-retrieval-evaluation.md)：同源五题的独立本地检索复跑、完整 top‑5 候选及关键证据位置覆盖；不代表通用召回率。
 - [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
 - [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。
+- [DEV-034](tasks/DEV-034-claim-citation-review.md)、[逐断言核验流程](development/claim-citation-review.md)与[材料审查记录](testing/claim-citation-review-acceptance.md)：正文不落盘规范与 DEV-032 全题脱敏材料审查；原正文缺失，完整断言核验及绑定仍未完成。
