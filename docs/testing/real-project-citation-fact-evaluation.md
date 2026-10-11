@@ -1,6 +1,6 @@
 # DEV-025 真实项目资料离线引用事实评估
 
-日期：2026-10-09。资料快照：`develop` 提交 `b0b58142af63963bc36ced05df064e4253475794`。任务范围见 [DEV-025](../tasks/DEV-025-real-project-citation-fact-evaluation.md)。
+日期：2026-10-09。主要资料与代码快照：`develop` 提交 `b0b58142af63963bc36ced05df064e4253475794`。案例 8 单独使用 [PR #42](https://github.com/RyderChang/DevMate/pull/42) 提交 `114ee77ae7364bc6fa4c36c091fe64c32c299bd1` 的前端验收记录第 40–59 行，文件 SHA-256 为 `cb510519a38d39e6aa5cbc22a250d0c7ef197e06d6f09fe32ad546a45f0c7d3b`；这段合成浏览器记录尚不在上述 `develop` 快照内。任务范围见 [DEV-025](../tasks/DEV-025-real-project-citation-fact-evaluation.md)。
 
 ## 方法与判定
 
@@ -34,3 +34,5 @@
 - `git fetch origin develop`：取得并确认基线 `b0b58142af63963bc36ced05df064e4253475794`。
 - `rg -n` 核对 README、RAG API、配置、前端提示、后端历史读取与 Git 历史；`rg -n "Xmx|heap|堆内存|JVM.*内存|生产.*内存" README.md docs devmate-server/src/main/resources -g '*.md' -g '*.yml'` 未得到生产堆上限证据。
 - `docker ps --format '{{.Names}} {{.Image}} {{.Status}}'`：没有运行容器。环境变量检查只记录相关开关与模型密钥是否存在，未读取或输出凭据值。
+
+2026-10-11 PR 清理复核：保留主要资料基线，补明案例 8 的独立来源提交与 SHA，避免将未合并的 #42 内容归入旧 `develop`。整合已复核的 #42 与最新 `develop`，文档导航保留双方新增入口；未更改十条断言的判定或将其解释为模型分数。本轮只读核对 Git 中两版前端验收文件及来源哈希，执行文档格式/相对链接和 Git 空白检查，不启动模型或容器；最新完整 CI 以 PR 当前头提交为准。

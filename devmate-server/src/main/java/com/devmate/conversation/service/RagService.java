@@ -82,7 +82,10 @@ public class RagService {
                     error instanceof BusinessException failure?stored(failure):
                     error instanceof org.springframework.dao.DataAccessException || error instanceof org.springframework.transaction.TransactionException
                             ?ErrorCode.RAG_DATABASE_UNAVAILABLE:ErrorCode.AI_PROVIDER_UNAVAILABLE;
-            try { transactions.fail(context,code); }
+            RagFailureDiagnostic diagnostic = code != ErrorCode.AI_RESPONSE_INVALID ? null
+                    : error instanceof AiGatewayException failure ? RagFailureDiagnostic.gateway(failure.getResponseIssue())
+                    : error instanceof RagOutputException failure ? RagFailureDiagnostic.output(failure.issue()) : null;
+            try { transactions.fail(context,code,diagnostic); }
             catch(RuntimeException stateError) { LOG.warn("RAG state unconfirmed traceId={} invocationId={} code=STATE_UNCONFIRMED",MDC.get("traceId"),context.invocation()); }
             throw new BusinessException(code);
         }

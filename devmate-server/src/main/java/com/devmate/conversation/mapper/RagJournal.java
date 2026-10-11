@@ -56,6 +56,11 @@ public class RagJournal {
     public void unknown(long invocation) {
         jdbc.update("UPDATE rag_invocation_details SET chat_state='UNKNOWN' WHERE invocation_id=? AND chat_state='DISPATCHED'", invocation);
     }
+    public void failure(long invocation, String stage, String category) {
+        if(jdbc.update("UPDATE rag_invocation_details SET failure_stage=?,failure_category=? "
+                + "WHERE invocation_id=? AND failure_stage IS NULL AND failure_category IS NULL",
+                stage, category, invocation)!=1)throw new IllegalStateException("RAG failure diagnostic cannot be confirmed");
+    }
     public void checked(long invocation, LocalDateTime checked) {
         jdbc.update("UPDATE rag_invocation_details SET checked_at=? WHERE invocation_id=?", checked, invocation);
     }
