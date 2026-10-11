@@ -80,3 +80,5 @@
 - [真实资料检索召回与引用证据评估](testing/real-rag-retrieval-evaluation.md)：同源五题的独立本地检索复跑、完整 top‑5 候选及关键证据位置覆盖；不代表通用召回率。
 - [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
 - [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。
+- [DEV-031](tasks/DEV-031-q9-retest-and-output-decision.md)与[验收记录](testing/dev-031-q9-retest-acceptance.md)：Q9 五次定额复测、费用核对状态及输出约束建议。
+- [DEV-032](tasks/DEV-032-rag-output-constraint-experiment.md)与[验收记录](testing/rag-output-constraint-experiment-acceptance.md)：脱敏采集修正及四组实验结果；40 次额度已用完，所有者确认消费 ¥0.20、156,015 tokens，生产采纳决策待独立完成。
