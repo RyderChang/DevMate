@@ -88,11 +88,16 @@ jobs:
       - name: Verify local AI acceptance fixture
         working-directory: .
         run: node --test scripts/ai-stub.test.mjs
+      - name: Prepare system Python Tk for offline review tests
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y python3-tk
       - name: Verify transient claim review without model calls
         working-directory: .
         run: |
-          xvfb-run -a python3 -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
-          python3 -B scripts/rag-claim-review/run.py
+          xvfb-run -a /usr/bin/python3 -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
+          /usr/bin/python3 -B scripts/rag-claim-review/run.py
       - name: Check documentation and workflow syntax
         working-directory: .
         env:

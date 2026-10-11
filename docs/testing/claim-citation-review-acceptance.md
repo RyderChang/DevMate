@@ -89,7 +89,7 @@ git diff --check
 - `window.py`：本机 tkinter 只读正文/来源，选择区间登记核心、额外和弃答断言；手动确认遗漏及所有返回引用。无复制、备注、导出或截图入口；中断丢弃全部未提交选择，异常不打印正文或 traceback。
 - `run.py`：默认只做公开源预检，`--demo` 仅合成演示；没有网络模型客户端、密钥参数或 live 模式。内存接口必须由后续适配层提供同一请求的已验证答案/来源与授权账本，当前没有接入真实调用。
 - `frozen-inputs.json`：去掉原夹具中的 point/document/processing/index ID 和 score，只保留公开问题、S 来源、50 个候选定位与 E1–E17。SHA-256 `2ff08dc4060f74fe18cc10112b9988e3fa4bf2c11439699407b65ba3b2f5a506`；保留原 basis scope SHA，明确是新的评审输入 scope，不冒称原 DEV-032 夹具字节相同。来源与原五候选不变，没有应用 PR #51 的新选择。
-- Foundation CI 增加 Linux Xvfb 窗口测试和公开源预检；不调用模型、不跳过窗口测试、没有新增生产依赖或数据库变更。
+- Foundation CI 增加 Linux Xvfb 窗口测试和公开源预检；不调用模型、不跳过窗口测试、没有新增生产依赖或数据库变更。首轮 [CI](https://github.com/RyderChang/DevMate/actions/runs/38144359794) 的窗口测试因 PATH Python 缺少 tkinter 而失败，随后显式安装仅 CI 测试所需的系统 `python3-tk`，并使用 `/usr/bin/python3`；没有降低断言。
 
 实际执行：
 

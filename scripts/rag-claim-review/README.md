@@ -10,7 +10,7 @@ python -B scripts/rag-claim-review/run.py --demo
 python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 ```
 
-第一条仅核对冻结 SHA、七份 Git 公开源、十题四组及 50 个候选，输出固定预检摘要，不启动窗口。需要 Python 3.10+（含 tkinter）及冻结 Git 快照 `b0b58142af63963bc36ced05df064e4253475794`；浅克隆缺少该快照时固定失败，不自动联网补对象。Linux 窗口测试使用已有 tkinter 和 `xvfb-run`，CI 不跳过缺失的 GUI 测试。
+第一条仅核对冻结 SHA、七份 Git 公开源、十题四组及 50 个候选，输出固定预检摘要，不启动窗口。需要 Python 3.10+（含 tkinter）及冻结 Git 快照 `b0b58142af63963bc36ced05df064e4253475794`；浅克隆缺少该快照时固定失败，不自动联网补对象。Linux 窗口测试使用 tkinter 和 `xvfb-run`；CI 安装仅测试使用的系统 `python3-tk`，明确使用 `/usr/bin/python3`，不依赖 PATH 中缺少 Tk 的其他 Python，不跳过 GUI 测试。
 
 `--demo` 打开合成回答。选择答案区间，点击“加入当前断言”；一项可以添加多个不连续区间。选择分类、核心 E 编号、支持及类型；在 S 来源全文中按行核对后加入校核证据。选择 C 编号、对应判定和绑定；局部引用必须先把答案中的 `C1` 或 `[C1]` 选区设为标记。每个 C 对应的 S 编号/行区间以及核心证据行在窗口上方显示。
 
