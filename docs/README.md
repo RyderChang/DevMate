@@ -76,3 +76,4 @@
 - [DEV-023](tasks/DEV-023-frontend-rag-citations.md)与[验收记录](testing/frontend-rag-citations-acceptance.md)：默认关闭的前端文档问答、历史引用展示及实际验证结果。
 - [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
 - [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。
+- [DEV-031](tasks/DEV-031-q9-retest-and-output-decision.md)与[验收记录](testing/dev-031-q9-retest-acceptance.md)：Q9 五次定额复测、费用核对状态及输出约束建议。
