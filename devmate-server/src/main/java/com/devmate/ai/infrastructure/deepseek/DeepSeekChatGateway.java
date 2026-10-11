@@ -42,7 +42,7 @@ public final class DeepSeekChatGateway implements AiGateway {
 
     @Override
     public AiChatResult chat(AiChatRequest request) {
-        if (request.maxOutputTokens() > properties.getMaxOutputTokens()) throw invalid();
+        if (request.maxOutputTokens() > properties.getMaxOutputTokens()) throw invalid(AiGatewayException.ResponseIssue.UNCLASSIFIED);
         long started = System.nanoTime();
         try {
             return client.post().uri("/chat/completions")
@@ -52,8 +52,9 @@ public final class DeepSeekChatGateway implements AiGateway {
                         int status = response.getStatusCode().value();
                         if (status == 429) throw new AiGatewayException(ErrorCode.AI_PROVIDER_RATE_LIMITED);
                         if (status < 200 || status >= 300) {
-                            throw new AiGatewayException(status >= 500 || status == 401 || status == 402 || status == 403
-                                    ? ErrorCode.AI_PROVIDER_UNAVAILABLE : ErrorCode.AI_RESPONSE_INVALID);
+                            boolean unavailable = status >= 500 || status == 401 || status == 402 || status == 403;
+                            throw unavailable ? new AiGatewayException(ErrorCode.AI_PROVIDER_UNAVAILABLE)
+                                    : invalid(AiGatewayException.ResponseIssue.UPSTREAM_STATUS);
                         }
                         return parse(readLimited(response.getBody()), elapsedMillis(started));
                     });
@@ -89,12 +90,12 @@ public final class DeepSeekChatGateway implements AiGateway {
                 com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
                 int count = input.read(chunk);
                 if (count == -1) break;
-                if (count > properties.getMaxResponseBytes() - buffer.size()) throw new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID);
+                if (count > properties.getMaxResponseBytes() - buffer.size()) throw invalid(AiGatewayException.ResponseIssue.RESPONSE_SIZE);
                 buffer.write(chunk, 0, count);
             }
             com.devmate.ai.application.CallBudget.cap(java.time.Duration.ofSeconds(120));
             byte[] bytes = buffer.toByteArray();
-            if (bytes.length > properties.getMaxResponseBytes()) throw invalid();
+            if (bytes.length > properties.getMaxResponseBytes()) throw invalid(AiGatewayException.ResponseIssue.RESPONSE_SIZE);
             return bytes;
         } catch (IOException exception) {
             throw new AiGatewayException(hasTimeout(exception)
@@ -104,39 +105,42 @@ public final class DeepSeekChatGateway implements AiGateway {
 
     private AiChatResult parse(byte[] bytes, long durationMs) {
         try {
-            String json = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
+            String json;
+            try { json = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString(); }
+            catch (java.nio.charset.CharacterCodingException error) { throw invalid(AiGatewayException.ResponseIssue.RESPONSE_ENCODING); }
             JsonNode root = mapper.readTree(json);
-            if (root == null || !root.isObject() || !"chat.completion".equals(text(root, "object"))) throw invalid();
+            if (root == null || !root.isObject() || !"chat.completion".equals(text(root, "object"))) throw invalid(AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
             String id = text(root, "id");
             String responseModel = text(root, "model");
             JsonNode choices = root.get("choices");
             if (id == null || id.isBlank() || id.length() > 255 || responseModel == null || responseModel.isBlank()
-                    || responseModel.length() > 100 || choices == null || !choices.isArray() || choices.size() != 1) throw invalid();
+                    || responseModel.length() > 100 || choices == null || !choices.isArray() || choices.size() != 1) throw invalid(AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
             JsonNode choice = choices.get(0);
-            if (!choice.isObject() || !"stop".equals(text(choice, "finish_reason"))
-                    || integer(choice, "index") != 0) throw invalid();
+            if (!choice.isObject() || integer(choice, "index", AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE) != 0)
+                throw invalid(AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
+            if (!"stop".equals(text(choice, "finish_reason"))) throw invalid(AiGatewayException.ResponseIssue.FINISH_REASON);
             JsonNode message = choice.get("message");
             String content = text(message, "content");
-            if (!"assistant".equals(text(message, "role")) || content == null || content.isBlank()) throw invalid();
+            if (!"assistant".equals(text(message, "role")) || content == null || content.isBlank()) throw invalid(AiGatewayException.ResponseIssue.MESSAGE_CONTENT);
             JsonNode tools = message.get("tool_calls");
             if ((tools != null && !tools.isNull() && (!tools.isArray() || !tools.isEmpty()))
-                    || (message.has("function_call") && !message.get("function_call").isNull())) throw invalid();
+                    || (message.has("function_call") && !message.get("function_call").isNull())) throw invalid(AiGatewayException.ResponseIssue.MESSAGE_CONTENT);
             JsonNode usage = root.get("usage");
-            int input = integer(usage, "prompt_tokens");
-            int output = integer(usage, "completion_tokens");
-            int total = integer(usage, "total_tokens");
-            if ((long) input + output != total) throw invalid();
+            int input = integer(usage, "prompt_tokens", AiGatewayException.ResponseIssue.USAGE);
+            int output = integer(usage, "completion_tokens", AiGatewayException.ResponseIssue.USAGE);
+            int total = integer(usage, "total_tokens", AiGatewayException.ResponseIssue.USAGE);
+            if ((long) input + output != total) throw invalid(AiGatewayException.ResponseIssue.USAGE);
             // reasoning_content and cache breakdown are not stored or rendered as assistant content.
             return new AiChatResult(id, content, input, output, total, durationMs);
         } catch (IOException exception) {
-            throw invalid();
+            throw invalid(AiGatewayException.ResponseIssue.RESPONSE_ENVELOPE);
         }
     }
 
-    private int integer(JsonNode object, String field) {
+    private int integer(JsonNode object, String field, AiGatewayException.ResponseIssue issue) {
         JsonNode value = object != null && object.isObject() ? object.get(field) : null;
-        if (value == null || !value.isIntegralNumber() || !value.canConvertToInt() || value.intValue() < 0) throw invalid();
+        if (value == null || !value.isIntegralNumber() || !value.canConvertToInt() || value.intValue() < 0) throw invalid(issue);
         return value.intValue();
     }
 
@@ -153,5 +157,7 @@ public final class DeepSeekChatGateway implements AiGateway {
     }
 
     private long elapsedMillis(long started) { return Math.max(0, (System.nanoTime() - started) / 1_000_000); }
-    private AiGatewayException invalid() { return new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID); }
+    private AiGatewayException invalid(AiGatewayException.ResponseIssue issue) {
+        return new AiGatewayException(ErrorCode.AI_RESPONSE_INVALID, issue);
+    }
 }
