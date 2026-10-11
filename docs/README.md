@@ -74,3 +74,9 @@
 - [ADR 0008](adr/0008-bound-rag-conversation-and-citations.md)：Accepted，接口、租约、来源快照与长期额度合同。
 - [RAG API](api/rag-conversation.md)、[运行与恢复](development/rag-conversation.md)、[DEV-022 验收记录](testing/rag-conversation-acceptance.md)：默认关闭的后端合同及其合并前验收历史。
 - [DEV-023](tasks/DEV-023-frontend-rag-citations.md)与[验收记录](testing/frontend-rag-citations-acceptance.md)：默认关闭的前端文档问答、历史引用展示及实际验证结果。
+- [DEV-025](tasks/DEV-025-real-project-citation-fact-evaluation.md)与[离线评估记录](testing/real-project-citation-fact-evaluation.md)：以真实 DevMate 资料逐断言核对引用事实、时效与弃答边界；不代表模型质量分数。
+- [DEV-026：真实资料 RAG 回答、检索召回与引用证据评估](tasks/DEV-026-real-rag-evaluation.md)：任务范围、冻结输入、执行顺序与验收标准。
+- [真实生成回答与引用的逐断言评估](testing/real-rag-generated-citation-evaluation.md)：四份公开 DevMate 资料、五次实际 RAG 回答、服务端引用与证据缺口；不代表生产质量或检索召回率。
+- [真实资料检索召回与引用证据评估](testing/real-rag-retrieval-evaluation.md)：同源五题的独立本地检索复跑、完整 top‑5 候选及关键证据位置覆盖；不代表通用召回率。
+- [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
+- [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。

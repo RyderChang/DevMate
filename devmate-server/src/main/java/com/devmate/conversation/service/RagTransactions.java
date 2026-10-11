@@ -129,10 +129,10 @@ public class RagTransactions {
     }
 
     @Transactional(timeout=10)
-    public void fail(Context context, ErrorCode error) {
+    public void fail(Context context, ErrorCode error, RagFailureDiagnostic diagnostic) {
         projects.lockProjectForMaintenance(context.owner(),context.project());
         var c=conversations.lockOwned(context.owner(),context.project(),context.conversation());
-        failLocked(c,context.invocation(),context.started(),error);
+        failLocked(c,context.invocation(),context.started(),error,diagnostic);
     }
     @Transactional(timeout=10)
     public void expire(long invocation) {
@@ -144,10 +144,15 @@ public class RagTransactions {
             failLocked(c,invocation,i.getStartedAt(),ErrorCode.AI_REQUEST_EXPIRED);
     }
     private void failLocked(ConversationEntity c,long invocation,LocalDateTime start,ErrorCode error) {
+        failLocked(c,invocation,start,error,null);
+    }
+    private void failLocked(ConversationEntity c,long invocation,LocalDateTime start,ErrorCode error,RagFailureDiagnostic diagnostic) {
         journal.unknown(invocation);
-        if(invocations.fail(invocation,error.name(),Math.max(0,Duration.between(start,now()).toMillis()),now())==1
-                && c!=null && start.equals(c.getGenerationStartedAt()))
-            conversations.releaseGeneration(c.getOwnerUserId(),c.getProjectId(),c.getId(),start);
+        if(invocations.fail(invocation,error.name(),Math.max(0,Duration.between(start,now()).toMillis()),now())==1) {
+            if(diagnostic!=null)journal.failure(invocation,diagnostic.stage(),diagnostic.category());
+            if(c!=null && start.equals(c.getGenerationStartedAt()))
+                conversations.releaseGeneration(c.getOwnerUserId(),c.getProjectId(),c.getId(),start);
+        }
     }
     private void requireLive(Context context) {
         projects.lockOwnedActiveProject(context.owner(),context.project());
