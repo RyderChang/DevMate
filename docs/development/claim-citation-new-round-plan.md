@@ -54,3 +54,7 @@ Stub 回答、usage、窗口选择全部标为 OFFLINE_STUB/SYNTHETIC_CHOICES。
 提交本计划后停止。所有者尚需审查 scope、次数、预算、费用上界成立条件、真实驱动与本机评审安排，再独立明确授权新轮；模型选择确认不等于这些授权。真人语义验收仍未完成，没有新增窗口真人评审或真实输出。
 
 新增真实 Embedding/Chat 均为 0。DEV-032 已耗尽的 40 次额度、所有者确认的 ¥0.20 / 40 次 / 156015 tokens、完整逐断言评审 0/40、历史全部 claimCitationBinding=UNKNOWN、原结果 SHA `ba267e58263b1de8efa7b9f8656ac6045c0a8a0804b0a857a880c803e727ef59` 均保持。新轮不得补改历史；#50/#51 未合并草稿、#52 已关闭未合并，#53 继续草稿目标 develop；不合并、部署或自动启动新轮。
+
+## 后续离线费用核查与执行审查
+
+所有者要求继续后，已完成[执行准备](claim-citation-execution-preparation.md)：固定官方 tokenizer/配置/参考源码的 SHA 只读核查，确认参考字节 BPE 与 80 字节非思考前缀，但托管 API 等价性、JSON mode framing 仍未证明。原计划及 payload SHA 保留。按官方完整上下文回退预留为每次 ¥2.105344、40 次 ¥84.213760，超过拟定 ¥2.00；新 preparation scope `b11957ebaedeb61e4383fa7bf634be923d354cdfcec07f798a6bfa878f9efd7b` 保持 BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED，不批准增加预算。默认关闭门禁和 HTTP 政策仅经内存 Stub 演练，评审环境仍须所有者确认。不能把原 ¥1.397304 估算称为现已证明的托管费用上界。

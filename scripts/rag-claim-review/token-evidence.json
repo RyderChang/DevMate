@@ -1,0 +1,38 @@
+{
+  "version": "claim-token-evidence-v1",
+  "checkedDate": "2026-10-12",
+  "revision": "2cba9e42aa026125f3ed06c6d98c1db82f7ca027",
+  "sources": [
+    {
+      "path": "config.json",
+      "sha256": "8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/2cba9e42aa026125f3ed06c6d98c1db82f7ca027/config.json"
+    },
+    {
+      "path": "tokenizer.json",
+      "sha256": "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/2cba9e42aa026125f3ed06c6d98c1db82f7ca027/tokenizer.json"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "sha256": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/2cba9e42aa026125f3ed06c6d98c1db82f7ca027/tokenizer_config.json"
+    },
+    {
+      "path": "encoding.py",
+      "sha256": "502bdaec8a3fd88ebc24c4721a7038fbe42f2063c664638127056107920035c1",
+      "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/2cba9e42aa026125f3ed06c6d98c1db82f7ca027/encoding.py"
+    }
+  ],
+  "profile": {
+    "byteAlphabetCoverage": 256,
+    "normalizerExpands": false,
+    "prefixSpaceAdded": false,
+    "textTokenUpperBound": "UTF-8 content bytes",
+    "referenceChatFrameBytes": 80,
+    "contextTokens": 1048576,
+    "sourceExecuted": false,
+    "hostedApiEquivalence": "UNPROVEN",
+    "hostedJsonModeFraming": "UNPROVEN"
+  }
+}

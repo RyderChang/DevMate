@@ -159,3 +159,22 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 没有新增 UI 控件，此轮不重新截图窗口；原可见验收仍仅是代理执行的合成测试，不能作为真人评审。完整 Foundation 回归以本轮发布后新头 CI 为准。未完成：输入费用上界证明、独立真实授权/传输治理、本机不录制环境确认与所有者逐断言评审。合并、部署与自动启动新轮均未实施。
 
 本轮默认公开源预检 PASS、paidRequests=0；完整计划预检精确复算 40 个 payload 并返回上述 scope、NOT_GRANTED、paidRequests=0。`node scripts/check-docs.mjs --format-changed origin/develop` 检查 85 份 Markdown、390 个相对链接及格式通过；冻结 JSON/工作流 Prettier 与 Git 空白检查通过。
+
+## 2026-10-12：费用证据与关闭执行准备
+
+从干净 9673b39 继续同分支/#53。所有者的一般继续指令仅用于离线下一步，真实模型调用 0 次。固定官方 V4.1 修订四份公开 JSON/参考源码已在本机下载并逐 SHA 核对，仅按 JSON/AST 数据读取，未执行源码、安装 tokenizer、下载模型权重或运行模型。已确认参考 256 字节 BPE 覆盖、空 normalizer、无额外 BOS/EOS、1048576 上下文与 80 字节非思考文本前缀；托管 API 等价性及 JSON mode framing 仍 UNPROVEN。证据规范 SHA 为 a7bdc556b1ae31ecbae157182e5d54e9510cf85ba10e40330b4ac85b38578173；完整[执行准备](../development/claim-citation-execution-preparation.md)明确本机来源复现与 CI 固定摘要验证的区别。
+
+原估算计划、40 个 payload/组序、模型/v1/1024 输出、40 Chat / 0 Embedding、拟定 ¥2.00 cap 均未变。按官方完整上下文回退，每次保守预留 ¥2.105344、40 次 ¥84.213760，缺口 ¥82.213760；未增加预算、减题或用折扣填补。新 preparation SHA b11957ebaedeb61e4383fa7bf634be923d354cdfcec07f798a6bfa878f9efd7b，保持 BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/liveEnabled=false。
+
+新增 execution.py/token_evidence.py、两份证据/审查 JSON、test_execution.py、执行准备说明；更新任务书、原计划说明、工具 README、验收及 CI。live 门禁在网络/密钥/次数前固定拒绝；HTTP 只通过精确 MemoryHttpStub 模拟，没有 HTTPS 客户端或有效真实授权，也不替代已有排他 Stub 账本或宣称真实 fsync/跨进程锁已完成。真人与录制环境仍待所有者确认。
+
+实际验证：
+
+- bundled Python 3.12.14、JAVA_HOME=本机 JDK21、TEMP/TMP=仓库忽略目录：`-B -m unittest discover -s scripts/rag-claim-review -p 'test_execution.py' -v`，19 项通过。首次一项测试把内层 JSON 的转义串直接与 Unicode 正文比较而失败，改为测试解析合成内层 answer 的精确值后通过；没有修改生产 JSON 校验或降低断言。
+- 新回归覆盖：40 次上下文保守费用/原 cap 与 payload 保持、证据 provenance/hash、输入边界及参考 profile 负例、环境状态不代签、默认 live 与批准环境变量拒绝/零 socket 与密钥访问、摘要漂移、未知模拟保存确认、同对象配对/复制/篡改、3xx/错误体不读/不跟随、timeout/disconnect/interrupt 无重试、全调用 deadline、大小/编码/mediaType/UTF-8 拒绝、输入/输出/费用超界保留 usage、provider 失败保留 usage、非 Stub 类型拒绝、stdout/stderr 哨兵不泄漏。
+- `-B scripts/rag-claim-review/token_evidence.py`：四个本机官方文件重算 SHA 与 profile 摘要完全一致，TOKEN_REFERENCE_PASS、hostedApiEquivalence=UNPROVEN、paidRequests=0。CI 不下载、不执行这四个文件，不宣称重算过完整官方 tokenizer。
+- `-B scripts/rag-claim-review/execution.py`：新 preparation 完全复算，准确输出 reserve=84213760/cap=2000000/shortfall=82213760 micros，NOT_GRANTED、ownerEnvironment=UNCONFIRMED、paidRequests=0。
+
+完整 Python 回归、公开源/原计划预检、文档/空白检查与本轮新头 CI 在提交前后分别核验，不沿用旧头成功结论。生产源码、模板、校验器、依赖、数据库与原历史文件不改；真人语义评审、生产采纳、付费请求、合并及部署未实施。
+
+本轮全部 `test_*.py` 共 86 项通过，零失败/错误/跳过（原 67 + 新 19），耗时 83.087 秒。默认七源/50候选预检和原 40 payload 计划复算仍通过；执行准备预检成功复算预算不足并拒绝授权，不将审查成功解释为可启动。文档检查为 86 份 Markdown、399 个相对链接及格式通过；两份新增 JSON、工作流 Prettier 和 Git 空白检查通过。完整 Maven/Frontend/数据库验证由发布后的新头 CI 执行，本机复用原已编译生产校验桥，不宣称此轮重跑完整 Maven。

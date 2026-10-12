@@ -60,3 +60,11 @@ python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 `StubTransport(None, envelope=<合成 bytes>)` 保持精确 Stub 类型与 OFFLINE_STUB 限制。发送前固定 payload/plan SHA 随 Ticket 和 UNKNOWN 账本保存；信封同请求配对通过后提取合法 usage 并先保存，再核验提供商模型/choice/finish/message 和生产 JSON。实际引用 ID 由同信封经真实生产校验器得到，不使用另一份调用的 ID。缺失 usage 或提供商异常停止；未知、费用/输入/输出超界、保存失败与中断仍不重试。该入口没有 HTTP 客户端，不可用于付费调用。
 
 本机受限环境中若默认临时目录不可写，先将 TEMP/TMP 指向仓库忽略目录 `tmp/dev-034/test-temp`，并使用可用的 Python 3.10+（含 Tk）与 JDK 21；不能通过跳过文件/窗口测试解决环境问题。
+
+## 费用证据与关闭执行审查
+
+`python -B scripts/rag-claim-review/execution.py` 输出固定 execution preparation SHA、预算不足、环境未确认、NOT_GRANTED 与 paidRequests=0。原 ¥1.397304 仍是输入假设下的估算；官方完整上下文回退预留为 40 次 ¥84.213760，超过拟定 ¥2.00 cap，未提高额度或改变题组。固定官方参考 tokenizer/源码的只读证据、机器审查和政策演练见[执行准备](../../docs/development/claim-citation-execution-preparation.md)、[token-evidence.json](token-evidence.json)、[execution-preparation.json](execution-preparation.json)。
+
+`token_evidence.py` 是可选本机复现：需要四份固定官方文件已放在忽略目录 tmp/dev-034/token-evidence；仅解析 JSON/AST 字面量、重算 SHA 并比对摘要，不 import/exec 下载源码、不自动下载或安装 tokenizer。CI 使用固定摘要和合成 profile 测试，不重新下载官方文件，也不冒称重算过完整 tokenizer。
+
+`require_live_ready()` 与 `OfflineHttpHarness.live()` 固定拒绝，环境变量和 JSON 编辑不能开启。MemoryHttpStub 只模拟同请求 HTTP 状态、deadline、读入上界与 usage 保留；没有 socket、密钥、HTTPS 客户端或有效真实授权，不能证明真实 TLS/代理/网络验收、fsync 或跨进程锁。现有 OfflineAdapter 的精确 Stub 类型与排他账本限制保留。真人评审、无录制桌面及系统捕获限制仍需所有者确认；本轮不代签、不扫描或关闭私人软件。
