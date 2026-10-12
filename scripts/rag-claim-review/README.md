@@ -1,6 +1,6 @@
 # 瞬时逐断言评审工具
 
-DEV-034 的本机离线工具，只有公开来源预检、合成演示和内存调用接口；没有模型客户端、密钥参数、真实调用开关、正文文件读取入口或历史恢复功能。规则与限制见[核验流程](../../docs/development/claim-citation-review.md)。
+DEV-034 的本机离线工具，只有公开来源预检、合成演示和内存调用接口；没有 HTTP 模型客户端、密钥参数、真实调用开关、正文文件读取入口或历史恢复功能；已增加仅经 Stub 注入的提供商信封解码边界。规则与限制见[核验流程](../../docs/development/claim-citation-review.md)。
 
 ## 离线使用
 
@@ -25,7 +25,7 @@ python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 
 ## 离线调用适配与授权账本模拟
 
-`adapter.py` 提供 `StubGrant`、`StubTransport`、`ProductionValidator` 与 `OfflineAdapter.review(context, transport)`。入口只接受精确的 Stub 类型和固定 `OFFLINE_STUB` 授权；LIVE、DEV-032 或任意其他模式均拒绝。没有 HTTP 客户端、提供商信封解码、凭据读取或真实调用开关，不能用 Stub 授权发送网络请求。未来提供商驱动与真实授权必须另行审查。
+`adapter.py` 提供 `StubGrant`、`StubTransport`、`ProductionValidator` 与 `OfflineAdapter.review(context, transport)`。入口只接受精确的 Stub 类型和固定 `OFFLINE_STUB` 授权；LIVE、DEV-032 或任意其他模式均拒绝。没有 HTTP 客户端、凭据读取或真实调用开关，不能用 Stub 授权发送网络请求。`provider.py` 只解码同次内存 Stub 信封。未来提供商驱动与真实授权必须另行审查。
 
 `context` 由 `load_context(..., returned=[])` 创建，必须是本夹具的 FROZEN 上下文。适配先校验题干、题号、组别、scope、全部来源和原五候选，再创建只用于该次请求的内存 Ticket。返回必须持有同一个 Ticket 对象；逐项比对 round/attempt 编号、题组、scope 与完整候选定位，复制出值相等的 Ticket 也不能冒充本次请求。之后将同一响应的合法 usage、生产校验结果和实际引用接入同一个 Session；引用数量/顺序、C 编号、source/chunk SHA、ordinal、字符与行定位及类型全部精确比对，布尔不能冒充整数。
 
@@ -45,10 +45,18 @@ python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 
 `review_transient(context, answer, receipt, directory)` 接收内存中的已解析答案，不接收原始提供商信封或正文路径；`receipt` 严格限定 `status`、`usage`（inputTokens/outputTokens/totalTokens 或 null）、`reservedMicros`（整数，百万分之一人民币元）。它先保存未知评审及用量，再打开窗口；返回脱敏凭据路径。FAILED/UNKNOWN 必须没有答案和返回引用，来源覆盖为 UNKNOWN；成功且明确无引用才为 NOT_COVERED。
 
-该底层接口自身不校验生产 JSON 合同、调用授权、余额或响应真实性；离线适配已用 Stub 验证这些边界，真实提供商驱动尚未接入，也没有新轮授权。`FROZEN` 仅表示来源 scope 已冻结，不自动证明内容来自真实模型；不能据凭据格式或合法 usage 认定实际调用/费用。旧轮额度、账单与 UNKNOWN 不改变。
+该底层接口自身不校验生产 JSON 合同、调用授权、余额或响应真实性；离线适配已用 Stub 验证这些边界，HTTP 真实传输与付费授权尚未接入。离线信封驱动与冻结计划见下文。`FROZEN` 仅表示来源 scope 已冻结，不自动证明内容来自真实模型；不能据凭据格式或合法 usage 认定实际调用/费用。旧轮额度、账单与 UNKNOWN 不改变。
 
 答案及源文只在 Session/窗口内存中驻留。接口结束会清理自身正文引用并销毁窗口；调用者必须清理自己持有的响应、答案与来源引用。窗口禁止复制/剪切/粘贴和选区导出，没有备注/截图/导出功能，但不控制操作系统换页、第三方录屏或物理内存擦除。
 
 记录白名单与闭合枚举校验在保存前再次执行；只保存断言编号与 Unicode 字符区间、事实判定、冻结证据定位、逐引用对应/绑定、完整性及独立弃答。校核源可只保存 source SHA 与行范围，引用关系另保存冻结 chunk SHA。未知键、非法 ID、布尔冒充整数、越界坐标与缺少全文检查都拒绝，错误不回显原值。
 
 原 DEV-032 正文仍不可恢复。离线适配完成后，新真实轮仍需独立次数、预算和外发范围授权；提议与剩余条件见[任务书](../../docs/tasks/DEV-034-claim-citation-review.md)。本工具不实施生产输出约束采纳、合并或部署。
+
+## 新轮冻结计划与提供商信封 Stub
+
+`python -B scripts/rag-claim-review/plan.py` 只重新生成并比较全部 40 个精确 payload，输出固定 scope SHA 与 paidRequests=0。模型为所有者确认的 `deepseek-flash`、非思考、输出 1024 tokens；正式高峰/缓存未命中价下，按字节加 framing 的保守假设预留 ¥1.397304。输入费用上界仍须在授权前核实；不是提供商账单硬保证。完整外发范围、四组配置、逐次 SHA/预留、官方价格来源与剩余条件见[新轮计划](../../docs/development/claim-citation-new-round-plan.md)及 [new-round-plan.json](new-round-plan.json)。
+
+`StubTransport(None, envelope=<合成 bytes>)` 保持精确 Stub 类型与 OFFLINE_STUB 限制。发送前固定 payload/plan SHA 随 Ticket 和 UNKNOWN 账本保存；信封同请求配对通过后提取合法 usage 并先保存，再核验提供商模型/choice/finish/message 和生产 JSON。实际引用 ID 由同信封经真实生产校验器得到，不使用另一份调用的 ID。缺失 usage 或提供商异常停止；未知、费用/输入/输出超界、保存失败与中断仍不重试。该入口没有 HTTP 客户端，不可用于付费调用。
+
+本机受限环境中若默认临时目录不可写，先将 TEMP/TMP 指向仓库忽略目录 `tmp/dev-034/test-temp`，并使用可用的 Python 3.10+（含 Tk）与 JDK 21；不能通过跳过文件/窗口测试解决环境问题。

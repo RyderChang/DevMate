@@ -1,6 +1,6 @@
 # 正文不落盘的逐断言引用核验流程
 
-日期：2026-10-11；离线调用适配更新于 2026-10-12。规范版本 `claim-review-v1`；任务见 [DEV-034](../tasks/DEV-034-claim-citation-review.md)，当前材料审查见[验收记录](../testing/claim-citation-review-acceptance.md)。已实现[离线全断言窗口、凭据校验器及 Stub 调用适配](../../scripts/rag-claim-review/README.md)，并用合成数据验证。**没有重新生成 DEV-032 答案，真实提供商驱动和新轮付费授权均未接入**。
+日期：2026-10-11；离线调用适配更新于 2026-10-12。规范版本 `claim-review-v1`；任务见 [DEV-034](../tasks/DEV-034-claim-citation-review.md)，当前材料审查见[验收记录](../testing/claim-citation-review-acceptance.md)。已实现[离线全断言窗口、凭据校验器及 Stub 调用适配](../../scripts/rag-claim-review/README.md)，并用合成数据验证。**没有重新生成 DEV-032 答案，HTTP 真实传输和新轮付费授权均未接入；离线信封驱动及[冻结计划](claim-citation-new-round-plan.md)已准备**。
 
 ## 评审对象与独立维度
 

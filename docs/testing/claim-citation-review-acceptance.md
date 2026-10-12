@@ -2,7 +2,7 @@
 
 日期：2026-10-11。基线 `1a6dab6c67a7a200c08e78e975b4d3be5e0f1e93`；首阶段文档分支 `docs/dev-034-claim-citation-review`，继续实现分支 `chore/dev-034-transient-claim-review`。[任务书](../tasks/DEV-034-claim-citation-review.md)与[核验流程](../development/claim-citation-review.md)分别定义范围和后续评审口径。
 
-**已交付流程规范，审查全部 40 个题组材料，完成离线全断言评审工具及 Stub 调用适配；未完成原 40 份回答的逐断言核验。**正文没有保留，无法恢复全部核心/额外断言及引用位置。`claimCitationBinding` 仍为 `UNKNOWN`，不能报告全题事实或绑定通过。工具只用合成回答验证，真实提供商驱动尚未接入；没有新增真实模型请求。
+**已交付流程规范，审查全部 40 个题组材料，完成离线全断言评审工具及 Stub 调用适配；未完成原 40 份回答的逐断言核验。**正文没有保留，无法恢复全部核心/额外断言及引用位置。`claimCitationBinding` 仍为 `UNKNOWN`，不能报告全题事实或绑定通过。工具只用合成回答验证，HTTP 真实传输尚未接入；已准备仅限 Stub 的信封驱动与冻结计划，没有新增真实模型请求。
 
 ## 冻结输入与只读核验
 
@@ -142,3 +142,20 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 可见验收由代理使用 computer-use 完成，所有者尚未执行真人语义验收：`--stub-demo` 的合成 Q1/baseline 经过生产校验桥显示于本机可见 Tk 窗口，OFFLINE_STUB/题组/scope/sample、全文与行号、五个 C 对应区间、两行全引用相关性、核心与全篇检查及提交/中断控件均完整可见。实际拖选合成答案，添加后显示半开 Unicode 定位 `[0,10)`；未完成提交显示 `INCOMPLETE_REVIEW`，有选区草稿时显示 `UNSAVED_DRAFT`。点击中断后进程退出且窗口消失；凭据为 `INTERRUPTED`、`claimCount=null`、`claims=[]`，保留模拟 usage 10/5/15 与 1000 micros 预留，账本停止且不可再发。只查看合成正文/公开源，没有截图真实正文，也不将可见检查称为真实答案已评审。
 
 本轮新增真实 Embedding/Chat **0 次**。原账单仍为所有者确认 **¥0.20、40 次、156015 tokens**；原完整评审 **0/40**，所有历史 `claimCitationBinding` **UNKNOWN**。新增可审查的新轮提议写在任务书中，尚未授权/执行：最多 40 Chat、0 Embedding、总上限 ¥2.00，外发限定每题公开题干/原五候选/固定模板。剩余是新真实驱动与信封/usage 配对的审查、精确 payload/正式价格/总预留冻结、所有者独立授权及本机人工评审安排；本次不实现真实调用或生产采纳、不合并或部署。
+
+## 2026-10-12：提供商信封离线回归与冻结计划
+
+复用干净起点 dbe2a25 与 #53。所有者确认仅将离线计划模型改为 deepseek-flash、关闭思考；新增真实 Embedding/Chat 仍为 0，没有付费授权、真人语义评审或生产采纳。最新[冻结计划](../development/claim-citation-new-round-plan.md)和机器计划的完整 scope 为 `c5f81231b9b79aeffa7db3bac5f9fccf19a883705c2e928d6eafbf0c180bb750`，40 个精确 payload SHA、四组配置、固定输出 1024 与逐次/总预留均可复算。官方人民币高峰/缓存未命中报价已核验；¥1.397304 是字节加 framing 假设下的预留，输入上界尚未得到提供商合同证明，机器状态为 BLOCKED_INPUT_BOUND_PROOF，不能直接启动。
+
+新增文件：生产 v1 请求构建测试桥、公开完整请求元数据夹具、plan.py/new-round-plan.json、provider.py/test_provider.py 和新轮计划文档。adapter.py 增加同内存信封、payload/plan SHA 与 usage 交接；Foundation 增加冻结计划预检。仍严格限定精确 Stub 类型，不添加 HTTP 客户端、凭据读取或 live 参数；生产源码、Schema、依赖、数据库及默认配置未改。
+
+实际验证：
+
+- JDK 21 的离线 Maven：`./devmate-server/mvnw.cmd -B -o -f devmate-server/pom.xml '-Dtest=RagOutputDiagnosticTest' test dependency:build-classpath '-Dmdep.outputFile=../tmp/dev-034/validator-classpath.txt'`，新请求桥编译成功，生产诊断 2 项通过，零失败/错误/跳过。
+- 本机 PATH 的 conda python.exe 无法找到真实位置，改用已配置的 bundled Python 3.12.14（含 Tk），没有安装依赖或升级版本。默认临时目录在 Windows 沙箱中不可写，最初测试因此失败；设置 TEMP/TMP 为仓库忽略目录 tmp/dev-034/test-temp 后重跑。命令为该 Python 执行 `-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'`，最终 67 项通过，零失败/错误/跳过（原 49 + 新 18 项）；最后运行耗时 80.824 秒。
+- 新回归覆盖：40 个请求重算、跨 Java 进程稳定规范序列化、四组 v1 配置、plan/题干漂移、发送前未知计划绑定、同信封答案/usage/实际 C2,C1 顺序、复制/篡改 Ticket 与替换信封、模型/finish/role/content/工具/隐藏思考/缓存/choice 错误、缺失/非法 usage、输入/输出超界保留 usage、生产 JSON_SYNTAX、非法编码/大小/重复键/流式数据、正文/来源/异常不进入终端和凭据。
+- 原评审 manifest、完整公开请求夹具及本机原结果 SHA 只读重算，与交接的三个 SHA 完全一致；历史文件不改写，原 0/40、全部 UNKNOWN、账单 ¥0.20 / 40 次 / 156015 tokens 均保持。不读取或展示历史正文，不应用 #51。
+
+没有新增 UI 控件，此轮不重新截图窗口；原可见验收仍仅是代理执行的合成测试，不能作为真人评审。完整 Foundation 回归以本轮发布后新头 CI 为准。未完成：输入费用上界证明、独立真实授权/传输治理、本机不录制环境确认与所有者逐断言评审。合并、部署与自动启动新轮均未实施。
+
+本轮默认公开源预检 PASS、paidRequests=0；完整计划预检精确复算 40 个 payload 并返回上述 scope、NOT_GRANTED、paidRequests=0。`node scripts/check-docs.mjs --format-changed origin/develop` 检查 85 份 Markdown、390 个相对链接及格式通过；冻结 JSON/工作流 Prettier 与 Git 空白检查通过。

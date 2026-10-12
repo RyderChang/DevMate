@@ -17,7 +17,8 @@ from review import (ARMS, LOCATORS, MANIFEST_SHA, AtomicSink, ReviewError, Sessi
 ISSUES = ('JSON_SIZE', 'JSON_DUPLICATE_KEY', 'JSON_SYNTAX', 'JSON_TRAILING',
           'JSON_SHAPE', 'ANSWER_CONTENT', 'CITATION_IDS', 'CITATION_MARKERS')
 FAILURES = ISSUES + ('NONE', 'PAIRING_REJECTED', 'PROVIDER_FAILED', 'RESULT_UNKNOWN',
-                     'INTERRUPTED', 'VALIDATOR_UNAVAILABLE', 'SAVE_FAILED', 'USAGE_EXCEEDED')
+                     'INTERRUPTED', 'VALIDATOR_UNAVAILABLE', 'SAVE_FAILED', 'USAGE_EXCEEDED',
+                     'PROVIDER_ENVELOPE', 'PROVIDER_USAGE', 'PROVIDER_MODEL', 'PROVIDER_FINISH', 'PROVIDER_CONTENT')
 # Fixed simulated rates for offline ledger tests; never a current provider price quote.
 STUB_INPUT_MICROS = 2
 STUB_OUTPUT_MICROS = 8
@@ -59,6 +60,8 @@ class Ticket:
     scope: str
     # Tuple of fixed immutable candidate locators; no source/question body here.
     candidates: tuple = field(repr=False)
+    payload_sha: str = ''
+    plan_scope: str = ''
 
 
 @dataclass(repr=False)
@@ -68,23 +71,29 @@ class StubReply:
     usage: object = field(repr=False)
     raw: object = field(repr=False)
     citations: object = field(repr=False)
+    envelope: object = field(default=None, repr=False)
 
     def clear(self):
         self.raw = None
         self.citations = None
         self.usage = None
         self.ticket = None
+        self.envelope = None
 
 
 class StubTransport:
     """A deterministic memory-only response; never accepts URLs, keys or clients."""
-    def __init__(self, raw, ids=('C1',), usage=None, status='SUCCEEDED'):
+    def __init__(self, raw, ids=('C1',), usage=None, status='SUCCEEDED', *, envelope=None):
         self.raw, self.ids, self.status = raw, tuple(ids), status
+        require(envelope is None or (type(envelope) is bytes and raw is None), 'OFFLINE_ONLY')
+        self.envelope = envelope
         self.usage = usage if usage is not None else dict(inputTokens=10, outputTokens=5, totalTokens=15)
         self.sent = 0
 
     def send(self, ticket):
         self.sent += 1
+        if self.envelope is not None:
+            return StubReply(ticket, 'UNKNOWN', None, None, [], self.envelope)
         citations = [{'citationId': cid, 'source': dict(zip(LOCATORS, ticket.candidates[int(cid[1]) - 1]))}
                      for cid in self.ids] if self.status == 'SUCCEEDED' else []
         return StubReply(ticket, self.status, self.usage,
@@ -92,6 +101,7 @@ class StubTransport:
 
     def clear(self):
         self.raw = None; self.usage = None; self.ids = ()
+        self.envelope = None
 
 
 class ProductionValidator:
@@ -163,10 +173,17 @@ class OfflineAdapter:
         require(type(self.stopped) is bool)
         rows = []
         for row in self.rows:
-            keys(row, ('attemptId', 'sampleId', 'question', 'arm', 'receipt', 'code'))
+            keys(row, ('attemptId', 'sampleId', 'question', 'arm', 'receipt', 'code', 'payloadSha256', 'planScopeSha256'))
             local_id(row['attemptId']); local_id(row['sampleId'])
             integer(row['question'], 1, 10); choice(row['arm'], ARMS)
             require((row['question'], row['arm']) in self.grant.samples)
+            if row['planScopeSha256']:
+                from plan import frozen_plan
+                plan, sha = frozen_plan()
+                expected = next(r for r in plan['samples'] if (r['question'], r['arm']) == (row['question'], row['arm']))
+                require(row['planScopeSha256'] == sha and row['payloadSha256'] == expected['payloadSha256'])
+            else:
+                require(row['planScopeSha256'] == '' and row['payloadSha256'] == '')
             choice(row['code'], FAILURES)
             receipt = safe_receipt(row['receipt'])
             require(receipt['reservedMicros'] == self.grant.reserve_micros)
@@ -198,6 +215,7 @@ class OfflineAdapter:
 
     def review(self, context, transport):
         session = sink = reply = parsed = ticket = None
+        decoded = prepared = envelope_bytes = None
         row = None
         try:
             require(type(transport) is StubTransport, 'OFFLINE_ONLY')
@@ -209,29 +227,61 @@ class OfflineAdapter:
             require(len(self.rows) < self.grant.calls
                     and (len(self.rows) + 1) * self.grant.reserve_micros <= self.grant.cap_micros
                     and all((r['question'], r['arm']) != sample for r in self.rows), 'QUOTA_EXHAUSTED')
+            payload_sha = plan_scope = ''
+            input_rate, output_rate = STUB_INPUT_MICROS, STUB_OUTPUT_MICROS
+            if transport.envelope is not None:
+                envelope_bytes = transport.envelope
+                from plan import prepare, frozen_plan
+                plan, plan_scope = frozen_plan()
+                prepared, bounds = prepare(context)
+                require(bounds == next(r for r in plan['samples'] if (r['question'], r['arm']) == sample),
+                        'PAIRING_REJECTED')
+                payload_sha = bounds['payloadSha256']
+                input_rate = plan['price']['inputMissMicrosPerToken']
+                output_rate = plan['price']['outputMicrosPerToken']
+                require(self.grant.reserve_micros >= bounds['reservedMicros'], 'QUOTA_EXHAUSTED')
             ticket = Ticket(uuid.uuid4().hex, self.grant.round_id, *sample, context.scope,
-                            tuple(tuple(c[k] for k in LOCATORS) for c in context.chunks))
+                            tuple(tuple(c[k] for k in LOCATORS) for c in context.chunks), payload_sha, plan_scope)
             receipt = dict(status='UNKNOWN', usage=None, reservedMicros=self.grant.reserve_micros)
             session = Session(replace(context, mode='OFFLINE_STUB'), None, receipt)
             sink = AtomicSink(self.directory, session)
             row = dict(attemptId=ticket.attempt_id, sampleId=session.sample, question=sample[0],
-                       arm=sample[1], receipt=receipt, code='RESULT_UNKNOWN')
+                       arm=sample[1], receipt=receipt, code='RESULT_UNKNOWN',
+                       payloadSha256=payload_sha, planScopeSha256=plan_scope)
             self.rows.append(row)
             self._save(); sink.save(session)  # Both durable unknowns BEFORE any send.
             reply = transport.send(ticket)  # Exactly once; no retry even on BaseException.
             require(type(reply) is StubReply, 'PAIRING_REJECTED')
             require(reply.ticket is ticket
-                    and (ticket.attempt_id, ticket.round_id, ticket.question, ticket.arm, ticket.scope, ticket.candidates)
+                    and (ticket.attempt_id, ticket.round_id, ticket.question, ticket.arm, ticket.scope, ticket.candidates,
+                         ticket.payload_sha, ticket.plan_scope)
                     == (row['attemptId'], self.grant.round_id, *sample, context.scope,
-                        tuple(tuple(c[k] for k in LOCATORS) for c in context.chunks)), 'PAIRING_REJECTED')
+                        tuple(tuple(c[k] for k in LOCATORS) for c in context.chunks), payload_sha, plan_scope), 'PAIRING_REJECTED')
+            if payload_sha:
+                from provider import decode
+                require(reply.raw is None and reply.usage is None and reply.citations == []
+                        and reply.envelope is envelope_bytes and transport.envelope is envelope_bytes,
+                        'PAIRING_REJECTED')
+                decoded = decode(reply.envelope)
+                reply.usage, reply.raw = decoded.usage, decoded.raw
+                reply.status = 'SUCCEEDED' if decoded.code == 'NONE' else 'FAILED'
+            else:
+                require(reply.envelope is None, 'PAIRING_REJECTED')
             usage = safe_receipt(dict(status='UNKNOWN', usage=reply.usage,
                                       reservedMicros=self.grant.reserve_micros))['usage']
             row['receipt'] = dict(status='UNKNOWN', usage=usage, reservedMicros=self.grant.reserve_micros)
             session.receipt = row['receipt']
             self._save(); sink.save(session)  # Preserve usage even if subsequent pairing/JSON fails.
+            if decoded is not None and decoded.code != 'NONE':
+                row['receipt']['status'] = 'FAILED'
+                raise ReviewError(decoded.code)
+            if decoded is not None:
+                require(usage is not None and usage['inputTokens'] <= bounds['inputTokenBound']
+                        and usage['outputTokens'] <= bounds['maxOutputTokens'], 'USAGE_EXCEEDED')
             choice(reply.status, ('SUCCEEDED', 'FAILED', 'UNKNOWN'))
-            if usage and (usage['inputTokens'] * STUB_INPUT_MICROS
-                          + usage['outputTokens'] * STUB_OUTPUT_MICROS) > self.grant.reserve_micros:
+            require(reply.status != 'SUCCEEDED' or usage is not None, 'PROVIDER_USAGE')
+            if usage and (usage['inputTokens'] * input_rate
+                          + usage['outputTokens'] * output_rate) > self.grant.reserve_micros:
                 raise ReviewError('USAGE_EXCEEDED')
             if reply.status != 'SUCCEEDED':
                 require(reply.raw is None and reply.citations == [], 'PAIRING_REJECTED')
@@ -244,6 +294,10 @@ class OfflineAdapter:
                     row['receipt']['status'] = 'FAILED'; row['code'] = parsed['code']
                     if parsed['code'] == 'VALIDATOR_UNAVAILABLE': self.stopped = True
                 else:
+                    if decoded is not None:
+                        # Only ids accepted from THIS envelope by the real production validator.
+                        reply.citations = [{'citationId': cid, 'source': dict(zip(LOCATORS,
+                            ticket.candidates[int(cid[1]) - 1]))} for cid in parsed['citationIds']]
                     require(type(reply.citations) is list and len(reply.citations) == len(parsed['citationIds']),
                             'PAIRING_REJECTED')
                     for actual, cid in zip(reply.citations, parsed['citationIds']):
@@ -281,4 +335,5 @@ class OfflineAdapter:
             if session is not None: session.clear()
             if type(reply) is StubReply: reply.clear()
             if type(transport) is StubTransport: transport.clear()
-            context = reply = parsed = ticket = None
+            if decoded is not None: decoded.raw = decoded.usage = None
+            context = reply = parsed = ticket = prepared = decoded = envelope_bytes = None
