@@ -28,6 +28,8 @@ class ReviewWindow:
         self.ranges, self.checks, self.links = [], [], []
         self.marker = None
         self.message = tk.StringVar(value='逐项登记后，检查全文、核心遗漏和所有返回引用。')
+        ttk.Label(self.root, text=f'Q{session.context.question} · {session.context.arm} · {session.context.mode} · '
+                  f'scope {session.context.scope[:12]} · sample {session.sample[:12]}').pack(anchor='w')
         ttk.Label(self.root, text=session.context.prompt, wraplength=1050).pack(anchor='w')
         location = lambda c: next(s for s, (h, _) in session.context.sources.items() if h == c['sourceSha256'])
         ttk.Label(self.root, text='核心证据：' + '; '.join(f'{e} {location(t)}:{t["startLine"]}–{t["endLine"]}'

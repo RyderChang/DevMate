@@ -2,7 +2,7 @@
 
 日期：2026-10-11。基线 `1a6dab6c67a7a200c08e78e975b4d3be5e0f1e93`；首阶段文档分支 `docs/dev-034-claim-citation-review`，继续实现分支 `chore/dev-034-transient-claim-review`。[任务书](../tasks/DEV-034-claim-citation-review.md)与[核验流程](../development/claim-citation-review.md)分别定义范围和后续评审口径。
 
-**已交付流程规范，审查全部 40 个题组材料，并在继续阶段实现离线全断言评审工具；未完成原 40 份回答的逐断言核验。**正文没有保留，无法恢复全部核心/额外断言及引用位置。`claimCitationBinding` 仍为 `UNKNOWN`，不能报告全题事实或绑定通过。工具只用合成回答验证，尚未接入真实调用适配层；没有新增真实模型请求。
+**已交付流程规范，审查全部 40 个题组材料，完成离线全断言评审工具及 Stub 调用适配；未完成原 40 份回答的逐断言核验。**正文没有保留，无法恢复全部核心/额外断言及引用位置。`claimCitationBinding` 仍为 `UNKNOWN`，不能报告全题事实或绑定通过。工具只用合成回答验证，真实提供商驱动尚未接入；没有新增真实模型请求。
 
 ## 冻结输入与只读核验
 
@@ -106,4 +106,39 @@ Windows Python（本机 miniconda，TEMP/TMP 指向忽略目录 `tmp/dev-034/tes
 
 应用层不落盘与日志边界通过合成测试；不承诺操作系统换页、第三方录屏或物理擦除。保存完成后原文销毁，凭据不能让他人恢复断言；需要独立复核时须在同一内存生命周期中另行安排。目前工具为单评审者窗口，没有实现双人并行评审。
 
-已完成离线工具；剩余是后续真实调用适配层的授权/响应配对验证，以及取得独立次数、预算、外发范围授权后的新样本逐断言评审。原 40 份回答依旧不可恢复，完整评审仍为 0/40。没有进入生产输出约束采纳。回滚撤回工具、离线 CI 步骤与本任务文档，不改原文件、账单或生产行为。
+上述为首轮离线工具验收时的状态；随后调用适配验证见下节。原 40 份回答依旧不可恢复，完整评审仍为 0/40。没有进入生产输出约束采纳。回滚撤回工具、测试桥、离线 CI 步骤与本任务文档，不改原文件、账单或生产行为。
+
+## 2026-10-12：离线调用适配与合成可见窗口
+
+本轮复用 `chore/dev-034-transient-claim-review` 与草稿 [PR #53](https://github.com/RyderChang/DevMate/pull/53)，开始 HEAD 为 `c67861d4453023ff5875264079a68c5915e23dff`。中断前改动保留并续做；#50/#51 仍为未合并草稿，#52 关闭但未合并。开始头的 [Foundation CI](https://github.com/RyderChang/DevMate/actions/runs/38144859528) 成功不代表本轮新改动已经通过 CI；本轮当前头状态另行核验。
+
+交付文件与行为：
+
+- `adapter.py`：限定 OFFLINE_STUB 授权与 Stub 类型，按固定题组/scope 预留次数和模拟费用；发送前保存未知账本/凭据，同题组不可补发，同目录同 round 不可恢复。返回内存 Ticket 的对象身份及 round/attempt/题组/scope/候选全部逐项核对，之后接入同响应 usage 与生产校验结果。实际 C 顺序/数量与每个 source/chunk SHA、ordinal、字符/行定位和类型必须精确匹配，拒绝跨请求或候选混用。
+- `ClaimReviewValidationBridge.java`：测试源中的内存管道桥直接复用生产 `RagOutputValidator`；生产代码、JSON 合同及模板未变，Python 没有另一套输出校验。正文只通过被捕获的 stdin/stdout 管道流转，不进入 argv、终端或文件；stderr/异常不回显，禁止 JVM 核心转储。
+- `review.py`、`window.py`、`run.py`：固定题干也须匹配；新增 OFFLINE_STUB 模式与合成 reviewer，窗口显示题组/mode/scope/sample；新增 `--stub-demo` 合成全链路入口，默认仍预检，没有网络入口或密钥参数。
+- `test_adapter.py` 与 Foundation 工作流：增加真实 Java 校验器 → Stub 配对/账本 → Tk → 脱敏凭据的回归。测试移至 Backend 完整验证之后，复用已编译类并生成 classpath，仍用系统 Python/Tk/Xvfb；没有新增生产依赖或数据库改动。
+
+实际执行（JDK 21 路径为本机安装）：
+
+```powershell
+$env:JAVA_HOME = 'C:/Program Files/Java/jdk-21'
+$env:PATH = "$env:JAVA_HOME/bin;$env:PATH"
+./devmate-server/mvnw.cmd -B -o -f devmate-server/pom.xml '-Dtest=RagOutputDiagnosticTest' test dependency:build-classpath '-Dmdep.outputFile=../tmp/dev-034/validator-classpath.txt'
+New-Item -ItemType Directory -Force tmp/dev-034/test-temp | Out-Null
+$env:TEMP = (Resolve-Path tmp/dev-034/test-temp).Path
+$env:TMP = $env:TEMP
+python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
+python -B scripts/rag-claim-review/run.py
+python -B scripts/rag-claim-review/run.py --stub-demo
+```
+
+Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。生产 Java `RagOutputDiagnosticTest` **2 项通过，零失败/错误/跳过**，离线 Maven 构建成功。八类生产结构失败、所有请求/引用定位字段错配、复制 Ticket、篡改 Ticket、布尔定位、异题候选、题干漂移、非法授权、次数/费用耗尽、已完成同题重发、排他 round 创建、发送前未知预留、失败/未知 usage、超预留、回包保存失败、窗口/传输中断、桥故障及非 Stub 类型均覆盖。正文/源摘录与异常哨兵的 stdout、stderr、日志及临时文件检查通过，调用结束 Stub/Session 内容引用清理通过。该结果不证明跨机器真实授权治理、真实提供商响应或人工语义质量。
+
+默认预检 **PASS**：七源、50 候选 SHA、十题四组不变，`paidRequests=0`。本轮只读重算原脱敏结果 SHA 仍为 `ba267e58263b1de8efa7b9f8656ac6045c0a8a0804b0a857a880c803e727ef59`，评审 manifest SHA 仍为 `2ff08dc4060f74fe18cc10112b9988e3fa4bf2c11439699407b65ba3b2f5a506`；没有使用 #51 的 Q4 新候选，也未重新评判任何历史样本。
+
+`node scripts/check-docs.mjs --format-changed origin/develop`：84 份 Markdown、383 个相对链接及改动格式通过；工作流 Prettier 和 `git diff --check` 通过。本机未运行后端/前端/数据库完整套件，完整 Foundation 回归由推送后 CI 核验，不用开始头 CI 的成功替代新提交结果。
+
+可见验收由代理使用 computer-use 完成，所有者尚未执行真人语义验收：`--stub-demo` 的合成 Q1/baseline 经过生产校验桥显示于本机可见 Tk 窗口，OFFLINE_STUB/题组/scope/sample、全文与行号、五个 C 对应区间、两行全引用相关性、核心与全篇检查及提交/中断控件均完整可见。实际拖选合成答案，添加后显示半开 Unicode 定位 `[0,10)`；未完成提交显示 `INCOMPLETE_REVIEW`，有选区草稿时显示 `UNSAVED_DRAFT`。点击中断后进程退出且窗口消失；凭据为 `INTERRUPTED`、`claimCount=null`、`claims=[]`，保留模拟 usage 10/5/15 与 1000 micros 预留，账本停止且不可再发。只查看合成正文/公开源，没有截图真实正文，也不将可见检查称为真实答案已评审。
+
+本轮新增真实 Embedding/Chat **0 次**。原账单仍为所有者确认 **¥0.20、40 次、156015 tokens**；原完整评审 **0/40**，所有历史 `claimCitationBinding` **UNKNOWN**。新增可审查的新轮提议写在任务书中，尚未授权/执行：最多 40 Chat、0 Embedding、总上限 ¥2.00，外发限定每题公开题干/原五候选/固定模板。剩余是新真实驱动与信封/usage 配对的审查、精确 payload/正式价格/总预留冻结、所有者独立授权及本机人工评审安排；本次不实现真实调用或生产采纳、不合并或部署。

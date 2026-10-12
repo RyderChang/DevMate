@@ -154,8 +154,8 @@ def safe_receipt(receipt):
 def safe_context(context):
     require(type(context) is Context)
     integer(context.question, 1, 10); choice(context.arm, ARMS)
-    choice(context.mode, ('FROZEN', 'SYNTHETIC'))
-    require(context.scope == (MANIFEST_SHA if context.mode == 'FROZEN' else digest(b'claim-review-demo-v1')))
+    choice(context.mode, ('FROZEN', 'OFFLINE_STUB', 'SYNTHETIC'))
+    require(context.scope == (digest(b'claim-review-demo-v1') if context.mode == 'SYNTHETIC' else MANIFEST_SHA))
     require(len(context.chunks) == 5 and tuple(context.targets) == CORE[context.question])
     _returned(list(context.returned))
     require(bool(context.sources) and set(context.sources) <= {f'S{i}' for i in range(1, 8)})
@@ -178,13 +178,15 @@ def safe_context(context):
         integer(t['endLine'], first, len(text.splitlines()))
     if context.mode == 'SYNTHETIC':
         expected = demo_context(context.question, context.arm, list(context.returned))
-        require(context.sources == expected.sources and context.chunks == expected.chunks and context.targets == expected.targets)
+        require(context.prompt == expected.prompt and context.sources == expected.sources
+                and context.chunks == expected.chunks and context.targets == expected.targets)
     else:
         try:
             blob = Path(__file__).with_name('frozen-inputs.json').read_bytes()
             require(digest(blob) == MANIFEST_SHA, 'FROZEN_INPUT_INVALID')
             manifest = json.loads(blob)
             expected = next(q for q in manifest['questions'] if q['number'] == context.question)
+            require(context.prompt == expected['question'])
             require({s: h for s, (h, _) in context.sources.items()} == {s['id']: s['sha256'] for s in manifest['sources']})
             require([dict(c) for c in context.chunks] == expected['candidates'] and dict(context.targets) == expected['targets'])
         except ReviewError:
@@ -317,7 +319,7 @@ class Session:
         return {'version': VERSION, 'sampleId': self.sample, 'mode': self.context.mode,
                 'question': self.context.question, 'arm': self.context.arm, 'scopeSha256': self.context.scope,
                 'receipt': receipt, 'reviewStatus': self.status,
-                'reviewer': ('SYNTHETIC_CHOICES' if self.context.mode == 'SYNTHETIC' else 'OWNER_MANUAL')
+                'reviewer': ('OWNER_MANUAL' if self.context.mode == 'FROZEN' else 'SYNTHETIC_CHOICES')
                             if self.status == 'COMPLETED' else None,
                 'claimCount': len(claims) if self.status == 'COMPLETED' else None, 'claims': claims,
                 'completion': finish,
