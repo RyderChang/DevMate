@@ -3,6 +3,7 @@
 脚本默认不读取私人或生产账户。不要输出凭据、上传原始日志、执行未知用户仓库代码或做全局 prune。
 
 - `check-docs.mjs`：Markdown 链接、代码围栏和改动格式检查。
+- [`rag-claim-review/`](rag-claim-review/README.md)：DEV-034 本机瞬时逐断言窗口、闭合凭据校验及合成测试；仅离线预检/演示，无真实调用入口。
 - `summarize-tests.py`：仅输出后端测试类名与计数；摘要本身不代表通过。
 - `conversation_env.py`、`ai-stub.mjs`：隔离对话联调与 Stub，使用方式见[开发指南](../docs/development/local-development.md)。
 - `storage-preflight/`：SDK/hash 锁、固定源码 MinIO 构建和真实存储/数据库预检，见[准备记录](../docs/development/storage-preflight.md)。
