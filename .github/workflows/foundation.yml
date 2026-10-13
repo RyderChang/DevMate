@@ -60,6 +60,8 @@ jobs:
           /usr/bin/python3 -B scripts/rag-claim-review/run.py
           /usr/bin/python3 -B scripts/rag-claim-review/plan.py
           /usr/bin/python3 -B scripts/rag-claim-review/execution.py
+          /usr/bin/python3 -B scripts/rag-claim-review/cost_contract.py
+          /usr/bin/python3 -B scripts/rag-claim-review/tokenizer_archive.py
       - name: Create sanitized test summary
         if: always()
         run: python3 scripts/summarize-tests.py

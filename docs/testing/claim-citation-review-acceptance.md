@@ -192,3 +192,30 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 本机命令使用 bundled Python 3.12.14（Tk）、JAVA_HOME=本机 JDK21、TEMP/TMP=仓库忽略目录。完整回归及固定源/计划预检、文档/空白检查在最终提交前核验；新头 CI 在发布后独立核对，不沿用旧头成功。Maven/Frontend/数据库完整验证由本轮新头 Foundation 执行，本机只复用已编译生产测试桥。局限为本机权威目录、文件锁/SQLite 合同，未验证物理断电、网络盘或多主机治理；新协调层不代签真人评审，返回内存内容需由调用者 clear。未合并、部署或启动真实新轮。
 
 最终本机实际结果：`-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'` 共 118 项通过（原 86 + 新 32），96.244 秒，零失败/错误/跳过；Tk 销毁后出现一次固定 ThemeChanged 诊断，无正文/凭据，测试退出 0。`run.py` 七源/50 候选预检 PASS；`plan.py` 原 40 payload/SHA 复算 PASS；`execution.py` 原 scope、84213760/2000000/82213760 micros 与 BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/ownerEnvironment=UNCONFIRMED/paidRequests=0 保持。`node scripts/check-docs.mjs --format-changed origin/develop` 检查 88 份 Markdown、413 个相对链接及格式通过，`git diff --check` 通过。旧五份冻结 JSON 无 diff。本机未重跑完整 Maven/Frontend。
+
+## 2026-10-13：追加托管费用证据与离线审查
+
+所有者要求自行执行下一步；从干净 `0196def` 复用同分支和 #53，远端 develop `1a6dab6` 未变。官方价格页仍为 Flash 高峰输入未命中 ¥2/百万、输出 ¥8/百万；固定 recipe 六份文件与官方四份页面已只读取得并逐 SHA 记录，源码未运行、构建或 import。新增 `cost_contract.py`、`test_cost_contract.py`、两份来源/审查 JSON 与[费用合同说明](../development/claim-citation-hosted-cost-audit.md)，同步任务、README/导航、CI 与本记录。
+
+发现参考 JSON 模式另追加 105 UTF-8 bytes，20 个组需计入该开销。同原 40 payload 的固定参考输入合计 474284 tokens，参考费用 ¥1.276248；托管 tokenizer 绑定、内容预处理及 JSON framing 仍 UNPROVEN，托管 input/reservation 仍 null。共享上下文候选算术为 ¥84.131840，仍超 ¥2.00；原冻结回退 ¥84.213760 不改。新审查 SHA `37e71d794d657379c732a6d186699651c0e86a963cecb259cdbc8dd08584d43d` 是证据摘要，不是新冻结授权；状态为 BLOCKED_HOSTED_BOUND/NOT_GRANTED/liveEnabled=false，环境仍 UNCONFIRMED。任何参考估算或低于预算的算术结果均不得自动升级为可发送的授权。
+
+本机 bundled Python 3.12.14/Tk、JDK21、TEMP/TMP=仓库忽略目录，实际命令/结果：
+
+- `-B -m unittest discover -s scripts/rag-claim-review -p 'test_cost_contract.py'`：新增 10 项通过；来源/形状/预算阈值/原 scope 与冻结回退、缺口/null 不升级及哨兵检查。随后增加数值闭合校验并运行完整套件。
+- `-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'`：**128 项通过**（原 118 + 新 10），121.934 秒，零失败/错误/跳过；原 Tk 销毁后的固定 ThemeChanged 诊断仍无正文/凭据，退出 0。
+- `-B scripts/rag-claim-review/cost_contract.py --verify-sources`：十份本机官方来源 bytes/SHA 复现通过，sourceExecuted=false、hostedBound=UNPROVEN、paidRequests=0。CI 不重抓或重算这十份未提交全文。
+- `-B scripts/rag-claim-review/cost_contract.py`：同 40 payload 完全复算，新审查与预算阈值 836160、参考 1276248、候选 84131840、旧回退 84213760 micros 一致，NOT_GRANTED/liveEnabled=false/UNCONFIRMED/paidRequests=0 保持。
+
+官方用量页链接的 tokenizer ZIP 两次只读检查申请均因自动审批服务“所选模型容量不足”未执行；这是审批失败，不是安全否决。该包不在已验证的十份来源中；未绕过审批，不能宣称包内版本/合同已核验。恢复审批后才能补做此项，仍不获付费权限。原计划/执行审查/四文件证据/请求夹具/历史全部不改；无付费探测或向提供商发消息。本机未重跑完整 Maven/Frontend，完整套件与新头 CI 在提交前后分别核验。
+
+`node scripts/check-docs.mjs --format-changed origin/develop`：89 Markdown、420 个相对链接与格式通过；新 JSON/工作流 Prettier、`git diff --check` 通过。旧冻结文件与生产实现无 diff。新头 CI 结果在 #53 记录，不以 0196def 的已通过结果代替本轮验证。
+
+## 2026-10-13：恢复提交与官方 tokenizer ZIP 补查
+
+所有者明确要求继续上述任务。开始工作区仍为原十个未提交文件，无额外用户改动，HEAD 与 #53 均为 0196def，草稿目标 develop。本次只读 ZIP 审批通过；从官方用量页当前链接取得 1911504-byte 包，SHA `e7310d1dafe0a86d8a5629fe78a7c763760f651db9b8682718a1781dcd6fe495`。仅 ZIP/JSON/AST 数据审查，未执行、import 或安装包内演示/transformers，也未使用 trust_remote_code。
+
+包内三个文件/一目录，配置 model_max_length=16384、LlamaTokenizerFast，无已审查 V4.1 System 标记、thinking/JSON 模式分支；tokenizer SHA `89085f...` 与固定 V4.1 发布文件不同。演示仅文本 encode。该配置不构成托管输入/上下文保证，不用于降低原回退或启用发送。独立摘要 SHA `74b9f3a369c63a370457919ebfe204a0d0aa52a367f4cb8adfe0537f577e84d5` 保留 UNPROVEN/NOT_GRANTED/liveEnabled=false；此前十份来源与费用审查 SHA 完全不变。
+
+新增 `tokenizer_archive.py`、`test_tokenizer_archive.py` 与 `tokenizer-archive-review.json`，同步既有费用说明/任务/README/验收及 CI。`-B scripts/rag-claim-review/tokenizer_archive.py --replay-local` 实际复现包/三个成员 SHA 与 JSON/AST 观察通过，sourceExecuted=false、paidRequests=0；`-B -m unittest discover -s scripts/rag-claim-review -p 'test_tokenizer_archive.py'` 五项通过。CI 仅运行固定摘要及合成负例，不联网下载/运行 ZIP，也不冒称复现该未提交归档。原 16384 值不能替代托管 1048576/预算回退的回归通过。
+
+最终本机完整 `-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'`：**133 项通过**（原 118 + 费用审查 10 + ZIP 5），142.203 秒，零失败/错误/跳过。十份来源的 `cost_contract.py --verify-sources` 复现与默认费用/ZIP 审查、ZIP `--replay-local`、原 `execution.py` 均通过；三份新摘要及两份旧 scope 不变，NOT_GRANTED/UNCONFIRMED/paidRequests=0 保持。89 Markdown、422 相对链接及格式检查、新 JSON/工作流 Prettier 和 Git 空白检查通过。原五份冻结 JSON、生产源码和依赖无 diff。本机未重跑完整 Maven/Frontend，提交的新头 CI 独立核验后登记在 #53；不沿用原 0196def 的成功 CI。

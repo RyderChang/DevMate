@@ -1,0 +1,117 @@
+{
+  "version": "claim-cost-source-review-v1",
+  "checkedDate": "2026-10-13",
+  "recipeRevision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+  "authorization": "NOT_GRANTED",
+  "liveEnabled": false,
+  "paidRequests": 0,
+  "observedPrice": {
+    "model": "deepseek-flash",
+    "currency": "CNY",
+    "checkedDate": "2026-10-13",
+    "inputMissMicrosPerToken": 2,
+    "outputMicrosPerToken": 8,
+    "cacheDiscountUsed": false,
+    "offPeakDiscountUsed": false
+  },
+  "hostedContract": {
+    "TOKENIZER_REVISION_BINDING": "UNPROVEN",
+    "CONTENT_PREPROCESSING_BOUND": "UNPROVEN",
+    "JSON_MODE_FRAMING_BOUND": "UNPROVEN"
+  },
+  "reviewedChatInputLimit": "NOT_DOCUMENTED_IN_REVIEWED_SCHEMA",
+  "referenceFrameBytes": 80,
+  "referenceJsonSuffixBytes": 105,
+  "sourceExecuted": false,
+  "officialSourceReplayInCi": false,
+  "sources": [
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "README.md",
+      "localFile": "README.md",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "c0365ecca30d53c2dac15d3e48aa4c2e825e8c2c",
+      "sha256": "0cccc69baa118d7689fc3ff2c2e47ab652e05410b777744c43a424f4db5fc0af",
+      "bytes": 5261,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/README.md"
+    },
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "docs/tokenizer.md",
+      "localFile": "docs__tokenizer.md",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "f2a5399ccac934e5c4d71a8ead310553252d4761",
+      "sha256": "9fb1dd444abe6729c9cafe29a2e3766d9e14b02a28e68e07d06e6d9aaac0c0db",
+      "bytes": 6918,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/docs/tokenizer.md"
+    },
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "deepseek-recipe-encoding/src/tokenizer.rs",
+      "localFile": "deepseek-recipe-encoding__src__tokenizer.rs",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "64fe8681d6a9ea8a55c357e2a27464de968de863",
+      "sha256": "4b3a0d0041cc438da962fc5dde087c52fc61eb0900854163f019f3031768a52d",
+      "bytes": 831,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/deepseek-recipe-encoding/src/tokenizer.rs"
+    },
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "deepseek-recipe-encoding/src/v4/mod.rs",
+      "localFile": "deepseek-recipe-encoding__src__v4__mod.rs",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "c953d6a2c3aca603d93f2ab8860cd27a50f0c8ee",
+      "sha256": "0a4577a216bcbddabd5bcf969cabd75060deb79e643548f8a04bda1d76e4a982",
+      "bytes": 16076,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/deepseek-recipe-encoding/src/v4/mod.rs"
+    },
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "deepseek-recipe-encoding/src/v4/dsv41.rs",
+      "localFile": "deepseek-recipe-encoding__src__v4__dsv41.rs",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "66260bb5da7b128e9c79a3c145f5428c697d4735",
+      "sha256": "3408554e8a4ade05e034231cab8f87efcee7459d7fdd28fbb926f652e3b56786",
+      "bytes": 2072,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/deepseek-recipe-encoding/src/v4/dsv41.rs"
+    },
+    {
+      "kind": "OFFICIAL_DOC_SNAPSHOT",
+      "localFile": "pricing.html",
+      "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+      "sha256": "5a7b1832592387340f2fc456399b34b89b05f3fa167c2e35909e2fa4afe021e3",
+      "bytes": 24116
+    },
+    {
+      "kind": "OFFICIAL_DOC_SNAPSHOT",
+      "localFile": "token-usage.html",
+      "url": "https://api-docs.deepseek.com/quick_start/token_usage/",
+      "sha256": "08bf766935b9ff92aee592c70bdac0908e3f44f1e3e52e93dd7aeafc9925fd1a",
+      "bytes": 22447
+    },
+    {
+      "kind": "OFFICIAL_DOC_SNAPSHOT",
+      "localFile": "chat-completion.html",
+      "url": "https://api-docs.deepseek.com/api/create-chat-completion/",
+      "sha256": "e7133a7c2a7c2662567cca2e2392b503f97c2fb583009ff85f878744e0a36ba7",
+      "bytes": 142966
+    },
+    {
+      "kind": "OFFICIAL_DOC_SNAPSHOT",
+      "localFile": "json-mode.html",
+      "url": "https://api-docs.deepseek.com/guides/json_mode/",
+      "sha256": "f728a4dad99c2328c9c982b08c113f400abcc1a7eba238f08738f51a951d1b30",
+      "bytes": 32085
+    },
+    {
+      "kind": "PINNED_OFFICIAL_RECIPE",
+      "path": "deepseek-recipe-core/src/util/json_formatter.rs",
+      "localFile": "deepseek-recipe-core__src__util__json_formatter.rs",
+      "revision": "8cadfede7063c896b944e7bae05daa3549ae97ea",
+      "gitBlobSha": "84c989d89d6e96612c88f5f72a3f2be96695ddc3",
+      "sha256": "729102bc38ce4d312dc42f00be43f0b212d7410761cd313d5e85a2c9006223ed",
+      "bytes": 3556,
+      "url": "https://github.com/deepseek-ai/deepseek-recipe/blob/8cadfede7063c896b944e7bae05daa3549ae97ea/deepseek-recipe-core/src/util/json_formatter.rs"
+    }
+  ]
+}

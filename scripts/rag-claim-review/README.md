@@ -35,6 +35,10 @@ python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 
 原冻结文件和费用阻断保留，¥2.00 托管上界未证明，¥84.213760 仍只是历史保守回退。取得更紧证据或明确改变预算后才可重新冻结；真实调用另需所有者独立确认完整计划和评审环境。本轮不启动真实发送。
 
+`python -B scripts/rag-claim-review/cost_contract.py` 重算[追加托管费用审查](../../docs/development/claim-citation-hosted-cost-audit.md)：同 40 payload 的固定参考 JSON 开销、预算阈值与共享上下文候选费用。参考 ¥1.276248 不作为托管证明，候选 ¥84.131840 不替换旧冻结回退；`hostedInputTokenBound/hostedReservedMicros=null`、BLOCKED_HOSTED_BOUND/NOT_GRANTED/liveEnabled=false 保留。`--verify-sources` 仅复现本机十份已下载官方快照的 bytes/SHA，不下载/执行源码；CI 只运行默认审查及固定摘要/合成负例。
+
+`python -B scripts/rag-claim-review/tokenizer_archive.py` 校验官方 tokenizer ZIP 的独立固定摘要；`--replay-local` 可只读复现已下载包/三个成员 SHA 与 JSON/AST 观察。包内 16384 配置不能当作托管输入限制，V4.1 tokenizer/framing 绑定仍未证明；演示的 trust_remote_code 不执行。CI 不下载/运行 ZIP，只核对摘要与合成负例，详见上述费用说明。
+
 `context` 由 `load_context(..., returned=[])` 创建，必须是本夹具的 FROZEN 上下文。适配先校验题干、题号、组别、scope、全部来源和原五候选，再创建只用于该次请求的内存 Ticket。返回必须持有同一个 Ticket 对象；逐项比对 round/attempt 编号、题组、scope 与完整候选定位，复制出值相等的 Ticket 也不能冒充本次请求。之后将同一响应的合法 usage、生产校验结果和实际引用接入同一个 Session；引用数量/顺序、C 编号、source/chunk SHA、ordinal、字符与行定位及类型全部精确比对，布尔不能冒充整数。
 
 生产 JSON 只交给现有 `RagOutputValidator`。测试目录中的 `ClaimReviewValidationBridge` 通过捕获的 stdin/stdout 内存管道传递原始 JSON 与已解析答案，不在命令参数、终端或文件中传递正文；Python 不重写 JSON 合同。捕获 stderr 后不回显，异常只返回固定类别，JVM 禁止创建核心转储。桥缺失、失败或协议异常会停止，不降级到另一套解析器。
