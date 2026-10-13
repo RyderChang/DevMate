@@ -81,3 +81,4 @@
 - [DEV-029 评估](testing/rag-failure-stage-and-quality-assessment.md)：RAG 502 阶段证据、Q4 排序与逐断言引用问题。
 - [DEV-030](tasks/DEV-030-rag-json-output-diagnostics.md)与[验收记录](testing/rag-json-output-diagnostics-acceptance.md)：Q9 JSON 失败的脱敏细分诊断、验证与限制。
 - [DEV-034](tasks/DEV-034-claim-citation-review.md)、[逐断言核验流程](development/claim-citation-review.md)、[离线评审工具](../scripts/rag-claim-review/README.md)与[材料审查记录](testing/claim-citation-review-acceptance.md)：正文不落盘窗口、脱敏校验与 DEV-032 全题材料审查；原正文缺失，真实完整断言核验及绑定仍未完成。
+- [DEV-034 关闭的 HTTPS 驱动与独立账本](development/claim-citation-https-ledger.md)：固定 TLS/总 deadline、事务预留、排他与失败停止，仅 Stub 验证，保留费用/授权阻断。

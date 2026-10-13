@@ -1,6 +1,6 @@
 # 瞬时逐断言评审工具
 
-DEV-034 的本机离线工具，只有公开来源预检、合成演示和内存调用接口；没有 HTTP 模型客户端、密钥参数、真实调用开关、正文文件读取入口或历史恢复功能；已增加仅经 Stub 注入的提供商信封解码边界。规则与限制见[核验流程](../../docs/development/claim-citation-review.md)。
+DEV-034 的本机工具，默认只有公开来源预检、合成演示和内存 Stub 调用；已增加关闭的 HTTPS 传输实现与独立事务账本，仅 Stub 验证。没有密钥加载器、真实调用开关、正文文件读取入口或历史恢复功能。规则与限制见[核验流程](../../docs/development/claim-citation-review.md)及[驱动和账本说明](../../docs/development/claim-citation-https-ledger.md)。
 
 ## 离线使用
 
@@ -25,7 +25,15 @@ python -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
 
 ## 离线调用适配与授权账本模拟
 
-`adapter.py` 提供 `StubGrant`、`StubTransport`、`ProductionValidator` 与 `OfflineAdapter.review(context, transport)`。入口只接受精确的 Stub 类型和固定 `OFFLINE_STUB` 授权；LIVE、DEV-032 或任意其他模式均拒绝。没有 HTTP 客户端、凭据读取或真实调用开关，不能用 Stub 授权发送网络请求。`provider.py` 只解码同次内存 Stub 信封。未来提供商驱动与真实授权必须另行审查。
+`adapter.py` 提供 `StubGrant`、`StubTransport`、`ProductionValidator` 与 `OfflineAdapter.review(context, transport)`。入口只接受精确的 Stub 类型和固定 `OFFLINE_STUB` 授权；LIVE、DEV-032 或任意其他模式均拒绝。该适配不接入 HTTPS 客户端、凭据读取或真实调用开关，不能用 Stub 授权发送网络请求。`provider.py` 只解码同次内存 Stub 信封。新 HTTPS 实现的公开入口仍固定关闭，真实授权与发送交接必须另行审查。
+
+## 独立账本及 HTTPS 的离线验收
+
+`authorization.py` 区分关闭的 `NewRoundAuthorization` 与仅模拟的 `RehearsalAuthorization`；`RoundLedger` 使用 SQLite FULL 事务及跨进程本机排他锁，发送前同时提交 UNKNOWN 次数/预留/未评审状态。`governed.py` 仅交接精确 MemoryHttpStub，合法 usage 在生产校验前保存；同轮、同授权和同题组不能恢复/重发/补额，所有失败停止。测试中的 `rehearsal_cap` 是模拟容量，不改变真实 ¥2.00。
+
+`https_driver.py` 实现固定 HTTPS/TLS 校验、0 重定向/重试、DNS 至 EOF 总 deadline、含响应头/framing 的接收限制；公开 `exchange` 仍在任何密钥或网络前拒绝。内部 wire 实现只由测试以合成凭据/内存连接验证，没有 live CLI。`test_authorization.py` / `test_https_driver.py` 被现有 Foundation 自动发现；详细命令、存储合同与授权剩余条件见[说明](../../docs/development/claim-citation-https-ledger.md)。
+
+原冻结文件和费用阻断保留，¥2.00 托管上界未证明，¥84.213760 仍只是历史保守回退。取得更紧证据或明确改变预算后才可重新冻结；真实调用另需所有者独立确认完整计划和评审环境。本轮不启动真实发送。
 
 `context` 由 `load_context(..., returned=[])` 创建，必须是本夹具的 FROZEN 上下文。适配先校验题干、题号、组别、scope、全部来源和原五候选，再创建只用于该次请求的内存 Ticket。返回必须持有同一个 Ticket 对象；逐项比对 round/attempt 编号、题组、scope 与完整候选定位，复制出值相等的 Ticket 也不能冒充本次请求。之后将同一响应的合法 usage、生产校验结果和实际引用接入同一个 Session；引用数量/顺序、C 编号、source/chunk SHA、ordinal、字符与行定位及类型全部精确比对，布尔不能冒充整数。
 

@@ -178,3 +178,17 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 完整 Python 回归、公开源/原计划预检、文档/空白检查与本轮新头 CI 在提交前后分别核验，不沿用旧头成功结论。生产源码、模板、校验器、依赖、数据库与原历史文件不改；真人语义评审、生产采纳、付费请求、合并及部署未实施。
 
 本轮全部 `test_*.py` 共 86 项通过，零失败/错误/跳过（原 67 + 新 19），耗时 83.087 秒。默认七源/50候选预检和原 40 payload 计划复算仍通过；执行准备预检成功复算预算不足并拒绝授权，不将审查成功解释为可启动。文档检查为 86 份 Markdown、399 个相对链接及格式通过；两份新增 JSON、工作流 Prettier 和 Git 空白检查通过。完整 Maven/Frontend/数据库验证由发布后的新头 CI 执行，本机复用原已编译生产校验桥，不宣称此轮重跑完整 Maven。
+
+## 2026-10-13：关闭 HTTPS 实现与独立授权账本
+
+从干净 `5d0bfa4` 继续同分支/草稿 #53；远端 develop 仍为 `1a6dab6`，前一头 CI 成功。新增 `https_driver.py`、`authorization.py`、`governed.py` 与两个测试文件；更新任务、README/导航、执行说明及本记录，新增[驱动和账本合同](../development/claim-citation-https-ledger.md)与 Proposed [ADR 0009](../adr/0009-local-transient-review-authorization-ledger.md)。现有 CI 的 `test_*.py` 自动包含新回归，无需改变生产配置或 CI 网络政策。
+
+本轮只用内存 Stub/合成凭据，没有外部 DNS/TLS/HTTP 模型请求、密钥查找或正文截图。公开及底层连接入口在 TLS/DNS/socket/额度前固定拒绝；真实授权载体也不能创建账本。模拟账本使用完整保守预留作 rehearsal_cap，与真实 ¥2.00 cap 分开，不重新冻结或提高预算。两份旧冻结计划、证据及历史文件保持不变，¥2.00 托管上界未证明，¥84.213760 仅为冻结审查回退。真人完整计划/环境确认仍待所有者独立完成。
+
+新增回归验证：固定端点/方法、证书/主机名/CA/TLS 最低版本、禁代理/重定向/重试、DNS 单地址、有界等待、写入/响应头/framing/正文/EOF 共用 120 秒 deadline、总线流/正文大小、类型/编码/长度冲突与截断、套接字及响应句柄生命周期；SQLite FULL 提交的 UNKNOWN 在 Stub 交接前可被另一连接读到、失败或提交确认丢失不发、结果保存失败保留 usage、进程排他、授权/round/题组唯一、预留后强制进程退出保留 UNKNOWN 且不能恢复、配对错乱不归入 usage、提供商/生产结构失败及超界保留合法 usage、线程重入/旧授权/非 Stub 拒绝、正文/payload/异常哨兵不进入 SQLite/journal 或终端。
+
+贯通测试包含真实标准库 HTTPConnection/HTTPResponse 解析与未修改的生产 Java 校验器，但 IO 为内存 wire Stub；不代表真实服务端证书、网络可用性或费用验收。Windows 初次新增账本测试发现测试读连接未显式关闭及合成引用顺序预期错误，已关闭连接并按原返回 C2/C1 精确断言；未降低断言。贯通测试也发现 Connection: close 的套接字读取句柄需保留至文件关闭，已修复并回归。
+
+本机命令使用 bundled Python 3.12.14（Tk）、JAVA_HOME=本机 JDK21、TEMP/TMP=仓库忽略目录。完整回归及固定源/计划预检、文档/空白检查在最终提交前核验；新头 CI 在发布后独立核对，不沿用旧头成功。Maven/Frontend/数据库完整验证由本轮新头 Foundation 执行，本机只复用已编译生产测试桥。局限为本机权威目录、文件锁/SQLite 合同，未验证物理断电、网络盘或多主机治理；新协调层不代签真人评审，返回内存内容需由调用者 clear。未合并、部署或启动真实新轮。
+
+最终本机实际结果：`-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'` 共 118 项通过（原 86 + 新 32），96.244 秒，零失败/错误/跳过；Tk 销毁后出现一次固定 ThemeChanged 诊断，无正文/凭据，测试退出 0。`run.py` 七源/50 候选预检 PASS；`plan.py` 原 40 payload/SHA 复算 PASS；`execution.py` 原 scope、84213760/2000000/82213760 micros 与 BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/ownerEnvironment=UNCONFIRMED/paidRequests=0 保持。`node scripts/check-docs.mjs --format-changed origin/develop` 检查 88 份 Markdown、413 个相对链接及格式通过，`git diff --check` 通过。旧五份冻结 JSON 无 diff。本机未重跑完整 Maven/Frontend。
