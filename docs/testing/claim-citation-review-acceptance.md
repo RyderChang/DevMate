@@ -219,3 +219,13 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 新增 `tokenizer_archive.py`、`test_tokenizer_archive.py` 与 `tokenizer-archive-review.json`，同步既有费用说明/任务/README/验收及 CI。`-B scripts/rag-claim-review/tokenizer_archive.py --replay-local` 实际复现包/三个成员 SHA 与 JSON/AST 观察通过，sourceExecuted=false、paidRequests=0；`-B -m unittest discover -s scripts/rag-claim-review -p 'test_tokenizer_archive.py'` 五项通过。CI 仅运行固定摘要及合成负例，不联网下载/运行 ZIP，也不冒称复现该未提交归档。原 16384 值不能替代托管 1048576/预算回退的回归通过。
 
 最终本机完整 `-B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'`：**133 项通过**（原 118 + 费用审查 10 + ZIP 5），142.203 秒，零失败/错误/跳过。十份来源的 `cost_contract.py --verify-sources` 复现与默认费用/ZIP 审查、ZIP `--replay-local`、原 `execution.py` 均通过；三份新摘要及两份旧 scope 不变，NOT_GRANTED/UNCONFIRMED/paidRequests=0 保持。89 Markdown、422 相对链接及格式检查、新 JSON/工作流 Prettier 和 Git 空白检查通过。原五份冻结 JSON、生产源码和依赖无 diff。本机未重跑完整 Maven/Frontend，提交的新头 CI 独立核验后登记在 #53；不沿用原 0196def 的成功 CI。
+
+## 2026-10-13：提供商计数/费用控制合同补查
+
+从干净 `cec57ad` 继续当前分支和草稿 #53。所有者要求继续，补查官方 Chat、Anthropic 兼容、余额/错误、并发文档及 sitemap；五份官方 HTML/XML 只读下载并记录 SHA，其中 Chat SHA 与上轮相同，sitemap 解析为 52 URL，未见 count_tokens/tokenize 文档路径。并发文档直接由官方网页工具读取，未宣称保存该页快照或 CI 重抓。部分初次抓取超时及搜索无结果不作为功能不存在证据。
+
+补查未取得冻结 Chat 的发送前保证计数/强输入/费用 cap；余额/402、并发/user_id、SDK 方法、被忽略的 budget_tokens 与客户端超时不能替代保证。新增[合同补查及证据验收条件](../development/claim-citation-provider-contract-followup.md)、[DRAFT/UNSENT 询证正文](../development/claim-citation-provider-inquiry-draft.md)，同步导航/任务/费用说明/工具 README/本记录，共七份 Markdown；没有改脚本、测试、配置、依赖、原冻结 JSON 或生产行为。未查询账户、尝试猜测端点、读取密钥、调用模型或向他人发送消息。
+
+本阶段纯文档，执行格式/相对链接和 Git 空白检查，不重复未改变的本机 133 项回归。原 40 payload、¥2.00、¥84.213760 回退、NOT_GRANTED/UNCONFIRMED/真实发送关闭保持。上一头 133 项离线测试/Maven 271 项与前后端完整 CI 实际成功；本轮新头状态在发布后单独核验并登记 #53，不沿用旧头结论。继续到真实授权需要提供商有效合同或所有者明确预算/scope 决策，询证仍未发送。
+
+实际 `node scripts/check-docs.mjs --format-changed origin/develop`：91 Markdown、435 相对链接与格式通过；`git diff --check` 通过。脚本/摘要、工作流、依赖及生产实现无 diff，不宣称本轮重跑未改变的本机套件。

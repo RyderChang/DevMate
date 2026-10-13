@@ -83,3 +83,4 @@
 - [DEV-034](tasks/DEV-034-claim-citation-review.md)、[逐断言核验流程](development/claim-citation-review.md)、[离线评审工具](../scripts/rag-claim-review/README.md)与[材料审查记录](testing/claim-citation-review-acceptance.md)：正文不落盘窗口、脱敏校验与 DEV-032 全题材料审查；原正文缺失，真实完整断言核验及绑定仍未完成。
 - [DEV-034 关闭的 HTTPS 驱动与独立账本](development/claim-citation-https-ledger.md)：固定 TLS/总 deadline、事务预留、排他与失败停止，仅 Stub 验证，保留费用/授权阻断。
 - [DEV-034 托管费用追加审查](development/claim-citation-hosted-cost-audit.md)：官方固定资料、参考 JSON 开销与共享上下文候选费用；托管边界未证明，不改变旧计划或授权。
+- [DEV-034 提供商控制合同补查](development/claim-citation-provider-contract-followup.md)及[未发送询证草稿](development/claim-citation-provider-inquiry-draft.md)：预计数/输入/费用 cap、兼容字段和余额边界，列出提供商需回答的最小问题。

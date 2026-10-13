@@ -61,6 +61,8 @@
 
 ## 需要取得的证据
 
+后续已补查[发送前计数、余额/错误及兼容接口合同](claim-citation-provider-contract-followup.md)，并准备[未发送询证草稿](claim-citation-provider-inquiry-draft.md)。未在已审查公开资料中取得强上界或费用 cap，不修改本文件的冻结算术和结论。
+
 按固定 40 次 × 1024 输出，高峰输出预留为 `40960 × 8 = 327680 micros`。要满足 ¥2.00，必须证明整个范围的输入 token 上界不超过：
 
 ```text
