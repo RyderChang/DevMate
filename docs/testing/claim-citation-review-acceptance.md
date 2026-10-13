@@ -229,3 +229,25 @@ Windows **49 项测试通过，零跳过**：原 31 项加 18 项适配回归。
 本阶段纯文档，执行格式/相对链接和 Git 空白检查，不重复未改变的本机 133 项回归。原 40 payload、¥2.00、¥84.213760 回退、NOT_GRANTED/UNCONFIRMED/真实发送关闭保持。上一头 133 项离线测试/Maven 271 项与前后端完整 CI 实际成功；本轮新头状态在发布后单独核验并登记 #53，不沿用旧头结论。继续到真实授权需要提供商有效合同或所有者明确预算/scope 决策，询证仍未发送。
 
 实际 `node scripts/check-docs.mjs --format-changed origin/develop`：91 Markdown、435 相对链接与格式通过；`git diff --check` 通过。脚本/摘要、工作流、依赖及生产实现无 diff，不宣称本轮重跑未改变的本机套件。
+
+## 2026-10-13：托管合同取证与计划再审查
+
+从干净 `505d94e` 继续当前分支/#53。所有者选择直接提供官方书面答复后要求自行推进；目前未收到专项答复或新预算/范围。本轮只读重新取得官方价格、Chat、用量、错误码、并发和 sitemap 六份快照，bytes/SHA 及[证据逐项判定](../development/claim-citation-provider-contract-followup.md#2026-10-13托管合同取证与授权计划再审查)已记录。只解析 HTML/XML 数据，快照在忽略目录，不改前轮证据或提交全文。Git 网络读取曾连接失败，后经 GitHub API 成功核验 #53 为 OPEN/DRAFT、目标 develop、头 505d94e，develop 仍为 1a6dab6；不将失败读取当作核验成功。
+
+公开目录仍为 52 URL，Chat 快照没有列出保证预计数/输入/费用 cap；本日高峰价未变，但价格页允许变价。完整托管 framing、失败/未知计费上界、期限与全 40 payload 适用性仍缺失。没有重新冻结授权计划或验收真实评审环境，询证仍未发送；付费、账户/计数/模型请求新增均为 0。¥84.213760 仍为保守回退，不能解释为预算批准。
+
+本机 Python 3.13.5、已有生产 Java 校验桥，仅 Stub/离线验证。实际命令：
+
+```powershell
+Push-Location scripts/rag-claim-review
+python -B -m unittest test_execution.ExecutionTest.test_live_gate_rejects_before_network_key_lookup_or_attempt test_execution.ExecutionTest.test_environment_is_owner_unconfirmed_not_promoted_by_synthetic_tests test_https_driver.HttpsDriverTest.test_public_entry_fails_before_key_dns_socket_or_connection test_https_driver.HttpsDriverTest.test_private_wire_also_cannot_construct_real_connection test_cost_contract.CostContractTest.test_reference_result_does_not_promote_hosted_proof_or_authorization
+Pop-Location
+python -B scripts/rag-claim-review/execution.py
+python -B scripts/rag-claim-review/cost_contract.py
+node scripts/check-docs.mjs --format-changed origin/develop
+git diff --check
+```
+
+五项针对性回归通过，45.270 秒，零失败/错误/跳过：公开/底层 live 入口在密钥/DNS/socket 前拒绝、环境不由合成测试确认、参考费用不升级为托管证明/授权。`execution.py` 复算 preparation scope、84213760/2000000/82213760 micros、BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/UNCONFIRMED/paidRequests=0；`cost_contract.py` 重建同 40 payload，保持 BLOCKED_HOSTED_BOUND、836160 阈值、1276248/84131840/84213760 micros 和 liveEnabled=false。Python 启动器有已有路径定位警告，两入口及测试均退出 0，不将警告当作跳过测试的理由。
+
+本轮仅三份 Markdown 改动；生产源码、脚本/测试、冻结 JSON、依赖、工作流及历史资料无 diff。本机不重跑完整 Maven/Frontend 或 GUI；匹配文档的格式/相对链接与 Git 空白检查通过，新提交的完整 CI 在发布后独立核验并登记 #53。回滚仅撤回本轮三份文档新增段落，保留原证据/计划/账本。下一步仍待官方书面答复或所有者明确预算/scope；只说明，不自动启动付费执行。
