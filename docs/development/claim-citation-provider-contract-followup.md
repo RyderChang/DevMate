@@ -113,9 +113,28 @@
 | 预算与预留       | 旧 cap/逐次/总预留和历史回退均可离线复现                                                            | ¥84.213760 只保留为旧冻结审查回退；本轮没有证明它覆盖新版全部计费条件，更没有批准增加预算                               |
 | 机器预检         | plan/execution/cost 审查不在线查询托管路由，旧摘要状态仍为 NOT_GRANTED/liveEnabled=false            | 通过只证明旧输入和算术可复现，不证明当前模型身份、合同新鲜度或允许发送；本轮不新增机器状态或放宽关闭门禁                |
 
-**下一步应是版本变化后的合同补证与模型范围决定，不能直接执行旧计划。** 需要所有者明确是否接受后续待审计划使用 1017 路由，或要求提供商证明可固定原版本；本轮不替所有者作此选择，不把继续指令写成新版本/预算/执行授权。若接受新版，再核验对应版本的托管计数或 cap、完整 framing、价格/输出和失败/未知计费合同及有效期，并逐项覆盖原四组全部 40 payload。一般的性能或平均输出长度改进不能用作最坏费用上界。
+初步审查后，所有者明确选择 **“接受 1017，仅继续离线取证”**，该版本范围选择已收到；不批准预算、真实调用、重新冻结完整计划或确认环境。随后按以下固定修订补查 1017 公开参考。下一步仍须核验该版本的托管计数或 cap、完整 framing、价格/输出和失败/未知计费合同及有效期，并逐项覆盖原四组全部 40 payload。一般的性能或平均输出长度改进不能用作最坏费用上界。
 
 取得适用证据且满足确认预算后，才可重新冻结完整计划，并独立审查授权交接和评审环境。即使另行提高预算，模型版本的适用性和费用/环境审查仍不能省略。原两份 scope、40 Chat / 0 Embedding、原题组/Q4、1024 输出、拟定 ¥2.00 和旧回退均不改；未重新冻结、未开启真实发送、未代签环境、未修改历史结果。
+
+### 所有者确认后的 1017 固定参考取证
+
+从 [DeepSeek 官方 1017 模型库](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017)读取公开注册元数据，固定修订为 `1bae0e1088993b9b82de08f59de5be5a34e42170`，lastModified 为 `2026-10-17T05:46:55Z`。本机元数据 5770 bytes、SHA `acb0aaa072c55e98e8dedb32fc10278b205d49d674e864b6b7ad3fd1fbf7507c`，保存在上述忽略目录的 `reference-1017/`。元数据读取是公开模型库资料查询，不是推理或账户请求；未使用 Token、SDK 或第三方部署服务。
+
+以下六个文件全部从该固定修订下载，不从浮动 main 计算证据。只读 Markdown/JSON，`encoding/encoding.py` 仅作 AST 语法解析，不 import/exec、构建或运行模型/包内测试，不下载权重。
+
+| 固定修订文件                                                                                                                                             | bytes   | SHA-256                                                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------ |
+| [README.md](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/README.md)                         | 5231    | `b72b796e4f4c739eca5d0ad360a7679b39118ca7eb64891f7151a527b292c42a` |
+| [config.json](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/config.json)                     | 3311    | `8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879` |
+| [tokenizer.json](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/tokenizer.json)               | 6367257 | `c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b` |
+| [tokenizer_config.json](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/tokenizer_config.json) | 801     | `6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547` |
+| [encoding/README.md](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/encoding/README.md)       | 12164   | `a34a5ca98c65e5b5b2bedd693cc2e18e732fe50192723fb6937ae07219c23739` |
+| [encoding/encoding.py](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017/blob/1bae0e1088993b9b82de08f59de5be5a34e42170/encoding/encoding.py)   | 37962   | `13231c592e958fb39e2af6001dae69d90e7a36b265702b9b390236fb387599e2` |
+
+本机逐 SHA 比较确认：1017 的 config.json、tokenizer.json、tokenizer_config.json 与旧修订 `2cba9e42aa026125f3ed06c6d98c1db82f7ca027` 的固定记录完全一致；配置中的 max_position_embeddings 仍为 1048576。新目录 encoding/encoding.py 的 SHA 与旧根目录 encoding.py 不同；仅记录文件差异，不据此推断托管格式或 token 数必然变化。
+
+1017 模型卡说明没有 Jinja chat template，encoding 为参考格式实现，另链接 deepseek-recipe 做协议转换。这增强了公开参考文件的可追溯性，**没有给出 api.deepseek.com 正在使用这些确切 bytes、完整预处理/JSON 内部 framing 的保证，或请求级计数/cap、失败/未知计费合同**。因此不替换旧参考/费用 JSON，不把三个相同 SHA 当作托管绑定证明，不把参考费用 ¥1.276248 或旧回退 ¥84.213760 升级为 1017 的可靠费用预留。计费证据、有效期和明确预算仍待补充；真实调用保持关闭。
 
 ## 验证与回滚
 

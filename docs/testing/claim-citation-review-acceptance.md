@@ -276,4 +276,6 @@ git diff --check
 
 文档检查首次因沙箱内 Node 无法派生 Git 而 EPERM；只读检查经正常提升后实际成功，未跳过、修改检查器或将失败当作通过。网络 CLI 首次受沙箱代理限制失败，提升后 GitHub 只读核验成功。格式/相对链接与 Git 空白检查通过；本机未重跑完整 Maven/Frontend/GUI，新头 CI 发布后单独核验并登记 #53。
 
-回滚仅撤回本次五份文档新增段落，不删除原证据/计划/账本。后续仍需模型版本范围决定及适用费用合同，明确预算后重新冻结，再独立审查授权交接与环境；增加预算本身不能省略版本/合同适用性。本轮不发询证、不开启付费执行或实施其他任务。
+所有者随后明确选择“接受 1017，仅继续离线取证”。继续只读取得官方 Hugging Face 模型库公开元数据（不含 Token），固定修订 `1bae0e1088993b9b82de08f59de5be5a34e42170`，下载 README/config/tokenizer/tokenizer_config 与 encoding README/源码六文件，未下载权重。全部 bytes/SHA 已记入合同说明；用 hashlib 与旧 token-evidence.json 比较，三个 config/tokenizer 文件 SHA 完全一致；JSON 的 text_config.max_position_embeddings=1048576，ast.parse 新 encoding/encoding.py 成功。只解析数据，未执行/import 下载源码、运行包内测试、调用推理或使用第三方部署。新参考的可追溯性增强，但不证明托管预处理/完整 JSON framing 或计费保证；没有更新旧机器 JSON/scope 或将历史费用升级为新版保证。
+
+回滚仅撤回本次五份文档新增段落，不删除原证据/计划/账本。1017 离线待审范围已获确认；后续仍需适用费用合同和明确预算，之后才能重新冻结并独立审查授权交接与环境。本轮不发询证、不开启付费执行或实施其他任务。
