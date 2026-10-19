@@ -12,6 +12,7 @@ import {
 import { getProject } from '@/api/projects'
 import type { Conversation, ConversationMessage, Project, SendMessageResponse } from '@/api/types'
 import RagCitations from '@/components/conversation/RagCitations.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import {
   classifyRagSendFailure,
   codePointLength,
@@ -509,7 +510,13 @@ function retryPending(): void {
             :class="message.role === 'USER' ? 'message-user' : 'message-assistant'"
           >
             <div class="message-meta">
-              <strong>{{ message.role === 'USER' ? '你' : 'DevMate' }}</strong>
+              <span class="message-author"
+                ><span class="message-avatar" aria-hidden="true"
+                  ><AppIcon v-if="message.role === 'ASSISTANT'" name="spark" /><span v-else
+                    >你</span
+                  ></span
+                ><strong>{{ message.role === 'USER' ? '你' : 'DevMate' }}</strong></span
+              >
               <time>{{ formatProjectDate(message.createdAt) }}</time>
             </div>
             <p>{{ message.content }}</p>
@@ -542,14 +549,16 @@ function retryPending(): void {
         <el-input
           v-model="draft"
           type="textarea"
-          :rows="5"
+          :rows="4"
           resize="vertical"
-          placeholder="输入消息；内容只会以纯文本展示"
+          placeholder="描述你想推进的问题…"
+          aria-label="消息内容"
           :disabled="composerLocked"
           @keydown.ctrl.enter.prevent="submit"
           @keydown.meta.enter.prevent="submit"
         />
         <div class="composer-actions">
+          <span class="composer-shortcut">Ctrl / ⌘ + Enter 发送</span>
           <span :class="{ 'character-count-error': draftLength > MAX_MESSAGE_LENGTH }">
             {{ draftLength }}/{{ MAX_MESSAGE_LENGTH }} {{ mode === 'rag' ? 'UTF-16 码元' : '字符' }}
           </span>
@@ -560,6 +569,7 @@ function retryPending(): void {
             @click="submit"
           >
             {{ sending ? '正在生成' : '发送消息' }}
+            <AppIcon name="arrow" />
           </el-button>
         </div>
       </el-card>
@@ -569,124 +579,193 @@ function retryPending(): void {
 
 <style scoped>
 .conversation-chat-page {
-  width: min(100%, 920px);
+  width: min(100%, 960px);
 }
-
 .conversation-chat-page > .el-alert {
   margin-bottom: 16px;
 }
-
+.conversation-heading {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--dm-border);
+}
 .conversation-heading h1 {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  font-size: clamp(23px, 2.1vw, 28px);
 }
-
+.conversation-heading .page-actions {
+  padding-top: 20px;
+}
 .message-panel {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
+  border: 0;
+  background: transparent;
 }
-
 .message-panel :deep(.el-card__body) {
-  padding: clamp(12px, 3vw, 24px);
+  padding: 8px 0 24px;
 }
-
 .load-earlier {
-  margin-bottom: 18px;
+  margin-bottom: 28px;
   text-align: center;
 }
-
 .message-list {
   display: grid;
-  gap: 16px;
+  gap: 30px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
 .message-item {
-  width: min(86%, 720px);
-  padding: 14px 16px;
-  border: 1px solid #dcdfe6;
-  border-radius: 12px;
-  background: #fff;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
 }
-
 .message-user {
   justify-self: end;
-  border-color: #b3d8ff;
-  background: #ecf5ff;
+  width: fit-content;
+  max-width: 86%;
+  padding: 16px 20px;
+  border: 1px solid #dfe6f3;
+  border-radius: 14px 14px 3px 14px;
+  background: #edf2fb;
 }
-
 .message-assistant {
   justify-self: start;
 }
-
 .message-meta {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
-  color: #909399;
-  font-size: 12px;
+  align-items: center;
+  gap: 12px;
+  color: var(--dm-muted);
+  font-size: 11px;
 }
-
+.message-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .message-meta strong {
-  color: #303133;
+  color: var(--dm-text);
+  font-size: 12px;
+  font-weight: 600;
 }
-
+.message-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--dm-accent);
+  font-size: 15px;
+}
+.message-user .message-avatar {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d0daee;
+  color: #526c9e;
+  background: #f7f9fd;
+  font-size: 10px;
+}
+.message-user .message-meta {
+  justify-content: space-between;
+}
 .message-item p {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   overflow-wrap: anywhere;
-  line-height: 1.65;
+  line-height: 1.9;
   white-space: pre-wrap;
 }
-
+.message-assistant > p {
+  margin-left: 40px;
+}
+.message-assistant > :deep(.rag-evidence) {
+  margin-left: 40px;
+}
 .composer-card {
   position: sticky;
-  bottom: 12px;
-  background: rgb(255 255 255 / 96%);
+  bottom: 16px;
+  z-index: 1;
+  border-color: #d8dfed;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 30px #23334d09;
 }
-
+.composer-card :deep(.el-card__body) {
+  padding: 18px 20px 14px;
+}
+.composer-card :deep(.el-textarea__inner) {
+  padding: 4px 2px 10px;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.composer-card :deep(.el-textarea__inner:focus-visible) {
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 .composer-card .el-alert {
   margin-bottom: 14px;
 }
-
 .mode-choice {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
-  color: #606266;
-  font-size: 13px;
+  margin-bottom: 16px;
+  color: var(--dm-secondary);
+  font-size: 12px;
 }
-
 .composer-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 12px;
-  color: #909399;
-  font-size: 13px;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dm-border);
+  color: var(--dm-muted);
+  font-size: 11px;
 }
-
+.composer-shortcut {
+  margin-right: auto;
+}
 .character-count-error {
-  color: #f56c6c;
+  color: var(--el-color-danger);
 }
-
-@media (max-width: 480px) {
-  .message-item {
-    width: 94%;
-    padding: 12px;
+@media (max-width: 640px) {
+  .composer-card {
+    position: static;
   }
-
+  .conversation-heading .page-actions {
+    padding-top: 0;
+  }
+  .composer-shortcut {
+    display: none;
+  }
+  .message-user {
+    max-width: 94%;
+  }
+  .message-assistant > p,
+  .message-assistant > :deep(.rag-evidence) {
+    margin-left: 0;
+  }
+}
+@media (max-width: 380px) {
   .composer-actions {
-    align-items: stretch;
-    flex-direction: column;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-
   .composer-actions .el-button {
-    width: 100%;
-    margin: 0;
+    margin-left: auto;
+  }
+  .message-user {
+    padding: 14px;
+  }
+  .composer-card :deep(.el-card__body) {
+    padding: 16px;
   }
 }
 </style>

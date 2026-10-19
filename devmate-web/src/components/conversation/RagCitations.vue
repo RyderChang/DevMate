@@ -54,46 +54,84 @@ defineProps<{ evidence: RagEvidence }>()
 
 <style scoped>
 .rag-evidence {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid #ebeef5;
-  font-size: 13px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--dm-border);
+  border-radius: 9px;
+  background: var(--dm-surface);
+  font-size: 12px;
+}
+.rag-evidence > strong {
+  font-size: 12px;
+  font-weight: 600;
 }
 .evidence-note {
-  color: #606266;
+  color: var(--dm-secondary);
+  font-size: 11px;
+  line-height: 1.7;
 }
 ol {
   display: grid;
-  gap: 10px;
-  margin: 10px 0;
-  padding-left: 20px;
+  gap: 18px;
+  margin: 16px 0;
+  padding-left: 18px;
 }
 li {
   overflow-wrap: anywhere;
 }
 li > span {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--dm-secondary);
 }
-.citation-name {
-  font-weight: 600;
+li .citation-name {
+  color: var(--dm-text);
+  font-weight: 550;
+}
+.el-tag {
+  display: inline-flex;
+  width: fit-content;
 }
 summary {
+  margin-top: 10px;
+  color: var(--dm-accent);
   cursor: pointer;
+  font-size: 11px;
 }
 dl {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 3px 8px;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 7px 14px;
+  padding: 14px;
+  border-radius: 6px;
+  background: var(--dm-canvas);
+  font-size: 11px;
 }
 dt {
-  color: #606266;
+  color: var(--dm-secondary);
 }
 dd {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
 small {
-  color: #606266;
+  display: block;
+  color: var(--dm-muted);
+  font-size: 10px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  dl {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  dd {
+    margin-bottom: 8px;
+  }
+  .rag-evidence {
+    padding: 14px;
+  }
 }
 </style>

@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { deleteProject, listProjects } from '@/api/projects'
 import type { Project } from '@/api/types'
+import AppIcon from '@/components/AppIcon.vue'
 import {
   formatProjectDate,
   getProjectErrorMessage,
@@ -137,10 +138,10 @@ async function remove(project: Project): Promise<void> {
       <div>
         <p class="eyebrow">项目空间</p>
         <h1>我的项目</h1>
-        <p>在独立项目中组织后续的代码、文档与 AI 工作流。</p>
+        <p>归拢项目上下文，继续你的下一次构建。</p>
       </div>
       <el-button type="primary" @click="router.push({ name: 'project-create' })"
-        >创建项目</el-button
+        ><AppIcon name="plus" />创建项目</el-button
       >
     </div>
 
@@ -173,12 +174,24 @@ async function remove(project: Project): Promise<void> {
       >
     </el-empty>
     <template v-else-if="loaded">
+      <div class="collection-heading">
+        <h2 class="collection-title">
+          全部项目 <span class="collection-count">{{ total }}</span>
+        </h2>
+        <span class="collection-order">按最近更新时间排序</span>
+      </div>
       <div class="project-grid" :aria-busy="loading">
-        <el-card v-for="project in projects" :key="project.id" class="project-card" shadow="hover">
+        <el-card v-for="project in projects" :key="project.id" class="project-card" shadow="never">
           <div class="project-card-content">
+            <div class="project-card-top">
+              <span class="project-folder"><AppIcon name="folder" /></span
+              ><span class="project-kind">项目空间</span>
+            </div>
             <h2>{{ project.name }}</h2>
             <p class="project-summary">{{ project.description || '暂无描述' }}</p>
-            <p class="project-time">更新于 {{ formatProjectDate(project.updateTime) }}</p>
+            <p class="project-time">
+              <AppIcon name="clock" />更新于 {{ formatProjectDate(project.updateTime) }}
+            </p>
           </div>
           <div class="project-card-actions">
             <el-button
@@ -186,7 +199,7 @@ async function remove(project: Project): Promise<void> {
               type="primary"
               @click="router.push({ name: 'project-detail', params: { projectId: project.id } })"
             >
-              查看
+              查看<AppIcon name="arrow" />
             </el-button>
             <el-button
               link
@@ -229,69 +242,99 @@ async function remove(project: Project): Promise<void> {
 <style scoped>
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+  gap: 20px;
 }
-
+.project-card {
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.project-card:hover {
+  border-color: #c6d1e8;
+  box-shadow: 0 6px 20px #23334d06;
+}
 .project-card :deep(.el-card__body) {
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  height: 100%;
+  min-height: 274px;
+  padding: 24px;
 }
-
 .project-card-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
 }
-
+.project-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.project-folder {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e1e7f6;
+  border-radius: 10px;
+  background: #f0f4fe;
+  color: #5777cc;
+  font-size: 19px;
+}
+.project-kind {
+  color: var(--dm-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
 .project-card h2 {
   margin: 0 0 12px;
   overflow-wrap: anywhere;
-  font-size: 19px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
 }
-
 .project-summary {
   display: -webkit-box;
-  min-height: 48px;
+  min-height: 44px;
   margin: 0;
   overflow: hidden;
-  color: #606266;
-  line-height: 1.6;
+  color: var(--dm-secondary);
+  font-size: 13px;
+  line-height: 1.8;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-
 .project-time {
-  margin: 20px 0 0;
-  color: #909399;
-  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: auto 0 0;
+  padding-top: 24px;
+  color: var(--dm-muted);
+  font-size: 11px;
 }
-
 .project-card-actions {
   display: flex;
   flex-wrap: wrap;
+  gap: 18px;
   justify-content: flex-end;
-  margin-top: 18px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dm-border);
 }
-
-.project-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 24px;
-  color: #606266;
+.project-card-actions .el-button {
+  min-height: 26px;
+  font-size: 12px;
 }
-
-@media (max-width: 640px) {
-  .project-pagination {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .project-pagination :deep(.el-pagination) {
-    flex-wrap: wrap;
-  }
+.project-card-actions .el-button:first-child {
+  margin-right: auto;
+}
+.project-card-actions .el-button:nth-child(2) {
+  color: var(--dm-secondary);
 }
 </style>

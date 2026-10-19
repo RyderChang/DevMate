@@ -42,6 +42,8 @@ npm run dev
 
 ## 项目空间
 
+工作台采用深色导航、浅色内容区和统一的 Element Plus 主题变量。项目内可直接切换概览与对话；窄屏导航自动换行，消息输入框在手机上随正文排列，避免遮挡历史。登录与注册共享视觉布局，业务流程与接口保持原合同。改版范围、合成截图及实际检查见[DEV-035 验收记录](../docs/testing/workspace-visual-polish-acceptance.md)。
+
 - `/projects`：分页列表，页码与页大小同步到 URL；
 - `/projects/new`：创建项目，成功后进入详情；
 - `/projects/:projectId`：项目详情及删除入口；

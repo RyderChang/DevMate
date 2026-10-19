@@ -139,7 +139,7 @@ async function submit(): Promise<void> {
 .character-count {
   width: 100%;
   margin: 4px 0 0;
-  color: #909399;
+  color: var(--dm-muted);
   font-size: 12px;
   text-align: right;
 }

@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { createConversation, listConversations } from '@/api/conversations'
 import { getProject } from '@/api/projects'
 import type { Conversation, Project } from '@/api/types'
+import AppIcon from '@/components/AppIcon.vue'
 import {
   codePointLength,
   CONVERSATION_PAGE_SIZES,
@@ -190,7 +191,7 @@ async function submitCreate(): Promise<void> {
         <div>
           <p class="eyebrow">项目对话</p>
           <h1>{{ project?.name || '加载项目中…' }}</h1>
-          <p>创建对话并围绕当前项目进行同步 AI 交流。</p>
+          <p>每个问题都有自己的上下文，每次对话都可以继续。</p>
         </div>
         <div class="page-actions">
           <el-button
@@ -199,7 +200,9 @@ async function submitCreate(): Promise<void> {
           >
             返回项目
           </el-button>
-          <el-button type="primary" :disabled="!project" @click="openCreate">创建对话</el-button>
+          <el-button type="primary" :disabled="!project" @click="openCreate"
+            ><AppIcon name="plus" />创建对话</el-button
+          >
         </div>
       </div>
 
@@ -231,16 +234,21 @@ async function submitCreate(): Promise<void> {
             v-for="conversation in conversations"
             :key="conversation.id"
             class="conversation-card"
-            shadow="hover"
+            shadow="never"
           >
-            <div class="conversation-card-heading">
-              <h2>{{ conversation.title }}</h2>
-              <el-tag :type="conversation.generationState === 'GENERATING' ? 'warning' : 'success'">
-                {{ conversation.generationState === 'GENERATING' ? '正在生成' : '空闲' }}
-              </el-tag>
+            <span class="conversation-icon"><AppIcon name="chat" /></span>
+            <div class="conversation-card-content">
+              <div class="conversation-card-heading">
+                <h2>{{ conversation.title }}</h2>
+                <el-tag
+                  :type="conversation.generationState === 'GENERATING' ? 'warning' : 'success'"
+                >
+                  {{ conversation.generationState === 'GENERATING' ? '正在生成' : '空闲' }}
+                </el-tag>
+              </div>
+              <p>创建于 {{ formatProjectDate(conversation.createdAt) }}</p>
+              <p>更新于 {{ formatProjectDate(conversation.updatedAt) }}</p>
             </div>
-            <p>创建于 {{ formatProjectDate(conversation.createdAt) }}</p>
-            <p>更新于 {{ formatProjectDate(conversation.updatedAt) }}</p>
             <el-button
               link
               type="primary"
@@ -251,7 +259,7 @@ async function submitCreate(): Promise<void> {
                 })
               "
             >
-              进入对话
+              进入对话<AppIcon name="arrow" />
             </el-button>
           </el-card>
         </div>
@@ -309,64 +317,78 @@ async function submitCreate(): Promise<void> {
 <style scoped>
 .conversation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: 18px;
-}
-
-.conversation-card-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   gap: 12px;
 }
-
+.conversation-card :deep(.el-card__body) {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+}
+.conversation-card:hover {
+  border-color: #c6d1e8;
+}
+.conversation-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  color: #5a72aa;
+  background: #f0f3fa;
+  font-size: 20px;
+}
+.conversation-card-content {
+  flex: 1;
+  min-width: 0;
+}
+.conversation-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
 .conversation-card h2 {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 19px;
+  font-size: 15px;
+  font-weight: 600;
 }
-
 .conversation-card p {
-  margin: 14px 0 0;
-  color: #909399;
-  font-size: 13px;
+  display: inline-block;
+  margin: 12px 18px 0 0;
+  color: var(--dm-muted);
+  font-size: 11px;
+  line-height: 1.6;
 }
-
 .conversation-card .el-button {
-  float: right;
-  margin-top: 12px;
+  flex: none;
+  font-size: 12px;
 }
-
-.project-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 24px;
-  color: #606266;
-}
-
 .character-count {
   display: block;
   width: 100%;
-  color: #909399;
+  color: var(--dm-muted);
   text-align: right;
-}
-
-.title-error {
-  color: #f56c6c;
   font-size: 12px;
 }
-
+.title-error {
+  color: var(--el-color-danger);
+  font-size: 12px;
+}
 @media (max-width: 640px) {
-  .project-pagination {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .project-pagination :deep(.el-pagination) {
+  .conversation-card :deep(.el-card__body) {
     flex-wrap: wrap;
+    gap: 14px;
+    padding: 20px;
+  }
+  .conversation-card-content {
+    flex-basis: calc(100% - 60px);
+  }
+  .conversation-card .el-button {
+    margin-left: auto;
   }
 }
 </style>
