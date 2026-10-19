@@ -279,3 +279,28 @@ git diff --check
 所有者随后明确选择“接受 1017，仅继续离线取证”。继续只读取得官方 Hugging Face 模型库公开元数据（不含 Token），固定修订 `1bae0e1088993b9b82de08f59de5be5a34e42170`，下载 README/config/tokenizer/tokenizer_config 与 encoding README/源码六文件，未下载权重。全部 bytes/SHA 已记入合同说明；用 hashlib 与旧 token-evidence.json 比较，三个 config/tokenizer 文件 SHA 完全一致；JSON 的 text_config.max_position_embeddings=1048576，ast.parse 新 encoding/encoding.py 成功。只解析数据，未执行/import 下载源码、运行包内测试、调用推理或使用第三方部署。新参考的可追溯性增强，但不证明托管预处理/完整 JSON framing 或计费保证；没有更新旧机器 JSON/scope 或将历史费用升级为新版保证。
 
 回滚仅撤回本次五份文档新增段落，不删除原证据/计划/账本。1017 离线待审范围已获确认；后续仍需适用费用合同和明确预算，之后才能重新冻结并独立审查授权交接与环境。本轮不发询证、不开启付费执行或实施其他任务。
+
+## 2026-10-19：1017 预算决定与合同阻断
+
+接手为干净 `16a81eb801887ba6d5ec7c7bc2513f1bc46a85b2`，同分支/#53 为 OPEN/DRAFT、目标 develop、远端头一致，无新增 comments/reviews。所有者本轮明确委托预算选择，Agent 已据此确定原四组全部 40 请求整轮上限为 **¥85.00 / 85000000 micros** 并告知所有者；所有者随后明确确认“尚未取得，保留阻断”。因此预算已决定，官方合同前置输入仍缺失；不把本轮决定写作实际调用授权。
+
+[合同复核及费用判定](../development/claim-citation-provider-contract-followup.md#2026-10-191017-预算决定与合同阻断)记录新预算、全部 40 请求共同缺口、历史费率条件下的整数比较及未冻结结论。公开更新日志/Chat/并发页面实际读取成功；价格/用量/错误页面读取失败或超时，没有刷新旧价格 checkedDate、新增快照 SHA 或假称资料已核验。定向搜索未补足保证条款，不能据此断言端点不存在。本轮未重抓参考文件、执行下载源码或访问账户/计数/模型接口。
+
+Python 3.13.5、JAVA_HOME 为本机 JDK21，复用已有生产 Java 测试桥；针对新预算不能升级旧费用证据或开启门禁这一边界，仅执行以下离线/Stub 回归：
+
+```powershell
+$env:JAVA_HOME = 'C:/Program Files/Java/jdk-21'
+Push-Location scripts/rag-claim-review
+python -B -m unittest test_cost_contract.CostContractTest.test_reference_result_does_not_promote_hosted_proof_or_authorization test_execution.ExecutionTest.test_live_gate_rejects_before_network_key_lookup_or_attempt test_execution.ExecutionTest.test_environment_is_owner_unconfirmed_not_promoted_by_synthetic_tests test_https_driver.HttpsDriverTest.test_public_entry_fails_before_key_dns_socket_or_connection test_https_driver.HttpsDriverTest.test_private_wire_also_cannot_construct_real_connection
+Pop-Location
+```
+
+**5 项通过，27.511 秒，零失败/错误/跳过**；覆盖全部费用审查行仍不可作托管付费预留、公开/底层发送入口先于密钥/DNS/socket 拒绝，以及环境不由合成测试代签。初始 TEMP/TMP 设置使用了错误的相对目录，路径解析失败；上述五项不依赖该设置，测试实际完成并退出 0，未因此跳过测试或改用真实网络。不重复执行完整旧算术入口来宣称 1017 已验证。
+
+另外实际执行 `python -B -c` 的纯整数断言，核验新上限 85000000、条件输出 327680、条件输入余量 84672320、条件输入阈值 42336160 及与旧回退的差额 786240。全部断言通过，输出明确标注 hostedBound=UNPROVEN、newPlanFrozen=false、paidRequests=0。该计算没有引入官方结算粒度或完整计费保证，不能充当可靠逐次预留。
+
+本轮仅修改五份 Markdown：合同补查、旧计划提醒、未发送草稿提醒、任务书及本记录。原机器 JSON、cap/scope、40 payload、历史结果、生产实现、脚本/测试、依赖与工作流保持；旧预检中的 2000000 micros 仍只指旧冻结预算，不能当作本轮预算判定。没有新版计划或有效真实授权，费用阻断、NOT_GRANTED、liveEnabled=false、环境 UNCONFIRMED 保留。真实 Chat/Embedding、付费试请求、计数/账户请求与对外询证新增均为 0。
+
+`node scripts/check-docs.mjs --format-changed origin/develop`：91 份 Markdown、446 个相对链接及格式通过；`git diff --check` 通过。文档检查首次在沙箱内因 Node 派生 Git 被拒绝（EPERM）失败，经正常提升后原命令实际通过。GitHub CLI 同样在沙箱代理拒绝后，经正常提升核验远端头、develop 基线及 PR 状态成功，没有跳过检查或扩大到模型请求。
+
+发布后独立核验对应新头 Foundation CI，并在 #53 登记实际结果，不沿用 16a81eb 的成功。本机不重跑完整 Maven/Frontend/GUI。回滚仅撤回本轮文档变更，保留历史证据、计划与账本；预算决定的对话记录不因文档回滚消失。后续先等待适用官方材料，满足费用与 ¥85.00 后才重新冻结并独立审查交接/环境，真实调用另行明确授权；本轮结束后停止。
