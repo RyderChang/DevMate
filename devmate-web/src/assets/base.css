@@ -283,6 +283,7 @@ a:hover {
   color: var(--dm-secondary);
   font-size: 13px;
   line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 .page-heading .eyebrow {
   color: var(--dm-muted);

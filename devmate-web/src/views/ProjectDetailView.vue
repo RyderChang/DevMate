@@ -19,6 +19,7 @@ const router = useRouter()
 const project = ref<Project | null>(null)
 const loading = ref(false)
 const deletingProjectId = ref<number | null>(null)
+const deleting = ref(false)
 const errorMessage = ref('')
 const unavailable = ref(false)
 let requestVersion = 0
@@ -86,6 +87,7 @@ async function remove(): Promise<void> {
   }
 
   errorMessage.value = ''
+  deleting.value = true
   try {
     await deleteProject(currentProject.id)
     if (active && version === requestVersion) {
@@ -105,6 +107,7 @@ async function remove(): Promise<void> {
   } finally {
     if (active) {
       deletingProjectId.value = null
+      deleting.value = false
     }
   }
 }
@@ -141,7 +144,7 @@ async function remove(): Promise<void> {
           <el-button
             type="danger"
             plain
-            :loading="deletingProjectId === project.id"
+            :loading="deleting && deletingProjectId === project.id"
             :disabled="deletingProjectId !== null && deletingProjectId !== project.id"
             @click="remove"
           >

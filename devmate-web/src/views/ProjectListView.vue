@@ -23,6 +23,7 @@ const loading = ref(false)
 const loaded = ref(false)
 const errorMessage = ref('')
 const deletingProjectId = ref<number | null>(null)
+const deleting = ref(false)
 let requestVersion = 0
 let active = true
 
@@ -109,6 +110,7 @@ async function remove(project: Project): Promise<void> {
   }
 
   errorMessage.value = ''
+  deleting.value = true
   try {
     await deleteProject(project.id)
     if (!active || version !== requestVersion) {
@@ -127,6 +129,7 @@ async function remove(project: Project): Promise<void> {
   } finally {
     if (active) {
       deletingProjectId.value = null
+      deleting.value = false
     }
   }
 }
@@ -211,7 +214,7 @@ async function remove(project: Project): Promise<void> {
             <el-button
               link
               type="danger"
-              :loading="deletingProjectId === project.id"
+              :loading="deleting && deletingProjectId === project.id"
               :disabled="deletingProjectId !== null && deletingProjectId !== project.id"
               :aria-label="`删除项目 ${project.name}`"
               @click="remove(project)"

@@ -136,6 +136,34 @@ describe('ProjectListView', () => {
     expect(projectApi.deleteProject).not.toHaveBeenCalled()
   })
 
+  it('keeps the delete trigger focusable until confirmation and blocks duplicate dialogs', async () => {
+    let confirmDelete!: (value: Awaited<ReturnType<typeof ElMessageBox.confirm>>) => void
+    let finishDelete!: () => void
+    vi.mocked(projectApi.listProjects).mockResolvedValue(result())
+    vi.spyOn(ElMessageBox, 'confirm').mockImplementation(
+      () => new Promise((resolve) => (confirmDelete = resolve)),
+    )
+    vi.mocked(projectApi.deleteProject).mockImplementation(
+      () => new Promise<void>((resolve) => (finishDelete = resolve)),
+    )
+    const { wrapper } = await mountList()
+    const remove = wrapper.find<HTMLButtonElement>(`button[aria-label="删除项目 ${project.name}"]`)
+
+    await remove.trigger('click')
+    await flushPromises()
+    expect(remove.element.disabled).toBe(false)
+    expect(projectApi.deleteProject).not.toHaveBeenCalled()
+    await remove.trigger('click')
+    expect(ElMessageBox.confirm).toHaveBeenCalledTimes(1)
+
+    confirmDelete('confirm' as Awaited<ReturnType<typeof ElMessageBox.confirm>>)
+    await flushPromises()
+    expect(remove.element.disabled).toBe(true)
+    expect(projectApi.deleteProject).toHaveBeenCalledTimes(1)
+    finishDelete()
+    await flushPromises()
+  })
+
   it('keeps the project visible when delete fails', async () => {
     vi.mocked(projectApi.listProjects).mockResolvedValue(result())
     vi.mocked(projectApi.deleteProject).mockRejectedValue(new Error('offline'))
