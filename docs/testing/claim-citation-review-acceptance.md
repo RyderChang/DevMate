@@ -251,3 +251,29 @@ git diff --check
 五项针对性回归通过，45.270 秒，零失败/错误/跳过：公开/底层 live 入口在密钥/DNS/socket 前拒绝、环境不由合成测试确认、参考费用不升级为托管证明/授权。`execution.py` 复算 preparation scope、84213760/2000000/82213760 micros、BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/UNCONFIRMED/paidRequests=0；`cost_contract.py` 重建同 40 payload，保持 BLOCKED_HOSTED_BOUND、836160 阈值、1276248/84131840/84213760 micros 和 liveEnabled=false。Python 启动器有已有路径定位警告，两入口及测试均退出 0，不将警告当作跳过测试的理由。
 
 本轮仅三份 Markdown 改动；生产源码、脚本/测试、冻结 JSON、依赖、工作流及历史资料无 diff。本机不重跑完整 Maven/Frontend 或 GUI；匹配文档的格式/相对链接与 Git 空白检查通过，新提交的完整 CI 在发布后独立核验并登记 #53。回滚仅撤回本轮三份文档新增段落，保留原证据/计划/账本。下一步仍待官方书面答复或所有者明确预算/scope；只说明，不自动启动付费执行。
+
+## 2026-10-19：模型版本漂移与历史计划适用性
+
+所有者要求确定并自行执行下一步。从干净 `4c9af14` 检查当前分支、任务/合同材料、#53 及最新官方资料；PR 仍为 OPEN/DRAFT、目标 develop、同一头，无 comments/reviews，develop 仍为 `1a6dab6`。原 4c9af14 的 CI 为 success，仅作为原提交历史结果，不冒称本轮新提交已通过。
+
+本轮发现官方 2026-10-17 更新日志和当前价格页均将 `deepseek-flash` 对应版本列为 DeepSeek-V4.1-Flash-1017，公告称调用方式/价格不变。已只读下载七份官方快照到独立忽略目录，bytes/SHA 及[适用性判定](../development/claim-citation-provider-contract-followup.md#2026-10-19官方模型版本漂移与旧证据适用性)已记录，不覆盖前轮证据。XML 解析为 54 URL，较前轮增加 `/api/fetch` 和 `/news/news261017`；Chat 快照未列出四个被检查的预计数/cap 字段。没有运行网页脚本/下载代码、探测猜测端点或发起账户/计数/模型请求。
+
+五份文档更新：在旧冻结计划和未发送询证草稿前标明版本适用性，补充合同漂移审查、任务及本验收记录。没有修改脚本/测试、冻结 JSON、scope、payload、原参考文件、1024 输出、拟定 ¥2.00、¥84.213760 历史回退或生产配置。旧预检仍可复现，但不在线检查模型路由，不能证明当前托管版本或新版费用上界；本轮未新增机器门禁状态或接受新版模型，没有重新冻结授权或代签环境，真实发送继续关闭。
+
+实际验证使用 Python 3.13.5 和已有生产 Java 测试桥，仅合成 Stub：
+
+```powershell
+Push-Location scripts/rag-claim-review
+python -B -m unittest test_cost_contract.CostContractTest.test_full_40_payload_regeneration_matches_review_and_both_old_scopes test_cost_contract.CostContractTest.test_reference_result_does_not_promote_hosted_proof_or_authorization test_execution.ExecutionTest.test_live_gate_rejects_before_network_key_lookup_or_attempt test_https_driver.HttpsDriverTest.test_public_entry_fails_before_key_dns_socket_or_connection test_https_driver.HttpsDriverTest.test_private_wire_also_cannot_construct_real_connection
+Pop-Location
+python -B scripts/rag-claim-review/execution.py
+python -B scripts/rag-claim-review/cost_contract.py
+node scripts/check-docs.mjs --format-changed origin/develop
+git diff --check
+```
+
+五项回归通过，24.989 秒，零失败/错误/跳过；覆盖全部 40 payload 与两份旧 scope 的精确复现、参考证据不升级为授权，以及公开/底层发送入口先于密钥/DNS/socket 拒绝。`execution.py` 保持原 preparation SHA 与 84213760/2000000/82213760 micros、BLOCKED_BUDGET_AND_AUTHORIZATION/NOT_GRANTED/UNCONFIRMED/paidRequests=0；`cost_contract.py` 保持 BLOCKED_HOSTED_BOUND、836160 阈值、1276248/84131840/84213760 micros、liveEnabled=false 和 paidRequests=0。这些结果仅验证旧材料，不宣称实测或验证了 1017 模型。
+
+文档检查首次因沙箱内 Node 无法派生 Git 而 EPERM；只读检查经正常提升后实际成功，未跳过、修改检查器或将失败当作通过。网络 CLI 首次受沙箱代理限制失败，提升后 GitHub 只读核验成功。格式/相对链接与 Git 空白检查通过；本机未重跑完整 Maven/Frontend/GUI，新头 CI 发布后单独核验并登记 #53。
+
+回滚仅撤回本次五份文档新增段落，不删除原证据/计划/账本。后续仍需模型版本范围决定及适用费用合同，明确预算后重新冻结，再独立审查授权交接与环境；增加预算本身不能省略版本/合同适用性。本轮不发询证、不开启付费执行或实施其他任务。

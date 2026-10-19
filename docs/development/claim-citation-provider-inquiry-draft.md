@@ -2,6 +2,8 @@
 
 状态：DRAFT / UNSENT，供所有者审查。没有发送邮件、工单或 GitHub issue；实际渠道由所有者选择[官方文档列出的 API 服务联系渠道](https://api-docs.deepseek.com/api/get-user-balance/)。本文件不自动触发发送或读取账户凭据，范围见[合同补查](claim-citation-provider-contract-followup.md)。
 
+2026-10-19：已发现[1017 托管版本漂移](claim-citation-provider-contract-followup.md#2026-10-19官方模型版本漂移与旧证据适用性)。下列正文仍为未发送的历史草稿；实际询证前须明确答复针对的托管版本、原版本能否固定及保证有效期，不将同一模型别名或不变价格当成版本绑定。没有新增发送、模型选择或付费授权。
+
 ## 建议主题
 
 请求确认 deepseek-flash 非思考 Chat 的发送前输入/费用上界合同
