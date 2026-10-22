@@ -4,6 +4,7 @@ import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { getErrorMessage } from '@/api/errors'
+import AuthFrame from '@/components/AuthFrame.vue'
 import { useAuthStore } from '@/stores/auth'
 
 interface RegisterForm {
@@ -63,7 +64,7 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="auth-page">
+  <AuthFrame>
     <el-card class="auth-card" shadow="never">
       <div class="auth-heading">
         <span class="auth-brand">DevMate</span>
@@ -122,5 +123,5 @@ async function submit(): Promise<void> {
 
       <p class="auth-switch">已有账号？<RouterLink to="/login">返回登录</RouterLink></p>
     </el-card>
-  </main>
+  </AuthFrame>
 </template>

@@ -5,6 +5,7 @@
 - `check-docs.mjs`：Markdown 链接、代码围栏和改动格式检查。
 - `summarize-tests.py`：仅输出后端测试类名与计数；摘要本身不代表通过。
 - `conversation_env.py`、`ai-stub.mjs`：隔离对话联调与 Stub，使用方式见[开发指南](../docs/development/local-development.md)。
+- `seed-workspace-citations.py`：只为带任务标签的临时库和 `dev035_` 合成账号准备历史引用/资格元数据，不执行上传、索引或模型调用；`check-workspace-layout.mjs` 在渲染后的浏览器页面只读检查横向溢出。使用与边界见[工作台联调验收](../docs/testing/workspace-visual-polish-acceptance.md)。
 - `storage-preflight/`：SDK/hash 锁、固定源码 MinIO 构建和真实存储/数据库预检，见[准备记录](../docs/development/storage-preflight.md)。
 - `verify-knowledge-backend.py`：JDK 21 编译、固定 Linux JRE 执行完整后端；失败/缺失/跳过均拒绝。
 - `check-knowledge-test-reports.py`：Foundation CI 的完整报告门禁，要求八组存储、三组解析分块及三组索引/HTTP/向量验收，所有测试零跳过。
