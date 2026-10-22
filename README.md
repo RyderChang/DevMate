@@ -26,10 +26,12 @@ DevMate 是围绕软件项目上下文、面向真实研发流程的 AI 助手�
 
 - 后端：Java 21、Spring Boot 3、Spring Security、MyBatis-Plus；
 - 前端：Vue 3、Vite、Element Plus、Axios、Pinia；
-- 数据与基础设施：MySQL 8、Redis、Qdrant、MinIO；
+- 数据与基础设施：MySQL 8、Qdrant、MinIO；
 - 工程能力：Flyway、OpenAPI、JUnit 5、Testcontainers、Docker Compose、GitHub Actions。
 
-已接入部分的具体版本以构建文件为准；Redis 业务尚未接入；Qdrant 文档索引和本地 Embedding 默认关闭，MinIO 接入原文件存储边界。AI Gateway
+Redis 业务尚未接入，仅作为后续可选组件；根据缓存、统一限流等实际需求评估是否引入。
+
+已接入部分的具体版本以构建文件为准；Qdrant 文档索引和本地 Embedding 默认关闭，MinIO 接入原文件存储边界。AI Gateway
 提供 OpenAI Responses 与 DeepSeek 官方 Chat Completions 适配器，且默认关闭，不配置密钥也可构建和测试。
 国内试用可显式选择 `AI_PROVIDER=deepseek`；配置与真实冒烟步骤见[本地开发指南](docs/development/local-development.md)。
 
