@@ -28,6 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
@@ -47,6 +48,20 @@ jobs:
         run: ./devmate-server/mvnw -B -f devmate-server/pom.xml clean verify
       - name: Require storage acceptance reports without skipped tests
         run: python3 -B scripts/check-knowledge-test-reports.py
+      - name: Prepare production validator bridge classpath
+        run: ./devmate-server/mvnw -B -f devmate-server/pom.xml dependency:build-classpath -Dmdep.outputFile=../tmp/dev-034/validator-classpath.txt
+      - name: Prepare system Python Tk for offline review tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y python3-tk
+      - name: Verify transient claim review and Stub adapter without model calls
+        run: |
+          xvfb-run -a /usr/bin/python3 -B -m unittest discover -s scripts/rag-claim-review -p 'test_*.py'
+          /usr/bin/python3 -B scripts/rag-claim-review/run.py
+          /usr/bin/python3 -B scripts/rag-claim-review/plan.py
+          /usr/bin/python3 -B scripts/rag-claim-review/execution.py
+          /usr/bin/python3 -B scripts/rag-claim-review/cost_contract.py
+          /usr/bin/python3 -B scripts/rag-claim-review/tokenizer_archive.py
       - name: Create sanitized test summary
         if: always()
         run: python3 scripts/summarize-tests.py

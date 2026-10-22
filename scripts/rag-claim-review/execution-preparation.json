@@ -1,0 +1,385 @@
+{
+  "version": "claim-execution-preparation-v1",
+  "parentPlanSha256": "c5f81231b9b79aeffa7db3bac5f9fccf19a883705c2e928d6eafbf0c180bb750",
+  "authorization": "NOT_GRANTED",
+  "liveEnabled": false,
+  "tokenEvidenceSha256": "a7bdc556b1ae31ecbae157182e5d54e9510cf85ba10e40330b4ac85b38578173",
+  "transportPolicy": {
+    "version": "claim-http-policy-v1",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "method": "POST",
+    "redirects": 0,
+    "retries": 0,
+    "concurrency": 1,
+    "maxRequestBytes": 98304,
+    "maxResponseBytes": 1048576,
+    "deadlineMs": 120000,
+    "mediaType": "application/json",
+    "contentEncoding": "identity",
+    "tls": "HTTPS verified certificate and hostname required",
+    "proxy": "NO_IMPLICIT_ENVIRONMENT_PROXY",
+    "debugBodyLogging": false,
+    "unknownConsumesAttempt": true,
+    "failureKeepsReservation": true,
+    "resume": false,
+    "topUp": false,
+    "liveClientPresent": false
+  },
+  "model": "deepseek-flash",
+  "chatCalls": 40,
+  "embeddingCalls": 0,
+  "price": {
+    "currency": "CNY",
+    "checkedDate": "2026-10-12",
+    "inputMissMicrosPerToken": 2,
+    "outputMicrosPerToken": 8,
+    "cacheDiscountUsed": false,
+    "offPeakDiscountUsed": false,
+    "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/"
+  },
+  "capMicros": 2000000,
+  "estimatedReservedMicros": 1397304,
+  "costBasis": "Documented full context input + separately reserved maximum output; conservative over-reservation",
+  "totalReservedMicros": 84213760,
+  "budgetShortfallMicros": 82213760,
+  "readiness": "BLOCKED_BUDGET_AND_AUTHORIZATION",
+  "blockers": [
+    "BUDGET_INSUFFICIENT",
+    "HOSTED_TOKENIZER_BINDING_UNPROVEN",
+    "NO_PAYABLE_AUTHORIZATION",
+    "NO_LIVE_CLIENT",
+    "OWNER_ENVIRONMENT_UNCONFIRMED"
+  ],
+  "environment": {
+    "tk": "OFFLINE_SYNTHETIC_TESTS_ONLY",
+    "privateDesktop": "OWNER_CONFIRMATION_REQUIRED",
+    "screenRecording": "OWNER_CONFIRMATION_REQUIRED",
+    "clipboardHistory": "OWNER_CONFIRMATION_REQUIRED",
+    "debuggerAndCrashCapture": "OWNER_CONFIRMATION_REQUIRED",
+    "ownerReviewer": "OWNER_CONFIRMATION_REQUIRED",
+    "applicationBodyPersistence": false,
+    "osMemoryErasureGuarantee": false
+  },
+  "samples": [
+    {
+      "question": 1,
+      "arm": "baseline",
+      "payloadSha256": "e9a069c5f716c8c81a971a26ff178642fd8645f1b0f33995c1b4bc4fdc33d33e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 1,
+      "arm": "example",
+      "payloadSha256": "6f1b222e44b1baeac235783a3ee0c14bcc3069d8c3bd58ef66cce923c1bccb6e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 1,
+      "arm": "json_mode",
+      "payloadSha256": "1a693b69b47da13c9869e1b38fb8db2cf37ea0fcdb4cfe6ab7579e70aa72ae41",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 1,
+      "arm": "combined",
+      "payloadSha256": "ac5325e749a8081cb7679157e64e7bd82e61a2ad39c2d84e3b0877cf8dd1bab2",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 2,
+      "arm": "example",
+      "payloadSha256": "2774ce1dc10492d29a5f70a1527f1248607df61f1befe152d0df85e5e9884ce5",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 2,
+      "arm": "json_mode",
+      "payloadSha256": "a21b4e732743d90ab2360339a6922c1917e851d39de097baa7f8c1ef0c49ae70",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 2,
+      "arm": "combined",
+      "payloadSha256": "8861e5eb91b1c03df1735eae1718ab8f33254ac7ad03dc8ec5691c6115c742f1",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 2,
+      "arm": "baseline",
+      "payloadSha256": "ae669bcaeb59e5b0f684091b300fbfc838d1e3ffc88b07aa7005b07d9fe5efdc",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 3,
+      "arm": "json_mode",
+      "payloadSha256": "bf880bdc7b8e70efc84245b5174bc6eb5ff2f50b9b2c3cbc3ad130940ed2bd42",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 3,
+      "arm": "combined",
+      "payloadSha256": "5b61b78600a4590673f2953125941e548a88b7c23104b70520ea744205cc5dc4",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 3,
+      "arm": "baseline",
+      "payloadSha256": "71a7be41d133dbd145dc33807b1808e834980da0e6bb6dc5813b36c5777431e9",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 3,
+      "arm": "example",
+      "payloadSha256": "87721f41d9269846ab6144f5ae69363246b85f3c2322d446175ffcc4f1cb42ca",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 4,
+      "arm": "combined",
+      "payloadSha256": "eb3adc0856dad32b293c0ea454d641fc5b69449a61e9bc6c575aaf84d5d727cf",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 4,
+      "arm": "baseline",
+      "payloadSha256": "269f5a68bf712411af3554f5109ab13ff255775f131d79c310b1d823438d4b2a",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 4,
+      "arm": "example",
+      "payloadSha256": "de670cf7a6b4c72a549247a0da94d9a355e4f71c7743cf227bf4e44b63e43d1b",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 4,
+      "arm": "json_mode",
+      "payloadSha256": "c0cf3395b19ea557311777a0666662be78bc128745235512a3dec36491472e75",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 5,
+      "arm": "baseline",
+      "payloadSha256": "29ca07fb6de99929c8dd1ee50b03d5c5635496ddef19487cc662cf91f047c459",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 5,
+      "arm": "example",
+      "payloadSha256": "242cc412f7a6c995267764d73f2647deb671cdcb389a04bcffa2547e1cd6c2f9",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 5,
+      "arm": "json_mode",
+      "payloadSha256": "ea431b36ddf8efb9d318cf4524aeea4b68cdb4ca820ac5dd2c39e99cbd7c2272",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 5,
+      "arm": "combined",
+      "payloadSha256": "5c6ca95145b25309f3b7cd956ef14be1eb5a0784afd788e8228d9be67c868b12",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 6,
+      "arm": "example",
+      "payloadSha256": "08144823622d8050fb2fda8334df2203c6da72a4f2cd5ce5e44a02e5124f196e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 6,
+      "arm": "json_mode",
+      "payloadSha256": "569ba3429aaf5e83d312b4749e96b4b7ac366da2ce7c2b25be8fe133415db806",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 6,
+      "arm": "combined",
+      "payloadSha256": "7dff680253a8b7a5cde79f822621fd507cbac16a678e6f078771c04275e10e71",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 6,
+      "arm": "baseline",
+      "payloadSha256": "c5bee2a09a24e19dd3b102e2917cf7aceb57a01de262b6dc322c0953b8b0b2c5",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 7,
+      "arm": "json_mode",
+      "payloadSha256": "d72a9452f166e0ec679ef0bd7cd17e8894c489bf5b3667002c3fd20d5324c40b",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 7,
+      "arm": "combined",
+      "payloadSha256": "d867359124e520b741a088799e08b1db0edc97a3cf8efab3db3ae9193c3dd0a2",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 7,
+      "arm": "baseline",
+      "payloadSha256": "7a84837dd31f150560b04e7ec8ada11d3cb6b8e11018c8970a0833644fd98843",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 7,
+      "arm": "example",
+      "payloadSha256": "c8fbe6b0ede8a02b0ccd30a253a1a7193416900378478802cb283e95c43b0e2e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 8,
+      "arm": "combined",
+      "payloadSha256": "ec274eb78499f7ac85e28c8ad74812860dfa02018fb12ac5d1df9a9a28fc9ae6",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 8,
+      "arm": "baseline",
+      "payloadSha256": "ba8ab59c10101b36518115c8b4dae6123d915e1515b576fd9eee6c4cede1751e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 8,
+      "arm": "example",
+      "payloadSha256": "0e7c54fe108a83afffaf7460a9a16cbfe6e756bb075ee8b1d1a9d67e432d29f6",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 8,
+      "arm": "json_mode",
+      "payloadSha256": "e71b296171daf1a21201543b67d5b8d44c610327dac99ee3f00ed160211fdc2d",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 9,
+      "arm": "baseline",
+      "payloadSha256": "6c09da1640b48575c37b55a04ed6a45ab852299d97397bbf0da792afad57c646",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 9,
+      "arm": "example",
+      "payloadSha256": "d1614ff06a325c1444457def155b1cba2df279e8e83b52f2f9c467cc8862e425",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 9,
+      "arm": "json_mode",
+      "payloadSha256": "2ad065702424fbd3a5757140058835885580ec95bd65526fe9fa85bccf2e157d",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 9,
+      "arm": "combined",
+      "payloadSha256": "3594ea824c979b1b7467592fb6503a78bef9c43bdfc72107cda07894545827cf",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 10,
+      "arm": "example",
+      "payloadSha256": "3927db025e09c4324c846198034a306d090c42fa9f1580fbed8d638f3e208b28",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 10,
+      "arm": "json_mode",
+      "payloadSha256": "37e91f7d77cd436895550f28276333ff833b4c0808daa9c9aaf53e1eea5a6d8e",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 10,
+      "arm": "combined",
+      "payloadSha256": "48cc6fca59172a2c68bc5767c19cb31892ea437ff40f7cfe6ca82673e88b6a31",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    },
+    {
+      "question": 10,
+      "arm": "baseline",
+      "payloadSha256": "87de81d382f86b9b64ca07f1cb7bd3bed0eb3a189c4fc93af3c1d1ceaebc0a1f",
+      "inputTokenBound": 1048576,
+      "maxOutputTokens": 1024,
+      "reservedMicros": 2105344
+    }
+  ]
+}
