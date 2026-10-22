@@ -28,6 +28,12 @@ public class RetrievalService {
         return hits.stream().sorted(Comparator.comparingDouble(RetrievalHit::score).reversed().thenComparing(RetrievalHit::pointId)).limit(topK).toList();
     }
     public RetrievalResponse search(long owner,long project,RetrievalRequest request){
+        return search(owner,project,request,false);
+    }
+    private List<RetrievalHit> selected(List<RetrievalHit> hits,int topK,String query,boolean rag){
+        return rag?RagEvidenceSelector.select(query,hits):sorted(hits,topK);
+    }
+    private RetrievalResponse search(long owner,long project,RetrievalRequest request,boolean rag){
         String operation=null;boolean ended=false;long start=System.nanoTime();
         try{
             var sources=transactions.sources(owner,project);int topK=request.topK()==null?5:request.topK();
@@ -51,14 +57,14 @@ public class RetrievalService {
                 for(var candidate:found){
                     if(!before.contains(candidate.sourceKey()) || !Double.isFinite(candidate.score()) || Math.abs(candidate.score())>1.001 || checked.putIfAbsent(candidate.pointId(),candidate)!=null)throw new EmbeddingFailure("VECTOR_INVALID_RESPONSE",true);
                 }
-                var snapshot=transactions.snapshot(owner,project,checked.values());hits=sorted(snapshot.hits(),topK);var after=keys(snapshot.sources());lastSources=after;
+                var snapshot=transactions.snapshot(owner,project,checked.values());hits=selected(snapshot.hits(),topK,request.query(),rag);var after=keys(snapshot.sources());lastSources=after;
                 if(before.equals(after)){
                     if(hits.size()==topK){incomplete=false;reason="TOP_K";break;}
                     if(found.size()<limit){incomplete=false;reason="EXHAUSTED";break;}
                 }else reason="SOURCES_CHANGED";
             }
             // Refresh accumulated hits once more immediately before returning; never retain an old round's body.
-            var snapshot=transactions.snapshot(owner,project,checked.values());var finalHits=sorted(snapshot.hits(),topK);
+            var snapshot=transactions.snapshot(owner,project,checked.values());var finalHits=selected(snapshot.hits(),topK,request.query(),rag);
             if(finalHits.size()<hits.size() || !lastSources.equals(keys(snapshot.sources()))){incomplete=true;reason="SOURCES_CHANGED";}
             if(!transactions.finish(operation,"SUCCEEDED",null,elapsed(start)))throw new BusinessException(ErrorCode.DOCUMENT_RETRIEVAL_UNAVAILABLE);
             return response(operation,tokens,topK,rounds,checked.size(),incomplete,reason,finalHits);
@@ -73,5 +79,10 @@ public class RetrievalService {
             if(operation==null && error instanceof EmbeddingFailure failure && failure.code().equals("TOKEN_LIMIT"))throw new BusinessException(ErrorCode.INVALID_PARAMETER);
             throw new BusinessException(ErrorCode.DOCUMENT_RETRIEVAL_UNAVAILABLE);
         }
+    }
+
+    /** RAG keeps five sources; its evidence selection is separate from the public search API. */
+    public RetrievalResponse searchForRag(long owner,long project,String query){
+        return search(owner,project,new RetrievalRequest(query,5),true);
     }
 }

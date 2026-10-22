@@ -144,6 +144,21 @@ class RagConversationIntegrationTest extends MySqlIntegrationTestBase {
                 .andExpect(jsonPath("$.data.rag.templateVersion").value("project-rag-v1"));
         mvc.perform(get("/v3/api-docs").header("Authorization",token)).andExpect(status().isOk()).andExpect(jsonPath("$.paths['/projects/{projectId}/conversations/{conversationId}/rag-messages'].post").exists());
     }
+    @Test void ragGatewayReceivesTheFiveSelectedSourcesIncludingTheLiteralAnchor() throws Exception {
+        var pool=new ArrayList<VectorCandidate>();
+        for(int n=0;n<5;n++)pool.add(candidate(indexed("ordinary candidate "+n),0.9-n*0.05));
+        long anchor=indexed("CHUNKED only publishes chunks; it does not imply vector indexing.");
+        pool.add(candidate(anchor,0.4));clearInvocations(model);
+        when(vectors.query(anyLong(),anyLong(),anyString(),anyList(),any(),anySet(),anyInt())).thenReturn(pool);
+        service.send(owner,project,conversation,new SendMessageRequest(uuid(),"达到 CHUNKED 是否已建立向量索引？"));
+        var captured=org.mockito.ArgumentCaptor.forClass(AiChatRequest.class);verify(gateway).chat(captured.capture());
+        var envelope=json.readTree(json.writeValueAsString(captured.getValue()));
+        var data=json.readTree(envelope.path("messages").get(0).path("content").asText());
+        assertThat(data.path("documents").size()).isEqualTo(5);
+        assertThat(data.path("documents").get(4).path("source").path("documentId").asLong()).isEqualTo(anchor);
+        assertThat(data.path("documents").get(4).path("text").asText()).contains("CHUNKED");
+        verify(model,times(1)).embed(anyString(),anyList(),anyList());
+    }
     @Test void historyRestoresOnlySuccessfulRagEvidenceAndRechecksCurrentAvailability() throws Exception {
         long document=ready();var answer=send(uuid());
         var first=conversations.listMessages(owner,project,conversation,1,2);

@@ -8,7 +8,6 @@ import com.devmate.conversation.dto.SendMessageRequest;
 import com.devmate.conversation.mapper.ConversationMessageMapper;
 import com.devmate.conversation.vo.RagMessageResponse;
 import com.devmate.knowledge.application.RetrievalService;
-import com.devmate.knowledge.dto.RetrievalRequest;
 import com.devmate.project.service.ProjectService;
 import java.time.*;
 import org.slf4j.Logger;
@@ -58,7 +57,7 @@ public class RagService {
         if(start.existing()!=null)return start.existing();
         var context=start.context();
         try(var budget=CallBudget.open(remaining(context))) {
-            var found=retrieval.search(owner,project,new RetrievalRequest(content,5));
+            var found=retrieval.searchForRag(owner,project,content);
             if(found.incomplete())throw new BusinessException(ErrorCode.RAG_RETRIEVAL_INCOMPLETE);
             if(found.hits().isEmpty())throw new BusinessException(ErrorCode.RAG_CONTEXT_UNAVAILABLE);
             var history=messages.findRecentSuccessful(owner,project,conversation,ai.getMaxContextMessages());
